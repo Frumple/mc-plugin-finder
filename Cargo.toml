@@ -8,10 +8,14 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 constcat = "0.4.0"
+cornucopia_async = "0.6.0"
+deadpool-postgres = "0.12.1"
 futures = "0.3.30"
 governor = "0.6.0"
 nonzero_ext = "0.3.0"
 page-turner = "1.0.0"
+postgres-types = "0.2.6"
 reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }
 tokio = { version = "1.35.1", features = ["rt-multi-thread", "macros"] }
+tokio-postgres = "0.7.10"
