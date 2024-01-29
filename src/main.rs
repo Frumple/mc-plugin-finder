@@ -13,11 +13,11 @@ async fn main() -> Result<()> {
     let db_client = db_pool.get().await?;
 
     let spigot_client = SpigotClient::new(db_client)?;
-    let population_result = spigot_client.populate_all_spigot_authors().await;
-    println!("Authors populated: {:?}", population_result.count);
-    if population_result.error.is_some() {
-        println!("Error: {:#}", population_result.error.unwrap());
-    }
+    // let author_count = spigot_client.populate_all_spigot_authors().await?;
+    // println!("Authors added: {:?}", author_count);
+
+    let author_count = spigot_client.populate_new_spigot_authors().await?;
+    println!("Authors added: {:?}", author_count);
 
     Ok(())
 }

@@ -1,9 +1,9 @@
-use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient, SpigotPopulationResult};
-use crate::cornucopia::queries::spigot_author::insert_spigot_author;
+use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient};
+use crate::cornucopia::queries::spigot_author::{insert_spigot_author, get_highest_spigot_author_id};
 
 use anyhow::Result;
 use constcat::concat;
-use futures::TryFutureExt;
+use futures::{future, TryFutureExt};
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use serde::{Serialize, Deserialize};
@@ -12,10 +12,8 @@ use std::rc::Rc;
 
 const SPIGOT_AUTHORS_URL: &str = concat!(SPIGOT_BASE_URL, "/authors");
 
-const SPIGOT_AUTHORS_REQUEST_SIZE: u32 = 1000;
-const SPIGOT_AUTHORS_REQUEST_SORT: &str = "+id";
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
-const SPIGOT_AUTHORS_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotAuthorsRequest {
@@ -68,70 +66,119 @@ pub struct SpigotAuthor {
 }
 
 impl SpigotClient {
-  pub async fn populate_all_spigot_authors(&self) -> SpigotPopulationResult {
-    let get_authors_request = GetSpigotAuthorsRequest {
-        headers: GetSpigotAuthorsRequestHeaders {
-            size: SPIGOT_AUTHORS_REQUEST_SIZE,
-            page: 1,
-            sort: SPIGOT_AUTHORS_REQUEST_SORT.to_string(),
-            fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
-        }
-    };
-
-    let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
-
-    let result = self
-        .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, get_authors_request)
-        .items()
-        .try_for_each_concurrent(None, |author| {
-            let count_rc_clone = count_rc.clone();
-            async move {
-                let result = insert_spigot_author()
-                    .bind(&self.db_client, &author.id, &author.name)
-                    .map_ok(|_ok: u64| ())
-                    .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
-                    .await;
-
-                if result.is_ok() {
-                    count_rc_clone.set(count_rc_clone.get() + 1);
-                }
-
-                result
+    pub async fn populate_all_spigot_authors(&self) -> Result<u32> {
+        let get_authors_request = GetSpigotAuthorsRequest {
+            headers: GetSpigotAuthorsRequestHeaders {
+                size: 1000,
+                page: 1,
+                sort: "+id".to_string(),
+                fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
             }
-        })
-        .await;
+        };
 
-    let count = count_rc.get();
+        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
 
-    match result {
-        Ok(()) => SpigotPopulationResult { count, error: None },
-        Err(err) => SpigotPopulationResult { count, error: Some(err) }
+        let result = self
+            .pages_ahead(SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD, Limit::None, get_authors_request)
+            .items()
+            .try_for_each_concurrent(None, |author| {
+                let count_rc_clone = count_rc.clone();
+                async move {
+                    let db_result = insert_spigot_author()
+                        .bind(&self.db_client, &author.id, &author.name)
+                        .map_ok(|_ok: u64| ())
+                        .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
+                        .await;
+
+                    if db_result.is_ok() {
+                        count_rc_clone.set(count_rc_clone.get() + 1);
+                    }
+
+                    db_result
+                }
+            })
+            .await;
+
+        let count = count_rc.get();
+
+        match result {
+            Ok(()) => Ok(count),
+            Err(err) => Err(err)
+        }
     }
-}
 
-async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<SpigotGetAuthorsResponse> {
-    self.rate_limiter.until_ready().await;
+    pub async fn populate_new_spigot_authors(&self) -> Result<u32> {
+        let highest_author_id = get_highest_spigot_author_id()
+            .bind(&self.db_client)
+            .one()
+            .await?;
 
-    let raw_response = self.api_client.get(SPIGOT_AUTHORS_URL)
-        .query(&request.headers)
-        .send()
-        .await?;
+        println!("Highest id: {:?}", highest_author_id);
 
-    let raw_headers = raw_response.headers();
-    let headers = SpigotGetAuthorsResponseHeaders {
-        x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
-        x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
-    };
+        let get_authors_request = GetSpigotAuthorsRequest {
+            headers: GetSpigotAuthorsRequestHeaders {
+                size: 100,
+                page: 1,
+                sort: "-id".to_string(),
+                fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
+            }
+        };
 
-    let authors: Vec<SpigotAuthor> = raw_response.json().await?;
+        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
 
-    let response = SpigotGetAuthorsResponse {
-        authors,
-        headers
-    };
+        let result = self
+            .pages(get_authors_request)
+            .items()
+            .try_take_while(|x| future::ready(Ok(x.id > highest_author_id)))
+            .try_for_each(|author| {
+                let count_rc_clone = count_rc.clone();
+                async move {
+                    let db_result = insert_spigot_author()
+                        .bind(&self.db_client, &author.id, &author.name)
+                        .map_ok(|_ok: u64| ())
+                        .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
+                        .await;
 
-    Ok(response)
-}
+                    if db_result.is_ok() {
+                        count_rc_clone.set(count_rc_clone.get() + 1);
+                    }
+
+                    db_result
+                }
+            })
+            .await;
+
+        let count = count_rc.get();
+
+        match result {
+            Ok(()) => Ok(count),
+            Err(err) => Err(err)
+        }
+    }
+
+    async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<SpigotGetAuthorsResponse> {
+        self.rate_limiter.until_ready().await;
+
+        let raw_response = self.api_client.get(SPIGOT_AUTHORS_URL)
+            .query(&request.headers)
+            .send()
+            .await?;
+
+        let raw_headers = raw_response.headers();
+        let headers = SpigotGetAuthorsResponseHeaders {
+            x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
+            x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
+        };
+
+        let authors: Vec<SpigotAuthor> = raw_response.json().await?;
+
+        let response = SpigotGetAuthorsResponse {
+            authors,
+            headers
+        };
+
+        Ok(response)
+    }
 }
 
 impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {

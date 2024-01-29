@@ -15,12 +15,6 @@ const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
 const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2";
 
 #[derive(Debug)]
-pub struct SpigotPopulationResult {
-    pub count: u32,
-    pub error: Option<anyhow::Error>
-}
-
-#[derive(Debug)]
 pub struct SpigotClient {
     api_client: Client,
     db_client: Object,
