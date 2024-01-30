@@ -42,7 +42,7 @@ struct GetSpigotAuthorsRequestHeaders {
 }
 
 #[derive(Debug)]
-struct SpigotGetAuthorsResponse {
+struct GetSpigotAuthorsResponse {
     headers: SpigotGetAuthorsResponseHeaders,
     authors: Vec<SpigotAuthor>
 }
@@ -53,13 +53,13 @@ struct SpigotGetAuthorsResponseHeaders {
     x_page_count: u32
 }
 
-impl SpigotGetAuthorsResponse {
+impl GetSpigotAuthorsResponse {
     fn more_authors_available(&self) -> bool {
         self.headers.x_page_index <= self.headers.x_page_count
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Deserialize)]
 pub struct SpigotAuthor {
     id: i32,
     name: String
@@ -67,7 +67,7 @@ pub struct SpigotAuthor {
 
 impl SpigotClient {
     pub async fn populate_all_spigot_authors(&self) -> Result<u32> {
-        let get_authors_request = GetSpigotAuthorsRequest {
+        let request = GetSpigotAuthorsRequest {
             headers: GetSpigotAuthorsRequestHeaders {
                 size: 1000,
                 page: 1,
@@ -79,7 +79,7 @@ impl SpigotClient {
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
 
         let result = self
-            .pages_ahead(SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD, Limit::None, get_authors_request)
+            .pages_ahead(SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_for_each_concurrent(None, |author| {
                 let count_rc_clone = count_rc.clone();
@@ -156,7 +156,7 @@ impl SpigotClient {
         }
     }
 
-    async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<SpigotGetAuthorsResponse> {
+    async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
         self.rate_limiter.until_ready().await;
 
         let raw_response = self.api_client.get(SPIGOT_AUTHORS_URL)
@@ -166,26 +166,28 @@ impl SpigotClient {
 
         let raw_headers = raw_response.headers();
         let headers = SpigotGetAuthorsResponseHeaders {
+            // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
             x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
             x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
         };
 
         let authors: Vec<SpigotAuthor> = raw_response.json().await?;
 
-        let response = SpigotGetAuthorsResponse {
+        let response = GetSpigotAuthorsResponse {
+            headers,
             authors,
-            headers
         };
 
         Ok(response)
     }
 }
 
+// TODO: Can this be expressed once instead of for both authors and resources?
 impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
-  type PageItems = Vec<SpigotAuthor>;
-  type PageError = anyhow::Error;
+    type PageItems = Vec<SpigotAuthor>;
+    type PageError = anyhow::Error;
 
-  async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
+    async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
         println!("Start: {:?}", request);
         let response = self.get_authors(request.clone()).await?;
         println!("End: {:?}", request);

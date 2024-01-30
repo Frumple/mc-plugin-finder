@@ -13,11 +13,13 @@ async fn main() -> Result<()> {
     let db_client = db_pool.get().await?;
 
     let spigot_client = SpigotClient::new(db_client)?;
-    // let author_count = spigot_client.populate_all_spigot_authors().await?;
-    // println!("Authors added: {:?}", author_count);
+    // let count = spigot_client.populate_all_spigot_authors().await?;
 
-    let author_count = spigot_client.populate_new_spigot_authors().await?;
-    println!("Authors added: {:?}", author_count);
+    // let count = spigot_client.populate_new_spigot_authors().await?;
+
+    let count = spigot_client.populate_all_spigot_resources().await?;
+
+    println!("Items added: {:?}", count);
 
     Ok(())
 }
@@ -27,7 +29,7 @@ async fn create_db_pool() -> Result<Pool, CreatePoolError> {
     config.user = Some(String::from("postgres"));
     config.password = Some(String::from("postgres"));
     config.host = Some(String::from("127.0.0.1"));
-    config.port = Some(5435);
+    config.port = Some(5432);
     config.dbname = Some(String::from("postgres"));
     config.create_pool(Some(Runtime::Tokio1), NoTls)
 }

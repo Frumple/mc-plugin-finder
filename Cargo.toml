@@ -15,7 +15,9 @@ governor = "0.6.0"
 nonzero_ext = "0.3.0"
 page-turner = "1.0.0"
 postgres-types = "0.2.6"
+regex = "1.10.3"
 reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }
+time = "0.3.31"
 tokio = { version = "1.35.1", features = ["rt-multi-thread", "macros"] }
-tokio-postgres = "0.7.10"
+tokio-postgres = { version = "0.7.10", features = ["with-time-0_3"] }

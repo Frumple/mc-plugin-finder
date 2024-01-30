@@ -8,6 +8,7 @@ use reqwest::Client;
 use std::num::NonZeroU32;
 
 mod author;
+mod resource;
 
 const SPIGOT_USER_AGENT: &str = "analysis";
 const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
