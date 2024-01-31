@@ -1,14 +1,16 @@
 use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient};
-use crate::cornucopia::queries::spigot_author::{insert_spigot_author, get_highest_spigot_author_id};
+use crate::cornucopia::queries::spigot_author::{InsertSpigotAuthorParams, insert_spigot_author, get_highest_spigot_author_id};
 
 use anyhow::Result;
 use constcat::concat;
+use cornucopia_async::Params;
 use futures::{future, TryFutureExt};
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::rc::Rc;
+use std::time::Instant;
 
 const SPIGOT_AUTHORS_URL: &str = concat!(SPIGOT_BASE_URL, "/authors");
 
@@ -75,17 +77,20 @@ impl SpigotClient {
             .try_for_each_concurrent(None, |author| {
                 let count_rc_clone = count_rc.clone();
                 async move {
+                    let params = InsertSpigotAuthorParams {
+                        id: author.id,
+                        name: author.name
+                    };
+
                     let db_result = insert_spigot_author()
-                        .bind(&self.db_client, &author.id, &author.name)
-                        .map_ok(|_ok: u64| ())
-                        .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
+                        .params(&self.db_client, &params)
                         .await;
 
-                    if db_result.is_ok() {
-                        count_rc_clone.set(count_rc_clone.get() + 1);
+                    match db_result {
+                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                        Err(err) => println!("Skipping author ID {}: Unable to add author to database: {}", author.id, err)
                     }
-
-                    db_result
+                    Ok(())
                 }
             })
             .await;
@@ -176,9 +181,11 @@ impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
     type PageError = anyhow::Error;
 
     async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
-        println!("Start: {:?}", request);
+        println!("API Start: {:?}", request);
+        let start = Instant::now();
         let response = self.get_authors(request.clone()).await?;
-        println!("End: {:?}", request);
+        let duration = start.elapsed();
+        println!("API End: {:?} in {:?}", request, duration);
 
         if response.more_authors_available() {
             request.page += 1;

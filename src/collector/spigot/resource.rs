@@ -1,5 +1,5 @@
 use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient};
-use crate::cornucopia::queries::spigot_resource::{insert_spigot_resource, InsertSpigotResourceParams};
+use crate::cornucopia::queries::spigot_resource::{InsertSpigotResourceParams, insert_spigot_resource};
 
 use anyhow::{anyhow, Result};
 use constcat::concat;
@@ -12,6 +12,7 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::rc::Rc;
+use std::time::Instant;
 
 const SPIGOT_RESOURCES_URL: &str = concat!(SPIGOT_BASE_URL, "/resources");
 
@@ -137,8 +138,6 @@ impl SpigotClient {
 
                             let db_result = insert_spigot_resource()
                                 .params(&self.db_client, &params)
-                                // .map_ok(|_ok: u64| ())
-                                // .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
                                 .await;
 
                             match db_result {
@@ -212,9 +211,11 @@ impl PageTurner<GetSpigotResourcesRequest> for SpigotClient {
     type PageError = anyhow::Error;
 
   async fn turn_page(&self, mut request: GetSpigotResourcesRequest) -> TurnedPageResult<Self, GetSpigotResourcesRequest> {
-        println!("Start: {:?}", request);
+        println!("API Start: {:?}", request);
+        let start = Instant::now();
         let response = self.get_resources(request.clone()).await?;
-        println!("End: {:?}", request);
+        let duration = start.elapsed();
+        println!("API End: {:?} in {:?}", request, duration);
 
         if response.more_resources_available() {
             request.page += 1;
