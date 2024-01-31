@@ -20,28 +20,26 @@ const SPIGOT_POPULATE_ALL_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
-    headers: GetSpigotResourcesRequestHeaders,
+    size: u32,
+    page: u32,
+    sort: String,
+    fields: String
 }
 
 impl RequestAhead for GetSpigotResourcesRequest {
     fn next_request(&self) -> Self {
         Self {
-            headers: GetSpigotResourcesRequestHeaders {
-                size: self.headers.size,
-                page: self.headers.page + 1,
-                sort: self.headers.sort.clone(),
-                fields: self.headers.fields.clone()
-            }
+            size: self.size,
+            page: self.page + 1,
+            sort: self.sort.clone(),
+            fields: self.fields.clone()
         }
     }
 }
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequestHeaders {
-    size: u32,
-    page: u32,
-    sort: String,
-    fields: String
+
 }
 
 #[derive(Debug)]
@@ -105,12 +103,10 @@ pub struct SpigotResourceNestedVersion {
 impl SpigotClient {
     pub async fn populate_all_spigot_resources(&self) -> Result<u32> {
         let request = GetSpigotResourcesRequest {
-            headers: GetSpigotResourcesRequestHeaders {
-                size: 1000,
-                page: 1,
-                sort: "+id".to_string(),
-                fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
-            }
+            size: 1000,
+            page: 1,
+            sort: "+id".to_string(),
+            fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
         };
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -174,7 +170,7 @@ impl SpigotClient {
         self.rate_limiter.until_ready().await;
 
         let raw_response = self.api_client.get(SPIGOT_RESOURCES_URL)
-            .query(&request.headers)
+            .query(&request)
             .send()
             .await?;
 
@@ -211,7 +207,6 @@ impl SpigotClient {
     // }
 }
 
-// TODO: Can this be expressed once instead of for both authors and resources?
 impl PageTurner<GetSpigotResourcesRequest> for SpigotClient {
     type PageItems = Vec<SpigotResource>;
     type PageError = anyhow::Error;
@@ -222,7 +217,7 @@ impl PageTurner<GetSpigotResourcesRequest> for SpigotClient {
         println!("End: {:?}", request);
 
         if response.more_resources_available() {
-            request.headers.page += 1;
+            request.page += 1;
             Ok(TurnedPage::next(response.resources, request))
         } else {
             Ok(TurnedPage::last(response.resources))

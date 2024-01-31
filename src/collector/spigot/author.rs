@@ -17,28 +17,21 @@ const SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotAuthorsRequest {
-    headers: GetSpigotAuthorsRequestHeaders,
+    size: u32,
+    page: u32,
+    sort: String,
+    fields: String
 }
 
 impl RequestAhead for GetSpigotAuthorsRequest {
     fn next_request(&self) -> Self {
         Self {
-            headers: GetSpigotAuthorsRequestHeaders {
-                size: self.headers.size,
-                page: self.headers.page + 1,
-                sort: self.headers.sort.clone(),
-                fields: self.headers.fields.clone()
-            }
+            size: self.size,
+            page: self.page + 1,
+            sort: self.sort.clone(),
+            fields: self.fields.clone()
         }
     }
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct GetSpigotAuthorsRequestHeaders {
-    size: u32,
-    page: u32,
-    sort: String,
-    fields: String
 }
 
 #[derive(Debug)]
@@ -68,12 +61,10 @@ pub struct SpigotAuthor {
 impl SpigotClient {
     pub async fn populate_all_spigot_authors(&self) -> Result<u32> {
         let request = GetSpigotAuthorsRequest {
-            headers: GetSpigotAuthorsRequestHeaders {
-                size: 1000,
-                page: 1,
-                sort: "+id".to_string(),
-                fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
-            }
+            size: 1000,
+            page: 1,
+            sort: "+id".to_string(),
+            fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
         };
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -115,19 +106,17 @@ impl SpigotClient {
 
         println!("Highest id: {:?}", highest_author_id);
 
-        let get_authors_request = GetSpigotAuthorsRequest {
-            headers: GetSpigotAuthorsRequestHeaders {
-                size: 100,
-                page: 1,
-                sort: "-id".to_string(),
-                fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
-            }
+        let request = GetSpigotAuthorsRequest {
+            size: 100,
+            page: 1,
+            sort: "-id".to_string(),
+            fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
         };
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
 
-        let result = self
-            .pages(get_authors_request)
+        let result: std::prelude::v1::Result<(), anyhow::Error> = self
+            .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.id > highest_author_id)))
             .try_for_each(|author| {
@@ -160,7 +149,7 @@ impl SpigotClient {
         self.rate_limiter.until_ready().await;
 
         let raw_response = self.api_client.get(SPIGOT_AUTHORS_URL)
-            .query(&request.headers)
+            .query(&request)
             .send()
             .await?;
 
@@ -182,7 +171,6 @@ impl SpigotClient {
     }
 }
 
-// TODO: Can this be expressed once instead of for both authors and resources?
 impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
     type PageItems = Vec<SpigotAuthor>;
     type PageError = anyhow::Error;
@@ -193,7 +181,7 @@ impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
         println!("End: {:?}", request);
 
         if response.more_authors_available() {
-            request.headers.page += 1;
+            request.page += 1;
             Ok(TurnedPage::next(response.authors, request))
         } else {
             Ok(TurnedPage::last(response.authors))
