@@ -7,6 +7,7 @@ CREATE TABLE spigot_author (
 CREATE TABLE spigot_resource (
   id serial NOT NULL,
   name text NOT NULL,
+  tag text NOT NULL,
   slug text NOT NULL,
   release_date timestamptz NOT NULL,
   update_date timestamptz NOT NULL,

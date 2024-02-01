@@ -16,7 +16,7 @@ use std::time::Instant;
 
 const SPIGOT_RESOURCES_URL: &str = concat!(SPIGOT_BASE_URL, "/resources");
 
-const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
+const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_ALL_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
@@ -66,6 +66,7 @@ struct SpigotGetResourcesResponseHeaders {
 pub struct SpigotResource {
     id: i32,
     name: String,
+    tag: String,
     release_date: i64,
     update_date: i64,
     file: Option<SpigotResourceNestedFile>,
@@ -122,10 +123,11 @@ impl SpigotClient {
                     // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
 
                     if let Some(file) = resource.file {
-                        if let Some(slug) = parse_slug_from_file_download_url(&file.url) {
+                        if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
                             let params = InsertSpigotResourceParams {
                                 id: resource.id,
                                 name: resource.name,
+                                tag: resource.tag,
                                 slug,
                                 release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
                                 update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
@@ -226,7 +228,7 @@ impl PageTurner<GetSpigotResourcesRequest> for SpigotClient {
     }
 }
 
-fn parse_slug_from_file_download_url(url: &str) -> Option<String> {
+fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
     let re = Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap();
     let caps = re.captures(url)?;
     Some(String::from(&caps[1]))

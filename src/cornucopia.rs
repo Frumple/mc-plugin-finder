@@ -134,14 +134,14 @@ u64, tokio_postgres :: Error > > + Send + 'a>>, C > for InsertSpigotAuthorStmt
     InsertSpigotAuthorParams < T1,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
     Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.name,) ) }
 }}pub mod spigot_resource
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct InsertSpigotResourceParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,> { pub id : i32,pub name : T1,pub slug : T2,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<T3>,pub premium : Option<bool>,pub source_code_link : Option<T4>,}#[derive( Debug, Clone, PartialEq, )] pub struct SpigotResource
-{ pub id : i32,pub name : String,pub slug : String,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : String,pub premium : bool,pub source_code_link : String,}pub struct SpigotResourceBorrowed < 'a >
-{ pub id : i32,pub name : &'a str,pub slug : &'a str,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : &'a str,pub premium : bool,pub source_code_link : &'a str,} impl < 'a > From < SpigotResourceBorrowed <
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct InsertSpigotResourceParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,> { pub id : i32,pub name : T1,pub tag : T2,pub slug : T3,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<T4>,pub premium : Option<bool>,pub source_code_link : Option<T5>,}#[derive( Debug, Clone, PartialEq, )] pub struct SpigotResource
+{ pub id : i32,pub name : String,pub tag : String,pub slug : String,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : String,pub premium : bool,pub source_code_link : String,}pub struct SpigotResourceBorrowed < 'a >
+{ pub id : i32,pub name : &'a str,pub tag : &'a str,pub slug : &'a str,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : &'a str,pub premium : bool,pub source_code_link : &'a str,} impl < 'a > From < SpigotResourceBorrowed <
 'a >> for SpigotResource
 {
     fn
-    from(SpigotResourceBorrowed { id,name,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,} : SpigotResourceBorrowed < 'a >)
-    -> Self { Self { id,name: name.into(),slug: slug.into(),release_date,update_date,author_id,version_id,version_name: version_name.into(),premium,source_code_link: source_code_link.into(),} }
+    from(SpigotResourceBorrowed { id,name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,} : SpigotResourceBorrowed < 'a >)
+    -> Self { Self { id,name: name.into(),tag: tag.into(),slug: slug.into(),release_date,update_date,author_id,version_id,version_name: version_name.into(),premium,source_code_link: source_code_link.into(),} }
 }pub struct SpigotResourceQuery < 'a, C : GenericClient, T, const N : usize >
 {
     client : & 'a  C, params :
@@ -192,24 +192,24 @@ SpigotResource, 0 >
     SpigotResourceQuery
     {
         client, params : [], stmt : & mut self.0, extractor :
-        | row | { SpigotResourceBorrowed { id : row.get(0),name : row.get(1),slug : row.get(2),release_date : row.get(3),update_date : row.get(4),author_id : row.get(5),version_id : row.get(6),version_name : row.get(7),premium : row.get(8),source_code_link : row.get(9),} }, mapper : | it | { <SpigotResource>::from(it) },
+        | row | { SpigotResourceBorrowed { id : row.get(0),name : row.get(1),tag : row.get(2),slug : row.get(3),release_date : row.get(4),update_date : row.get(5),author_id : row.get(6),version_id : row.get(7),version_name : row.get(8),premium : row.get(9),source_code_link : row.get(10),} }, mapper : | it | { <SpigotResource>::from(it) },
     }
 } }pub fn insert_spigot_resource() -> InsertSpigotResourceStmt
-{ InsertSpigotResourceStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO spigot_resource (id, name, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)")) } pub
+{ InsertSpigotResourceStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)")) } pub
 struct InsertSpigotResourceStmt(cornucopia_async :: private :: Stmt) ; impl
-InsertSpigotResourceStmt { pub async fn bind < 'a, C : GenericClient, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,>
+InsertSpigotResourceStmt { pub async fn bind < 'a, C : GenericClient, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,>
 (& 'a mut self, client : & 'a  C,
-id : & 'a i32,name : & 'a T1,slug : & 'a T2,release_date : & 'a time::OffsetDateTime,update_date : & 'a time::OffsetDateTime,author_id : & 'a i32,version_id : & 'a i32,version_name : & 'a Option<T3>,premium : & 'a Option<bool>,source_code_link : & 'a Option<T4>,) -> Result < u64, tokio_postgres :: Error >
+id : & 'a i32,name : & 'a T1,tag : & 'a T2,slug : & 'a T3,release_date : & 'a time::OffsetDateTime,update_date : & 'a time::OffsetDateTime,author_id : & 'a i32,version_id : & 'a i32,version_name : & 'a Option<T4>,premium : & 'a Option<bool>,source_code_link : & 'a Option<T5>,) -> Result < u64, tokio_postgres :: Error >
 {
     let stmt = self.0.prepare(client) .await ? ;
-    client.execute(stmt, & [id,name,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,]) .await
-} }impl < 'a, C : GenericClient + Send + Sync, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,>
-cornucopia_async :: Params < 'a, InsertSpigotResourceParams < T1,T2,T3,T4,>, std::pin::Pin<Box<dyn futures::Future<Output = Result <
+    client.execute(stmt, & [id,name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,]) .await
+} }impl < 'a, C : GenericClient + Send + Sync, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,>
+cornucopia_async :: Params < 'a, InsertSpigotResourceParams < T1,T2,T3,T4,T5,>, std::pin::Pin<Box<dyn futures::Future<Output = Result <
 u64, tokio_postgres :: Error > > + Send + 'a>>, C > for InsertSpigotResourceStmt
 {
     fn
     params(& 'a mut self, client : & 'a  C, params : & 'a
-    InsertSpigotResourceParams < T1,T2,T3,T4,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
-    Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.name,& params.slug,& params.release_date,& params.update_date,& params.author_id,& params.version_id,& params.version_name,& params.premium,& params.source_code_link,) ) }
+    InsertSpigotResourceParams < T1,T2,T3,T4,T5,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
+    Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.name,& params.tag,& params.slug,& params.release_date,& params.update_date,& params.author_id,& params.version_id,& params.version_name,& params.premium,& params.source_code_link,) ) }
 }}}
