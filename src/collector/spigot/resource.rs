@@ -233,3 +233,22 @@ fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
     let caps = re.captures(url)?;
     Some(String::from(&caps[1]))
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn should_extract_slug_from_file_download_url() {
+        let url = "resources/luckperms.28140/download?version=511529";
+        let slug = extract_slug_from_file_download_url(url);
+        assert_eq!(slug, Some("luckperms.28140".to_string()));
+    }
+
+    #[test]
+    fn should_not_extract_slug_if_file_download_url_has_no_name() {
+        let url = "resources/40087/download?version=156669";
+        let slug = extract_slug_from_file_download_url(url);
+        assert_eq!(slug, None);
+    }
+}
