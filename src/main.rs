@@ -16,11 +16,11 @@ async fn main() -> Result<()> {
 
     let spigot_client = SpigotClient::new(spigot_server)?;
 
-    let count = spigot_client.populate_all_spigot_authors(&db_client).await?;
+    let count = spigot_client.populate_spigot_authors(&db_client).await?;
 
-    // let count = spigot_client.populate_new_spigot_authors(&db_client).await?;
+    // let count = spigot_client.update_spigot_authors(&db_client).await?;
 
-    // let count = spigot_client.populate_all_spigot_resources(&db_client).await?;
+    // let count = spigot_client.populate_spigot_resources(&db_client).await?;
 
     println!("Items added: {:?}", count);
 

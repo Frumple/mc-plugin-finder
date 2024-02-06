@@ -5,7 +5,7 @@ use crate::cornucopia::queries::spigot_resource::{InsertSpigotResourceParams, in
 use anyhow::Result;
 use cornucopia_async::Params;
 use deadpool_postgres::Object;
-use futures::{future, TryFutureExt};
+use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use regex::Regex;
@@ -16,7 +16,7 @@ use std::rc::Rc;
 use std::time::Instant;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
-const SPIGOT_POPULATE_ALL_RESOURCES_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
@@ -24,6 +24,17 @@ struct GetSpigotResourcesRequest {
     page: u32,
     sort: String,
     fields: String
+}
+
+impl GetSpigotResourcesRequest {
+    fn create_populate_request() -> Self {
+        Self {
+            size: 1000,
+            page: 1,
+            sort: "+id".to_string(),
+            fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
+        }
+    }
 }
 
 impl RequestAhead for GetSpigotResourcesRequest {
@@ -102,18 +113,13 @@ pub struct SpigotResourceNestedVersion {
 // }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
-    pub async fn populate_all_spigot_resources(&self, db_client: &Object) -> Result<u32> {
-        let request = GetSpigotResourcesRequest {
-            size: 1000,
-            page: 1,
-            sort: "+id".to_string(),
-            fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
-        };
+    pub async fn populate_spigot_resources(&self, db_client: &Object) -> Result<u32> {
+        let request = GetSpigotResourcesRequest::create_populate_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
 
         let result = self
-            .pages_ahead(SPIGOT_POPULATE_ALL_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
+            .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_for_each_concurrent(None, |resource| {
                 let count_rc_clone = count_rc.clone();
