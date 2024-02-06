@@ -1,4 +1,5 @@
-use crate::collector::spigot::SpigotClient;
+use crate::collector::HttpServer;
+use crate::collector::spigot::{SpigotClient, SpigotServer};
 
 use anyhow::Result;
 use deadpool_postgres::{Config, CreatePoolError, Pool, Runtime};
@@ -11,13 +12,15 @@ mod cornucopia;
 async fn main() -> Result<()> {
     let db_pool = create_db_pool().await?;
     let db_client = db_pool.get().await?;
+    let spigot_server = SpigotServer::new().await;
 
-    let spigot_client = SpigotClient::new(db_client)?;
-    // let count = spigot_client.populate_all_spigot_authors().await?;
+    let spigot_client = SpigotClient::new(spigot_server)?;
 
-    // let count = spigot_client.populate_new_spigot_authors().await?;
+    let count = spigot_client.populate_all_spigot_authors(&db_client).await?;
 
-    let count = spigot_client.populate_all_spigot_resources().await?;
+    // let count = spigot_client.populate_new_spigot_authors(&db_client).await?;
+
+    // let count = spigot_client.populate_all_spigot_resources(&db_client).await?;
 
     println!("Items added: {:?}", count);
 

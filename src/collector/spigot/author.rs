@@ -1,9 +1,10 @@
-use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient};
+use crate::collector::HttpServer;
+use crate::collector::spigot::SpigotClient;
 use crate::cornucopia::queries::spigot_author::{InsertSpigotAuthorParams, insert_spigot_author, get_highest_spigot_author_id};
 
 use anyhow::Result;
-use constcat::concat;
 use cornucopia_async::Params;
+use deadpool_postgres::Object;
 use futures::{future, TryFutureExt};
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -11,8 +12,6 @@ use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Instant;
-
-const SPIGOT_AUTHORS_URL: &str = concat!(SPIGOT_BASE_URL, "/authors");
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
 const SPIGOT_POPULATE_ALL_AUTHORS_REQUESTS_AHEAD: usize = 2;
@@ -36,14 +35,14 @@ impl RequestAhead for GetSpigotAuthorsRequest {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotAuthorsResponse {
-    headers: SpigotGetAuthorsResponseHeaders,
+    headers: GetSpigotAuthorsResponseHeaders,
     authors: Vec<SpigotAuthor>
 }
 
-#[derive(Debug)]
-struct SpigotGetAuthorsResponseHeaders {
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct GetSpigotAuthorsResponseHeaders {
     x_page_index: u32,
     x_page_count: u32
 }
@@ -54,14 +53,14 @@ impl GetSpigotAuthorsResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpigotAuthor {
     id: i32,
     name: String
 }
 
-impl SpigotClient {
-    pub async fn populate_all_spigot_authors(&self) -> Result<u32> {
+impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
+    pub async fn populate_all_spigot_authors(&self, db_client: &Object) -> Result<u32> {
         let request = GetSpigotAuthorsRequest {
             size: 1000,
             page: 1,
@@ -83,7 +82,7 @@ impl SpigotClient {
                     };
 
                     let db_result = insert_spigot_author()
-                        .params(&self.db_client, &params)
+                        .params(db_client, &params)
                         .await;
 
                     match db_result {
@@ -103,9 +102,9 @@ impl SpigotClient {
         }
     }
 
-    pub async fn populate_new_spigot_authors(&self) -> Result<u32> {
+    pub async fn populate_new_spigot_authors(&self, db_client: &Object) -> Result<u32> {
         let highest_author_id = get_highest_spigot_author_id()
-            .bind(&self.db_client)
+            .bind(db_client)
             .one()
             .await?;
 
@@ -128,7 +127,7 @@ impl SpigotClient {
                 let count_rc_clone = count_rc.clone();
                 async move {
                     let db_result = insert_spigot_author()
-                        .bind(&self.db_client, &author.id, &author.name)
+                        .bind(db_client, &author.id, &author.name)
                         .map_ok(|_ok: u64| ())
                         .map_err(|err: tokio_postgres::Error| anyhow::Error::new(err))
                         .await;
@@ -153,13 +152,14 @@ impl SpigotClient {
     async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
         self.rate_limiter.until_ready().await;
 
-        let raw_response = self.api_client.get(SPIGOT_AUTHORS_URL)
+        let url = format!("{}/authors", self.http_server.base_url());
+        let raw_response = self.api_client.get(url)
             .query(&request)
             .send()
             .await?;
 
         let raw_headers = raw_response.headers();
-        let headers = SpigotGetAuthorsResponseHeaders {
+        let headers = GetSpigotAuthorsResponseHeaders {
             // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
             x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
             x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
@@ -176,7 +176,7 @@ impl SpigotClient {
     }
 }
 
-impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
+impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpServer + Send + Sync {
     type PageItems = Vec<SpigotAuthor>;
     type PageError = anyhow::Error;
 
@@ -194,4 +194,65 @@ impl PageTurner<GetSpigotAuthorsRequest> for SpigotClient {
             Ok(TurnedPage::last(response.authors))
         }
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::collector::spigot::test::SpigotTestServer;
+
+    use wiremock::{Mock, ResponseTemplate};
+    use wiremock::matchers::{method, path, query_param};
+
+    #[tokio::test]
+    async fn should_get_authors() -> Result<()> {
+        let spigot_server = SpigotTestServer::new().await;
+
+        let request = GetSpigotAuthorsRequest {
+            size: 1000,
+            page: 3,
+            sort: "+id".to_string(),
+            fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
+        };
+
+        let expected_response = GetSpigotAuthorsResponse {
+            headers: GetSpigotAuthorsResponseHeaders {
+                x_page_index: 3,
+                x_page_count: 10
+            },
+            authors: vec![
+                SpigotAuthor {
+                    id: 1000,
+                    name: "testuser-1000".to_string()
+                },
+                SpigotAuthor {
+                    id: 1001,
+                    name: "testuser-1001".to_string()
+                }
+            ]
+        };
+
+        let response_template = ResponseTemplate::new(200)
+            .append_header("x-page-index", expected_response.headers.x_page_index.to_string().as_str())
+            .append_header("x-page-count", expected_response.headers.x_page_count.to_string().as_str())
+            .set_body_json(expected_response.authors.clone());
+
+        Mock::given(method("GET"))
+            .and(path("/authors"))
+            .and(query_param("size", request.size.to_string().as_str()))
+            .and(query_param("page", request.page.to_string().as_str()))
+            .and(query_param("sort", request.sort.as_str()))
+            .and(query_param("fields", SPIGOT_AUTHORS_REQUEST_FIELDS))
+            .respond_with(response_template)
+            .mount(spigot_server.mock())
+            .await;
+
+        let spigot_client = SpigotClient::new(spigot_server)?;
+        let response = spigot_client.get_authors(request).await?;
+
+        assert_eq!(response, expected_response);
+
+        Ok(())
+    }
+
 }

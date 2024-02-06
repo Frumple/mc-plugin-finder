@@ -1,9 +1,10 @@
-use crate::collector::spigot::{SPIGOT_BASE_URL, SpigotClient};
+use crate::collector::HttpServer;
+use crate::collector::spigot::SpigotClient;
 use crate::cornucopia::queries::spigot_resource::{InsertSpigotResourceParams, insert_spigot_resource};
 
-use anyhow::{anyhow, Result};
-use constcat::concat;
+use anyhow::Result;
 use cornucopia_async::Params;
+use deadpool_postgres::Object;
 use futures::{future, TryFutureExt};
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -13,8 +14,6 @@ use time::OffsetDateTime;
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Instant;
-
-const SPIGOT_RESOURCES_URL: &str = concat!(SPIGOT_BASE_URL, "/resources");
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_ALL_RESOURCES_REQUESTS_AHEAD: usize = 2;
@@ -45,7 +44,7 @@ struct GetSpigotResourcesRequestHeaders {
 
 #[derive(Debug)]
 struct GetSpigotResourcesResponse {
-    headers: SpigotGetResourcesResponseHeaders,
+    headers: GetSpigotResourcesResponseHeaders,
     resources: Vec<SpigotResource>
 }
 
@@ -56,7 +55,7 @@ impl GetSpigotResourcesResponse {
 }
 
 #[derive(Debug)]
-struct SpigotGetResourcesResponseHeaders {
+struct GetSpigotResourcesResponseHeaders {
     x_page_index: u32,
     x_page_count: u32
 }
@@ -102,8 +101,8 @@ pub struct SpigotResourceNestedVersion {
 //     name: String
 // }
 
-impl SpigotClient {
-    pub async fn populate_all_spigot_resources(&self) -> Result<u32> {
+impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
+    pub async fn populate_all_spigot_resources(&self, db_client: &Object) -> Result<u32> {
         let request = GetSpigotResourcesRequest {
             size: 1000,
             page: 1,
@@ -139,7 +138,7 @@ impl SpigotClient {
                             };
 
                             let db_result = insert_spigot_resource()
-                                .params(&self.db_client, &params)
+                                .params(db_client, &params)
                                 .await;
 
                             match db_result {
@@ -170,13 +169,14 @@ impl SpigotClient {
     async fn get_resources(&self, request: GetSpigotResourcesRequest) -> Result<GetSpigotResourcesResponse> {
         self.rate_limiter.until_ready().await;
 
-        let raw_response = self.api_client.get(SPIGOT_RESOURCES_URL)
+        let url = format!("{}/resources", self.http_server.base_url());
+        let raw_response = self.api_client.get(url)
             .query(&request)
             .send()
             .await?;
 
         let raw_headers = raw_response.headers();
-        let headers = SpigotGetResourcesResponseHeaders {
+        let headers = GetSpigotResourcesResponseHeaders {
             // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
             x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
             x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
@@ -208,7 +208,7 @@ impl SpigotClient {
     // }
 }
 
-impl PageTurner<GetSpigotResourcesRequest> for SpigotClient {
+impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpServer + Send + Sync {
     type PageItems = Vec<SpigotResource>;
     type PageError = anyhow::Error;
 

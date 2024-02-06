@@ -1,5 +1,6 @@
+use crate::collector::HttpServer;
+
 use anyhow::Result;
-use deadpool_postgres::Object;
 use governor::{Quota, RateLimiter};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -13,17 +14,26 @@ mod resource;
 const SPIGOT_USER_AGENT: &str = "analysis";
 const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
 
-const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2";
+pub struct SpigotServer;
+impl HttpServer for SpigotServer {
+    async fn new() -> Self {
+        Self
+    }
 
-#[derive(Debug)]
-pub struct SpigotClient {
-    api_client: Client,
-    db_client: Object,
-    rate_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>
+    fn base_url(&self) -> String {
+        String::from("https://api.spiget.org/v2")
+    }
 }
 
-impl SpigotClient {
-    pub fn new(db_client: Object) -> Result<SpigotClient> {
+#[derive(Debug)]
+pub struct SpigotClient<S> {
+    api_client: Client,
+    rate_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
+    http_server: S
+}
+
+impl<S> SpigotClient<S> {
+    pub fn new(http_server: S) -> Result<SpigotClient<S>> {
         let api_client = reqwest::Client::builder()
             .user_agent(SPIGOT_USER_AGENT)
             .build()?;
@@ -31,6 +41,34 @@ impl SpigotClient {
         let quota = Quota::per_second(SPIGOT_RATE_LIMIT_PER_SECOND);
         let rate_limiter = RateLimiter::direct(quota);
 
-        Ok(SpigotClient { api_client, db_client, rate_limiter })
+        Ok(Self { api_client, rate_limiter, http_server })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use wiremock::MockServer;
+
+    pub struct SpigotTestServer {
+        mock_server: MockServer
+    }
+
+    impl SpigotTestServer {
+        pub fn mock(&self) -> &MockServer {
+            &self.mock_server
+        }
+    }
+
+    impl HttpServer for SpigotTestServer {
+        async fn new() -> Self {
+            Self {
+                mock_server: MockServer::start().await
+            }
+        }
+
+        fn base_url(&self) -> String {
+            self.mock_server.uri()
+        }
     }
 }
