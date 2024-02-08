@@ -165,7 +165,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
         self.rate_limiter.until_ready().await;
 
-        let url = format!("{}/authors", self.http_server.base_url());
+        let url = self.http_server.base_url().join("authors")?;
         let raw_response = self.api_client.get(url)
             .query(&request)
             .send()

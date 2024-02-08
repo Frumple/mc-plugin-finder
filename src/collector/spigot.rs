@@ -7,6 +7,7 @@ use governor::state::{InMemoryState, NotKeyed};
 use nonzero_ext::*;
 use reqwest::Client;
 use std::num::NonZeroU32;
+use url::Url;
 
 mod author;
 mod resource;
@@ -20,8 +21,8 @@ impl HttpServer for SpigotServer {
         Self
     }
 
-    fn base_url(&self) -> String {
-        String::from("https://api.spiget.org/v2")
+    fn base_url(&self) -> Url {
+        Url::parse("https://api.spiget.org/v2").expect("Spigot base URL could not be parsed.")
     }
 }
 
@@ -67,8 +68,8 @@ mod test {
             }
         }
 
-        fn base_url(&self) -> String {
-            self.mock_server.uri()
+        fn base_url(&self) -> Url {
+            Url::parse(&self.mock_server.uri()).expect("Spigot mock server base URL could not be parsed.")
         }
     }
 }
