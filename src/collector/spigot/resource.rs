@@ -53,7 +53,7 @@ struct GetSpigotResourcesRequestHeaders {
 
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotResourcesResponse {
     headers: GetSpigotResourcesResponseHeaders,
     resources: Vec<SpigotResource>
@@ -65,13 +65,13 @@ impl GetSpigotResourcesResponse {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotResourcesResponseHeaders {
     x_page_index: u32,
     x_page_count: u32
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpigotResource {
     id: i32,
@@ -86,18 +86,18 @@ pub struct SpigotResource {
     source_code_link: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpigotResourceNestedFile {
     url: String
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpigotResourceNestedAuthor {
     id: i32
 }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpigotResourceNestedVersion {
     id: i32
 }
@@ -243,6 +243,10 @@ fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::collector::spigot::test::SpigotTestServer;
+
+    use wiremock::{Mock, ResponseTemplate};
+    use wiremock::matchers::{method, path, query_param};
 
     #[test]
     fn should_extract_slug_from_file_download_url() {
@@ -256,5 +260,79 @@ mod test {
         let url = "resources/40087/download?version=156669";
         let slug = extract_slug_from_file_download_url(url);
         assert_eq!(slug, None);
+    }
+
+    #[tokio::test]
+    async fn should_get_resources() -> Result<()> {
+        let spigot_server = SpigotTestServer::new().await;
+
+        let request = GetSpigotResourcesRequest::create_populate_request();
+
+        let expected_response = GetSpigotResourcesResponse {
+            headers: GetSpigotResourcesResponseHeaders {
+                x_page_index: 1,
+                x_page_count: 10
+            },
+            resources: vec![
+                SpigotResource {
+                    id: 2000,
+                    name: "testresource-2000".to_string(),
+                    tag: "testresource-2000-tag".to_string(),
+                    release_date: OffsetDateTime::now_utc().unix_timestamp(),
+                    update_date: OffsetDateTime::now_utc().unix_timestamp(),
+                    file: Some(SpigotResourceNestedFile {
+                        url: "resources/luckperms.28140/download?version=511529".to_string()
+                    }),
+                    author: SpigotResourceNestedAuthor {
+                        id: 1000
+                    },
+                    version: SpigotResourceNestedVersion {
+                        id: 511529
+                    },
+                    premium: Some(false),
+                    source_code_link: Some("https://github.com/lucko/LuckPerms".to_string())
+                },
+                SpigotResource {
+                    id: 2001,
+                    name: "testresource-2001".to_string(),
+                    tag: "testresource-2001-tag".to_string(),
+                    release_date: OffsetDateTime::now_utc().unix_timestamp(),
+                    update_date: OffsetDateTime::now_utc().unix_timestamp(),
+                    file: Some(SpigotResourceNestedFile {
+                        url: "resources/essentialsx.9089/download?version=50842".to_string()
+                    }),
+                    author: SpigotResourceNestedAuthor {
+                        id: 1001
+                    },
+                    version: SpigotResourceNestedVersion {
+                        id: 50842
+                    },
+                    premium: Some(false),
+                    source_code_link: Some("https://github.com/EssentialsX/Essentials".to_string())
+                }
+            ]
+        };
+
+        let response_template = ResponseTemplate::new(200)
+            .append_header("x-page-index", expected_response.headers.x_page_index.to_string().as_str())
+            .append_header("x-page-count", expected_response.headers.x_page_count.to_string().as_str())
+            .set_body_json(expected_response.resources.clone());
+
+            Mock::given(method("GET"))
+            .and(path("/resources"))
+            .and(query_param("size", request.size.to_string().as_str()))
+            .and(query_param("page", expected_response.headers.x_page_index.to_string().as_str()))
+            .and(query_param("sort", request.sort.as_str()))
+            .and(query_param("fields", SPIGOT_RESOURCES_REQUEST_FIELDS))
+            .respond_with(response_template)
+            .mount(spigot_server.mock())
+            .await;
+
+        let spigot_client = SpigotClient::new(spigot_server)?;
+        let response = spigot_client.get_resources(request).await?;
+
+        assert_eq!(response, expected_response);
+
+        Ok(())
     }
 }
