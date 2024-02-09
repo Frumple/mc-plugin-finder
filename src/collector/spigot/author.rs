@@ -12,6 +12,7 @@ use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Instant;
+use thiserror::Error;
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
 const SPIGOT_POPULATE_AUTHORS_REQUESTS_AHEAD: usize = 2;
@@ -79,6 +80,15 @@ pub struct SpigotAuthor {
     name: String
 }
 
+#[derive(Debug, Error)]
+enum SpigotAuthorError {
+    #[error("Skipping author ID {author_id}: Database query failed: {source}")]
+    DatabaseQueryFailed {
+        author_id: i32,
+        source: tokio_postgres::Error
+    }
+}
+
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_spigot_authors(&self, db_client: &Object) -> Result<u32> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
@@ -91,18 +101,11 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(None, |author| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    let params = InsertSpigotAuthorParams {
-                        id: author.id,
-                        name: author.name
-                    };
-
-                    let db_result = insert_spigot_author()
-                        .params(db_client, &params)
-                        .await;
+                    let db_result = insert_author_into_db(db_client, author).await;
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("Skipping author ID {}: Unable to add author to database: {}", author.id, err)
+                        Err(err) => println!("{}", err)
                     }
                     Ok(())
                 }
@@ -136,18 +139,11 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each(|author| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    let params = InsertSpigotAuthorParams {
-                        id: author.id,
-                        name: author.name
-                    };
-
-                    let db_result = insert_spigot_author()
-                        .params(db_client, &params)
-                        .await;
+                    let db_result = insert_author_into_db(db_client, author).await;
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("Skipping author ID {}: Unable to add author to database: {}", author.id, err)
+                        Err(err) => println!("{}", err)
                     }
                     Ok(())
                 }
@@ -162,7 +158,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         }
     }
 
-    async fn get_authors(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
+    async fn get_authors_from_api(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
         self.rate_limiter.until_ready().await;
 
         let url = self.http_server.base_url().join("authors")?;
@@ -197,7 +193,7 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
         println!("API Start: {:?}", request);
         let start = Instant::now();
-        let response = self.get_authors(request.clone()).await?;
+        let response = self.get_authors_from_api(request.clone()).await?;
         let duration = start.elapsed();
         println!("API End: {:?} in {:?}", request, duration);
 
@@ -210,6 +206,27 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
+async fn insert_author_into_db(db_client: &Object, author: SpigotAuthor) -> Result<()> {
+    let params = InsertSpigotAuthorParams {
+        id: author.id,
+        name: author.name
+    };
+
+    let db_result = insert_spigot_author()
+        .params(db_client, &params)
+        .await;
+
+    match db_result {
+        Ok(_) => Ok(()),
+        Err(err) => Err(
+            SpigotAuthorError::DatabaseQueryFailed {
+                author_id: author.id,
+                source: err
+            }.into()
+        )
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -219,7 +236,7 @@ mod test {
     use wiremock::matchers::{method, path, query_param};
 
     #[tokio::test]
-    async fn should_get_authors() -> Result<()> {
+    async fn should_get_authors_from_api() -> Result<()> {
         let spigot_server = SpigotTestServer::new().await;
 
         let request = GetSpigotAuthorsRequest::create_populate_request();
@@ -257,7 +274,7 @@ mod test {
             .await;
 
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let response = spigot_client.get_authors(request).await?;
+        let response = spigot_client.get_authors_from_api(request).await?;
 
         assert_eq!(response, expected_response);
 

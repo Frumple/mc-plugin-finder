@@ -14,6 +14,7 @@ use time::OffsetDateTime;
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Instant;
+use thiserror::Error;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
@@ -111,6 +112,24 @@ pub struct SpigotResourceNestedVersion {
     id: i32
 }
 
+#[derive(Debug, Error)]
+enum SpigotResourceError {
+    #[error("Skipping resource ID {resource_id}: Database query failed: {source}")]
+    DatabaseQueryFailed {
+        resource_id: i32,
+        source: tokio_postgres::Error
+    },
+    #[error("Skipping resource ID {resource_id}: Invalid slug from URL: {url}")]
+    InvalidSlugFromURL {
+        resource_id: i32,
+        url: String
+    },
+    #[error("Skipping resource ID {resource_id}: File does not exist")]
+    FileDoesNotExist {
+        resource_id: i32
+    }
+}
+
 // #[derive(Clone, Debug, Serialize)]
 // struct GetLatestResourceVersionRequest {
 //     resource: i32
@@ -133,42 +152,13 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(None, |resource| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
-                    // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
+                    let db_result = upsert_resource_into_db(db_client, resource).await;
 
-                    if let Some(file) = resource.file {
-                        if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
-                            let params = UpsertSpigotResourceParams {
-                                id: resource.id,
-                                name: resource.name,
-                                tag: resource.tag,
-                                slug,
-                                release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
-                                update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
-                                author_id: resource.author.id,
-                                version_id: resource.version.id,
-                                version_name: None::<String>,
-                                premium: resource.premium,
-                                source_code_link: resource.source_code_link
-                            };
-
-                            let db_result = upsert_spigot_resource()
-                                .params(db_client, &params)
-                                .await;
-
-                            match db_result {
-                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                Err(err) => println!("Skipping resource ID {}: Unable to add resource to database: {}", resource.id, err)
-                            }
-                            Ok(())
-                        } else {
-                            println!("Skipping resource ID {}: Unable to parse slug from URL: {}", resource.id, file.url);
-                            Ok(())
-                        }
-                    } else {
-                        println!("Skipping resource ID {}: Resource has no file.", resource.id);
-                        Ok(())
+                    match db_result {
+                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                        Err(err) => println!("{}", err)
                     }
+                    Ok(())
                 }
             })
             .await;
@@ -200,39 +190,16 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each(|resource| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    if let Some(file) = resource.file {
-                        if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
-                            let params = UpsertSpigotResourceParams {
-                                id: resource.id,
-                                name: resource.name,
-                                tag: resource.tag,
-                                slug,
-                                release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
-                                update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
-                                author_id: resource.author.id,
-                                version_id: resource.version.id,
-                                version_name: None::<String>,
-                                premium: resource.premium,
-                                source_code_link: resource.source_code_link
-                            };
+                    // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
+                    // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
 
-                            let db_result = upsert_spigot_resource()
-                                .params(db_client, &params)
-                                .await;
+                    let db_result = upsert_resource_into_db(db_client, resource).await;
 
-                            match db_result {
-                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                Err(err) => println!("Skipping resource ID {}: Unable to add resource to database: {}", resource.id, err)
-                            }
-                            Ok(())
-                        } else {
-                            println!("Skipping resource ID {}: Unable to parse slug from URL: {}", resource.id, file.url);
-                            Ok(())
-                        }
-                    } else {
-                        println!("Skipping resource ID {}: Resource has no file.", resource.id);
-                        Ok(())
+                    match db_result {
+                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                        Err(err) => println!("{}", err)
                     }
+                    Ok(())
                 }
             })
             .await;
@@ -245,7 +212,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         }
     }
 
-    async fn get_resources(&self, request: GetSpigotResourcesRequest) -> Result<GetSpigotResourcesResponse> {
+    async fn get_resources_from_api(&self, request: GetSpigotResourcesRequest) -> Result<GetSpigotResourcesResponse> {
         self.rate_limiter.until_ready().await;
 
         let url = self.http_server.base_url().join("resources")?;
@@ -294,7 +261,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
   async fn turn_page(&self, mut request: GetSpigotResourcesRequest) -> TurnedPageResult<Self, GetSpigotResourcesRequest> {
         println!("API Start: {:?}", request);
         let start = Instant::now();
-        let response = self.get_resources(request.clone()).await?;
+        let response = self.get_resources_from_api(request.clone()).await?;
         let duration = start.elapsed();
         println!("API End: {:?} in {:?}", request, duration);
 
@@ -304,6 +271,53 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
         } else {
             Ok(TurnedPage::last(response.resources))
         }
+    }
+}
+
+async fn upsert_resource_into_db(db_client: &Object, resource: SpigotResource) -> Result<()> {
+    if let Some(file) = resource.file {
+        if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
+            let params = UpsertSpigotResourceParams {
+                id: resource.id,
+                name: resource.name,
+                tag: resource.tag,
+                slug,
+                release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
+                update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
+                author_id: resource.author.id,
+                version_id: resource.version.id,
+                version_name: None::<String>,
+                premium: resource.premium,
+                source_code_link: resource.source_code_link
+            };
+
+            let db_result = upsert_spigot_resource()
+                .params(db_client, &params)
+                .await;
+
+            match db_result {
+                Ok(_) => Ok(()),
+                Err(err) => Err(
+                    SpigotResourceError::DatabaseQueryFailed {
+                        resource_id: resource.id,
+                        source: err
+                    }.into()
+                )
+            }
+        } else {
+            Err(
+                SpigotResourceError::InvalidSlugFromURL {
+                    resource_id: resource.id,
+                    url: file.url
+                }.into()
+            )
+        }
+    } else {
+        Err(
+            SpigotResourceError::FileDoesNotExist {
+                resource_id: resource.id
+            }.into()
+        )
     }
 }
 
@@ -336,7 +350,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_get_resources() -> Result<()> {
+    async fn should_get_resources_from_api() -> Result<()> {
         let spigot_server = SpigotTestServer::new().await;
 
         let request = GetSpigotResourcesRequest::create_populate_request();
@@ -402,7 +416,7 @@ mod test {
             .await;
 
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let response = spigot_client.get_resources(request).await?;
+        let response = spigot_client.get_resources_from_api(request).await?;
 
         assert_eq!(response, expected_response);
 
