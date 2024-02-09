@@ -166,6 +166,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         self.rate_limiter.until_ready().await;
 
         let url = self.http_server.base_url().join("authors")?;
+
         let raw_response = self.api_client.get(url)
             .query(&request)
             .send()

@@ -22,7 +22,7 @@ impl HttpServer for SpigotServer {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://api.spiget.org/v2").expect("Spigot base URL could not be parsed.")
+        Url::parse("https://api.spiget.org/v2/").expect("Spigot base URL could not be parsed.")
     }
 }
 

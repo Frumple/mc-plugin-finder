@@ -1,6 +1,6 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
-use crate::cornucopia::queries::spigot_resource::{InsertSpigotResourceParams, insert_spigot_resource};
+use crate::cornucopia::queries::spigot_resource::{get_latest_update_date, upsert_spigot_resource, UpsertSpigotResourceParams};
 
 use anyhow::Result;
 use cornucopia_async::Params;
@@ -32,6 +32,15 @@ impl GetSpigotResourcesRequest {
             size: 1000,
             page: 1,
             sort: "+id".to_string(),
+            fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
+        }
+    }
+
+    fn create_update_request() -> Self {
+        Self {
+            size: 100,
+            page: 1,
+            sort: "-updateDate".to_string(),
             fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
         }
     }
@@ -129,7 +138,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 
                     if let Some(file) = resource.file {
                         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
-                            let params = InsertSpigotResourceParams {
+                            let params = UpsertSpigotResourceParams {
                                 id: resource.id,
                                 name: resource.name,
                                 tag: resource.tag,
@@ -143,7 +152,71 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
                                 source_code_link: resource.source_code_link
                             };
 
-                            let db_result = insert_spigot_resource()
+                            let db_result = upsert_spigot_resource()
+                                .params(db_client, &params)
+                                .await;
+
+                            match db_result {
+                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                                Err(err) => println!("Skipping resource ID {}: Unable to add resource to database: {}", resource.id, err)
+                            }
+                            Ok(())
+                        } else {
+                            println!("Skipping resource ID {}: Unable to parse slug from URL: {}", resource.id, file.url);
+                            Ok(())
+                        }
+                    } else {
+                        println!("Skipping resource ID {}: Resource has no file.", resource.id);
+                        Ok(())
+                    }
+                }
+            })
+            .await;
+
+        let count = count_rc.get();
+
+        match result {
+            Ok(()) => Ok(count),
+            Err(err) => Err(err)
+        }
+    }
+
+    pub async fn update_spigot_resources(&self, db_client: &Object) -> Result<u32> {
+        let latest_update_date = get_latest_update_date()
+            .bind(db_client)
+            .one()
+            .await?;
+
+        println!("Latest update date: {:?}", latest_update_date);
+
+        let request = GetSpigotResourcesRequest::create_update_request();
+
+        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+
+        let result = self
+            .pages(request)
+            .items()
+            .try_take_while(|x| future::ready(Ok(x.update_date > latest_update_date.unix_timestamp())))
+            .try_for_each(|resource| {
+                let count_rc_clone = count_rc.clone();
+                async move {
+                    if let Some(file) = resource.file {
+                        if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
+                            let params = UpsertSpigotResourceParams {
+                                id: resource.id,
+                                name: resource.name,
+                                tag: resource.tag,
+                                slug,
+                                release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
+                                update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
+                                author_id: resource.author.id,
+                                version_id: resource.version.id,
+                                version_name: None::<String>,
+                                premium: resource.premium,
+                                source_code_link: resource.source_code_link
+                            };
+
+                            let db_result = upsert_spigot_resource()
                                 .params(db_client, &params)
                                 .await;
 
