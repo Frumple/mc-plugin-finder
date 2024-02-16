@@ -2,23 +2,14 @@ use deadpool_postgres::{Config, CreatePoolError, Pool, Runtime};
 use tokio_postgres::NoTls;
 
 pub struct Database {
-    user: String,
-    password: String,
-    host: String,
-    port: u16,
-    dbname: String
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub port: u16,
+    pub dbname: String
 }
 
 impl Database {
-    pub fn new(user: String, password: String, host: String, port: u16, dbname: String) -> Self {
-        Self {
-            user,
-            password,
-            host,
-            port,
-            dbname
-        }
-    }
 
     pub async fn create_pool(&self) -> Result<Pool, CreatePoolError> {
         let mut config = Config::new();
