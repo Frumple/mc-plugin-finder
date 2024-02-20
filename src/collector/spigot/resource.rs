@@ -66,7 +66,7 @@ struct GetSpigotResourcesRequestHeaders {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotResourcesResponse {
     headers: GetSpigotResourcesResponseHeaders,
-    resources: Vec<SpigotResource>
+    resources: Vec<IncomingSpigotResource>
 }
 
 impl GetSpigotResourcesResponse {
@@ -83,32 +83,32 @@ struct GetSpigotResourcesResponseHeaders {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SpigotResource {
+pub struct IncomingSpigotResource {
     id: i32,
     name: String,
     tag: String,
     release_date: i64,
     update_date: i64,
-    file: Option<SpigotResourceNestedFile>,
-    author: SpigotResourceNestedAuthor,
-    version: SpigotResourceNestedVersion,
+    file: Option<IncomingSpigotResourceNestedFile>,
+    author: IncomingSpigotResourceNestedAuthor,
+    version: IncomingSpigotResourceNestedVersion,
     premium: Option<bool>,
     source_code_link: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct SpigotResourceNestedFile {
+pub struct IncomingSpigotResourceNestedFile {
     url: String
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct SpigotResourceNestedAuthor {
+pub struct IncomingSpigotResourceNestedAuthor {
     id: i32
 }
 
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct SpigotResourceNestedVersion {
+pub struct IncomingSpigotResourceNestedVersion {
     id: i32
 }
 
@@ -228,7 +228,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
         };
 
-        let resources: Vec<SpigotResource> = raw_response.json().await?;
+        let resources: Vec<IncomingSpigotResource> = raw_response.json().await?;
 
         let response = GetSpigotResourcesResponse {
             headers,
@@ -255,7 +255,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 }
 
 impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpServer + Send + Sync {
-    type PageItems = Vec<SpigotResource>;
+    type PageItems = Vec<IncomingSpigotResource>;
     type PageError = anyhow::Error;
 
   async fn turn_page(&self, mut request: GetSpigotResourcesRequest) -> TurnedPageResult<Self, GetSpigotResourcesRequest> {
@@ -274,7 +274,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn upsert_resource_into_db(db_client: &Object, resource: SpigotResource) -> Result<()> {
+async fn upsert_resource_into_db(db_client: &Object, resource: IncomingSpigotResource) -> Result<()> {
     if let Some(file) = resource.file {
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
             let params = UpsertSpigotResourceParams {
@@ -361,37 +361,37 @@ mod test {
                 x_page_count: 10
             },
             resources: vec![
-                SpigotResource {
+                IncomingSpigotResource {
                     id: 2000,
                     name: "testresource-2000".to_string(),
                     tag: "testresource-2000-tag".to_string(),
                     release_date: OffsetDateTime::now_utc().unix_timestamp(),
                     update_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    file: Some(SpigotResourceNestedFile {
+                    file: Some(IncomingSpigotResourceNestedFile {
                         url: "resources/luckperms.28140/download?version=511529".to_string()
                     }),
-                    author: SpigotResourceNestedAuthor {
+                    author: IncomingSpigotResourceNestedAuthor {
                         id: 1000
                     },
-                    version: SpigotResourceNestedVersion {
+                    version: IncomingSpigotResourceNestedVersion {
                         id: 511529
                     },
                     premium: Some(false),
                     source_code_link: Some("https://github.com/lucko/LuckPerms".to_string())
                 },
-                SpigotResource {
+                IncomingSpigotResource {
                     id: 2001,
                     name: "testresource-2001".to_string(),
                     tag: "testresource-2001-tag".to_string(),
                     release_date: OffsetDateTime::now_utc().unix_timestamp(),
                     update_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    file: Some(SpigotResourceNestedFile {
+                    file: Some(IncomingSpigotResourceNestedFile {
                         url: "resources/essentialsx.9089/download?version=50842".to_string()
                     }),
-                    author: SpigotResourceNestedAuthor {
+                    author: IncomingSpigotResourceNestedAuthor {
                         id: 1001
                     },
-                    version: SpigotResourceNestedVersion {
+                    version: IncomingSpigotResourceNestedVersion {
                         id: 50842
                     },
                     premium: Some(false),

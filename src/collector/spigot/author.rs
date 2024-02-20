@@ -59,7 +59,7 @@ impl RequestAhead for GetSpigotAuthorsRequest {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotAuthorsResponse {
     headers: GetSpigotAuthorsResponseHeaders,
-    authors: Vec<SpigotAuthor>
+    authors: Vec<IncomingSpigotAuthor>
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -75,7 +75,7 @@ impl GetSpigotAuthorsResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct SpigotAuthor {
+pub struct IncomingSpigotAuthor {
     id: i32,
     name: String
 }
@@ -175,7 +175,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
         };
 
-        let authors: Vec<SpigotAuthor> = raw_response.json().await?;
+        let authors: Vec<IncomingSpigotAuthor> = raw_response.json().await?;
 
         let response = GetSpigotAuthorsResponse {
             headers,
@@ -187,7 +187,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 }
 
 impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpServer + Send + Sync {
-    type PageItems = Vec<SpigotAuthor>;
+    type PageItems = Vec<IncomingSpigotAuthor>;
     type PageError = anyhow::Error;
 
     async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
@@ -206,7 +206,7 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
-async fn insert_author_into_db(db_client: &Object, author: SpigotAuthor) -> Result<()> {
+async fn insert_author_into_db(db_client: &Object, author: IncomingSpigotAuthor) -> Result<()> {
     let params = InsertSpigotAuthorParams {
         id: author.id,
         name: author.name
@@ -247,11 +247,11 @@ mod test {
                 x_page_count: 10
             },
             authors: vec![
-                SpigotAuthor {
+                IncomingSpigotAuthor {
                     id: 1000,
                     name: "testuser-1000".to_string()
                 },
-                SpigotAuthor {
+                IncomingSpigotAuthor {
                     id: 1001,
                     name: "testuser-1001".to_string()
                 }
