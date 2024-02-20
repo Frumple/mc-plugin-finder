@@ -1,9 +1,8 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
-use crate::cornucopia::queries::spigot_author::{InsertSpigotAuthorParams, insert_spigot_author, get_highest_spigot_author_id};
+use crate::database::spigot::author::{SpigotAuthor, get_highest_spigot_author_id, insert_spigot_author};
 
 use anyhow::Result;
-use cornucopia_async::Params;
 use deadpool_postgres::Object;
 use futures::future;
 use futures::stream::TryStreamExt;
@@ -80,12 +79,21 @@ pub struct IncomingSpigotAuthor {
     name: String
 }
 
+impl From<IncomingSpigotAuthor> for SpigotAuthor {
+    fn from(author: IncomingSpigotAuthor) -> Self {
+        SpigotAuthor {
+            id: author.id,
+            name: author.name
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 enum SpigotAuthorError {
     #[error("Skipping author ID {author_id}: Database query failed: {source}")]
     DatabaseQueryFailed {
         author_id: i32,
-        source: tokio_postgres::Error
+        source: anyhow::Error
     }
 }
 
@@ -121,10 +129,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     pub async fn update_spigot_authors(&self, db_client: &Object) -> Result<u32> {
-        let highest_author_id = get_highest_spigot_author_id()
-            .bind(db_client)
-            .one()
-            .await?;
+        let highest_author_id = get_highest_spigot_author_id(db_client).await?;
 
         println!("Highest id: {:?}", highest_author_id);
 
@@ -207,20 +212,15 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
 }
 
 async fn insert_author_into_db(db_client: &Object, author: IncomingSpigotAuthor) -> Result<()> {
-    let params = InsertSpigotAuthorParams {
-        id: author.id,
-        name: author.name
-    };
+    let author_id = author.id;
 
-    let db_result = insert_spigot_author()
-        .params(db_client, &params)
-        .await;
+    let db_result = insert_spigot_author(db_client, author.into()).await;
 
     match db_result {
         Ok(_) => Ok(()),
         Err(err) => Err(
             SpigotAuthorError::DatabaseQueryFailed {
-                author_id: author.id,
+                author_id,
                 source: err
             }.into()
         )

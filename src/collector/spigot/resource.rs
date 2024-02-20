@@ -1,9 +1,8 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
-use crate::cornucopia::queries::spigot_resource::{get_latest_update_date, upsert_spigot_resource, UpsertSpigotResourceParams};
+use crate::database::spigot::resource::{SpigotResource, get_latest_spigot_resource_update_date, upsert_spigot_resource};
 
 use anyhow::Result;
-use cornucopia_async::Params;
 use deadpool_postgres::Object;
 use futures::future;
 use futures::stream::TryStreamExt;
@@ -117,7 +116,7 @@ enum SpigotResourceError {
     #[error("Skipping resource ID {resource_id}: Database query failed: {source}")]
     DatabaseQueryFailed {
         resource_id: i32,
-        source: tokio_postgres::Error
+        source: anyhow::Error
     },
     #[error("Skipping resource ID {resource_id}: Invalid slug from URL: {url}")]
     InvalidSlugFromURL {
@@ -172,10 +171,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     pub async fn update_spigot_resources(&self, db_client: &Object) -> Result<u32> {
-        let latest_update_date = get_latest_update_date()
-            .bind(db_client)
-            .one()
-            .await?;
+        let latest_update_date = get_latest_spigot_resource_update_date(db_client).await?;
 
         println!("Latest update date: {:?}", latest_update_date);
 
@@ -274,32 +270,32 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn upsert_resource_into_db(db_client: &Object, resource: IncomingSpigotResource) -> Result<()> {
-    if let Some(file) = resource.file {
+async fn upsert_resource_into_db(db_client: &Object, incoming_resource: IncomingSpigotResource) -> Result<()> {
+    let resource_id = incoming_resource.id;
+
+    if let Some(file) = incoming_resource.file {
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
-            let params = UpsertSpigotResourceParams {
-                id: resource.id,
-                name: resource.name,
-                tag: resource.tag,
+            let resource = SpigotResource {
+                id: incoming_resource.id,
+                name: incoming_resource.name,
+                tag: incoming_resource.tag,
                 slug,
-                release_date: OffsetDateTime::from_unix_timestamp(resource.release_date)?,
-                update_date: OffsetDateTime::from_unix_timestamp(resource.update_date)?,
-                author_id: resource.author.id,
-                version_id: resource.version.id,
+                release_date: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
+                update_date: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
+                author_id: incoming_resource.author.id,
+                version_id: incoming_resource.version.id,
                 version_name: None::<String>,
-                premium: resource.premium,
-                source_code_link: resource.source_code_link
+                premium: incoming_resource.premium,
+                source_code_link: incoming_resource.source_code_link
             };
 
-            let db_result = upsert_spigot_resource()
-                .params(db_client, &params)
-                .await;
+            let db_result = upsert_spigot_resource(db_client, resource).await;
 
             match db_result {
                 Ok(_) => Ok(()),
                 Err(err) => Err(
                     SpigotResourceError::DatabaseQueryFailed {
-                        resource_id: resource.id,
+                        resource_id,
                         source: err
                     }.into()
                 )
@@ -307,7 +303,7 @@ async fn upsert_resource_into_db(db_client: &Object, resource: IncomingSpigotRes
         } else {
             Err(
                 SpigotResourceError::InvalidSlugFromURL {
-                    resource_id: resource.id,
+                    resource_id,
                     url: file.url
                 }.into()
             )
@@ -315,7 +311,7 @@ async fn upsert_resource_into_db(db_client: &Object, resource: IncomingSpigotRes
     } else {
         Err(
             SpigotResourceError::FileDoesNotExist {
-                resource_id: resource.id
+                resource_id
             }.into()
         )
     }

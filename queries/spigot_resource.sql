@@ -1,10 +1,4 @@
---: SpigotResource()
-
---! get_spigot_resources : SpigotResource
-SELECT * FROM spigot_resource;
-
---! get_latest_update_date
-SELECT max(update_date) from spigot_resource;
+--: SpigotResourceEntity(version_name?, premium?, source_code_link?)
 
 --! upsert_spigot_resource (version_name?, premium?, source_code_link?)
 INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link)
@@ -21,3 +15,9 @@ INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, aut
     version_name = EXCLUDED.version_name,
     premium = EXCLUDED.premium,
     source_code_link = EXCLUDED.source_code_link;
+
+--! get_spigot_resources : SpigotResourceEntity
+SELECT * FROM spigot_resource;
+
+--! get_latest_spigot_resource_update_date
+SELECT max(update_date) from spigot_resource;
