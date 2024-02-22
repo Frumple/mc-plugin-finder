@@ -3,7 +3,7 @@ use crate::collector::spigot::SpigotClient;
 use crate::database::spigot::author::{SpigotAuthor, get_highest_spigot_author_id, insert_spigot_author};
 
 use anyhow::Result;
-use deadpool_postgres::Object;
+use deadpool_postgres::Client;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -98,7 +98,7 @@ enum SpigotAuthorError {
 }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
-    pub async fn populate_spigot_authors(&self, db_client: &Object) -> Result<u32> {
+    pub async fn populate_spigot_authors(&self, db_client: &Client) -> Result<u32> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -128,7 +128,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         }
     }
 
-    pub async fn update_spigot_authors(&self, db_client: &Object) -> Result<u32> {
+    pub async fn update_spigot_authors(&self, db_client: &Client) -> Result<u32> {
         let highest_author_id = get_highest_spigot_author_id(db_client).await?;
 
         println!("Highest id: {:?}", highest_author_id);
@@ -211,7 +211,7 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
-async fn insert_author_into_db(db_client: &Object, author: IncomingSpigotAuthor) -> Result<()> {
+pub async fn insert_author_into_db(db_client: &Client, author: IncomingSpigotAuthor) -> Result<()> {
     let author_id = author.id;
 
     let db_result = insert_spigot_author(db_client, author.into()).await;
@@ -228,15 +228,18 @@ async fn insert_author_into_db(db_client: &Object, author: IncomingSpigotAuthor)
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
+    use crate::database::spigot::author::get_spigot_authors;
+    use crate::test::DatabaseTestContext;
 
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
     #[tokio::test]
     async fn should_get_authors_from_api() -> Result<()> {
+        // Arrange
         let spigot_server = SpigotTestServer::new().await;
 
         let request = GetSpigotAuthorsRequest::create_populate_request();
@@ -246,16 +249,7 @@ mod test {
                 x_page_index: 1,
                 x_page_count: 10
             },
-            authors: vec![
-                IncomingSpigotAuthor {
-                    id: 1000,
-                    name: "testuser-1000".to_string()
-                },
-                IncomingSpigotAuthor {
-                    id: 1001,
-                    name: "testuser-1001".to_string()
-                }
-            ]
+            authors: create_test_authors()
         };
 
         let response_template = ResponseTemplate::new(200)
@@ -273,11 +267,81 @@ mod test {
             .mount(spigot_server.mock())
             .await;
 
+        // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
         let response = spigot_client.get_authors_from_api(request).await?;
 
+        // Assert
         assert_eq!(response, expected_response);
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_insert_spigot_author_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_insert_spigot_author_into_db").await;
+
+        // Arrange
+        let incoming_author = &create_test_authors()[0];
+
+        // Act
+        insert_author_into_db(&context.client, incoming_author.clone()).await?;
+
+        // Assert
+        let authors = get_spigot_authors(&context.client).await?;
+        let author = &authors[0];
+
+        assert_eq!(authors.len(), 1);
+        assert_eq!(author.id, 1);
+        assert_eq!(author.name, "author-1");
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_not_insert_author_with_duplicate_id_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_not_insert_author_with_duplicate_id_into_db").await;
+
+        // Arrange
+        let incoming_author = &create_test_authors()[0];
+
+        // Act
+        insert_author_into_db(&context.client, incoming_author.clone()).await?;
+
+        let result = insert_author_into_db(&context.client, incoming_author.clone()).await;
+        let error = result.unwrap_err();
+
+        // Assert
+        assert!(matches!(error.downcast_ref::<SpigotAuthorError>(), Some(SpigotAuthorError::DatabaseQueryFailed{ .. })));
+
+        let authors = get_spigot_authors(&context.client).await?;
+        let author = &authors[0];
+
+        assert_eq!(authors.len(), 1);
+        assert_eq!(author.id, 1);
+        assert_eq!(author.name, "author-1");
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    pub fn create_test_authors() -> Vec<IncomingSpigotAuthor> {
+        vec![
+            IncomingSpigotAuthor {
+                id: 1,
+                name: "author-1".to_string()
+            },
+            IncomingSpigotAuthor {
+                id: 2,
+                name: "author-2".to_string()
+            }
+        ]
     }
 }

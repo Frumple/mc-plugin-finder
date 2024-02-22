@@ -2,7 +2,7 @@ use crate::database::cornucopia::queries::spigot_resource::{self, UpsertSpigotRe
 
 use anyhow::Result;
 use cornucopia_async::Params;
-use deadpool_postgres::Object;
+use deadpool_postgres::Client;
 use time::OffsetDateTime;
 
 pub struct SpigotResource {
@@ -55,7 +55,7 @@ impl From<SpigotResourceEntity> for SpigotResource {
     }
 }
 
-pub async fn upsert_spigot_resource(db_client: &Object, resource: SpigotResource) -> Result<()> {
+pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
     spigot_resource::upsert_spigot_resource()
         .params(db_client, &resource.into())
         .await?;
@@ -63,7 +63,7 @@ pub async fn upsert_spigot_resource(db_client: &Object, resource: SpigotResource
     Ok(())
 }
 
-pub async fn get_spigot_resources(db_client: &Object) -> Result<Vec<SpigotResource>> {
+pub async fn get_spigot_resources(db_client: &Client) -> Result<Vec<SpigotResource>> {
     let entities = spigot_resource::get_spigot_resources()
         .bind(db_client)
         .all()
@@ -74,7 +74,7 @@ pub async fn get_spigot_resources(db_client: &Object) -> Result<Vec<SpigotResour
     Ok(resources)
 }
 
-pub async fn get_latest_spigot_resource_update_date(db_client: &Object) -> Result<OffsetDateTime> {
+pub async fn get_latest_spigot_resource_update_date(db_client: &Client) -> Result<OffsetDateTime> {
     let date = spigot_resource::get_latest_spigot_resource_update_date()
         .bind(db_client)
         .one()

@@ -2,7 +2,7 @@ use crate::database::cornucopia::queries::spigot_author::{self, InsertSpigotAuth
 
 use anyhow::Result;
 use cornucopia_async::Params;
-use deadpool_postgres::Object;
+use deadpool_postgres::Client;
 
 pub struct SpigotAuthor {
     pub id: i32,
@@ -27,7 +27,7 @@ impl From<SpigotAuthorEntity> for SpigotAuthor {
     }
 }
 
-pub async fn insert_spigot_author(db_client: &Object, author: SpigotAuthor) -> Result<()> {
+pub async fn insert_spigot_author(db_client: &Client, author: SpigotAuthor) -> Result<()> {
     spigot_author::insert_spigot_author()
         .params(db_client, &author.into())
         .await?;
@@ -35,7 +35,7 @@ pub async fn insert_spigot_author(db_client: &Object, author: SpigotAuthor) -> R
     Ok(())
 }
 
-pub async fn get_spigot_authors(db_client: &Object) -> Result<Vec<SpigotAuthor>> {
+pub async fn get_spigot_authors(db_client: &Client) -> Result<Vec<SpigotAuthor>> {
     let entities = spigot_author::get_spigot_authors()
         .bind(db_client)
         .all()
@@ -46,7 +46,7 @@ pub async fn get_spigot_authors(db_client: &Object) -> Result<Vec<SpigotAuthor>>
     Ok(authors)
 }
 
-pub async fn get_highest_spigot_author_id(db_client: &Object) -> Result<i32> {
+pub async fn get_highest_spigot_author_id(db_client: &Client) -> Result<i32> {
     let id = spigot_author::get_highest_spigot_author_id()
         .bind(db_client)
         .one()

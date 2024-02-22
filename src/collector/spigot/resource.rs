@@ -3,7 +3,7 @@ use crate::collector::spigot::SpigotClient;
 use crate::database::spigot::resource::{SpigotResource, get_latest_spigot_resource_update_date, upsert_spigot_resource};
 
 use anyhow::Result;
-use deadpool_postgres::Object;
+use deadpool_postgres::Client;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -140,7 +140,7 @@ enum SpigotResourceError {
 // }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
-    pub async fn populate_spigot_resources(&self, db_client: &Object) -> Result<u32> {
+    pub async fn populate_spigot_resources(&self, db_client: &Client) -> Result<u32> {
         let request = GetSpigotResourcesRequest::create_populate_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -170,7 +170,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         }
     }
 
-    pub async fn update_spigot_resources(&self, db_client: &Object) -> Result<u32> {
+    pub async fn update_spigot_resources(&self, db_client: &Client) -> Result<u32> {
         let latest_update_date = get_latest_spigot_resource_update_date(db_client).await?;
 
         println!("Latest update date: {:?}", latest_update_date);
@@ -270,7 +270,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn upsert_resource_into_db(db_client: &Object, incoming_resource: IncomingSpigotResource) -> Result<()> {
+async fn upsert_resource_into_db(db_client: &Client, incoming_resource: IncomingSpigotResource) -> Result<()> {
     let resource_id = incoming_resource.id;
 
     if let Some(file) = incoming_resource.file {
@@ -327,6 +327,9 @@ fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
 mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
+    use crate::collector::spigot::author::{insert_author_into_db, test::create_test_authors};
+    use crate::database::spigot::resource::get_spigot_resources;
+    use crate::test::DatabaseTestContext;
 
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
@@ -347,6 +350,7 @@ mod test {
 
     #[tokio::test]
     async fn should_get_resources_from_api() -> Result<()> {
+        // Arrange
         let spigot_server = SpigotTestServer::new().await;
 
         let request = GetSpigotResourcesRequest::create_populate_request();
@@ -356,44 +360,7 @@ mod test {
                 x_page_index: 1,
                 x_page_count: 10
             },
-            resources: vec![
-                IncomingSpigotResource {
-                    id: 2000,
-                    name: "testresource-2000".to_string(),
-                    tag: "testresource-2000-tag".to_string(),
-                    release_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    update_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    file: Some(IncomingSpigotResourceNestedFile {
-                        url: "resources/luckperms.28140/download?version=511529".to_string()
-                    }),
-                    author: IncomingSpigotResourceNestedAuthor {
-                        id: 1000
-                    },
-                    version: IncomingSpigotResourceNestedVersion {
-                        id: 511529
-                    },
-                    premium: Some(false),
-                    source_code_link: Some("https://github.com/lucko/LuckPerms".to_string())
-                },
-                IncomingSpigotResource {
-                    id: 2001,
-                    name: "testresource-2001".to_string(),
-                    tag: "testresource-2001-tag".to_string(),
-                    release_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    update_date: OffsetDateTime::now_utc().unix_timestamp(),
-                    file: Some(IncomingSpigotResourceNestedFile {
-                        url: "resources/essentialsx.9089/download?version=50842".to_string()
-                    }),
-                    author: IncomingSpigotResourceNestedAuthor {
-                        id: 1001
-                    },
-                    version: IncomingSpigotResourceNestedVersion {
-                        id: 50842
-                    },
-                    premium: Some(false),
-                    source_code_link: Some("https://github.com/EssentialsX/Essentials".to_string())
-                }
-            ]
+            resources: create_test_resources()
         };
 
         let response_template = ResponseTemplate::new(200)
@@ -411,11 +378,213 @@ mod test {
             .mount(spigot_server.mock())
             .await;
 
+        // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
         let response = spigot_client.get_resources_from_api(request).await?;
 
+        // Assert
         assert_eq!(response, expected_response);
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_insert_spigot_resource_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_insert_spigot_resource_into_db").await;
+
+        // Arrange
+        let incoming_author = &create_test_authors()[0];
+        insert_author_into_db(&context.client, incoming_author.clone()).await?;
+
+        let incoming_resource = &create_test_resources()[0];
+
+        // Act
+        upsert_resource_into_db(&context.client, incoming_resource.clone()).await?;
+
+        // Assert
+        let resources = get_spigot_resources(&context.client).await?;
+        let resource = &resources[0];
+
+        assert_eq!(resources.len(), 1);
+        assert_eq!(resource.id, 1);
+        assert_eq!(resource.name, "resource-1");
+        assert_eq!(resource.tag, "resource-1-tag");
+        assert_eq!(resource.slug, "foo.1");
+        assert_eq!(resource.release_date.unix_timestamp(), 1577865600);
+        assert_eq!(resource.update_date.unix_timestamp(), 1609488000);
+        assert_eq!(resource.author_id, 1);
+        assert_eq!(resource.version_id, 1);
+        assert_eq!(resource.premium, Some(false));
+        assert_eq!(resource.source_code_link, Some("https://github.com/Frumple/foo".to_string()));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_update_resource_in_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_update_resource_in_db").await;
+
+        // Arrange
+        let incoming_author = &create_test_authors()[0];
+        insert_author_into_db(&context.client, incoming_author.clone()).await?;
+
+        let incoming_resource = &create_test_resources()[0];
+        upsert_resource_into_db(&context.client, incoming_resource.clone()).await?;
+
+        let updated_resource = IncomingSpigotResource {
+            id: 1,
+            name: "resource-1-updated".to_string(),
+            tag: "resource-1-tag-updated".to_string(),
+            release_date: 1577865600,
+            update_date: 1704096000,
+            file: Some(IncomingSpigotResourceNestedFile {
+                url: "resources/foo.1/download?version=100".to_string()
+            }),
+            author: IncomingSpigotResourceNestedAuthor {
+                id: 1
+            },
+            version: IncomingSpigotResourceNestedVersion {
+                id: 100
+            },
+            premium: Some(true),
+            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string())
+        };
+
+        // Act
+        upsert_resource_into_db(&context.client, updated_resource.clone()).await?;
+
+        // Assert
+        let resources = get_spigot_resources(&context.client).await?;
+        let resource = &resources[0];
+
+        assert_eq!(resources.len(), 1);
+        assert_eq!(resource.id, 1);
+        assert_eq!(resource.name, "resource-1-updated");
+        assert_eq!(resource.tag, "resource-1-tag-updated");
+        assert_eq!(resource.slug, "foo.1");
+        assert_eq!(resource.release_date.unix_timestamp(), 1577865600);
+        assert_eq!(resource.update_date.unix_timestamp(), 1704096000);
+        assert_eq!(resource.author_id, 1);
+        assert_eq!(resource.version_id, 100);
+        assert_eq!(resource.premium, Some(true));
+        assert_eq!(resource.source_code_link, Some("https://github.com/Frumple/foo-updated".to_string()));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_not_insert_resource_with_nonexistent_author_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_not_insert_resource_with_nonexistent_author_into_db").await;
+
+        // Arrange
+        let incoming_resource = &create_test_resources()[0];
+
+        // Act
+        let result = upsert_resource_into_db(&context.client, incoming_resource.clone()).await;
+        let error = result.unwrap_err();
+
+        // Assert
+        assert!(matches!(error.downcast_ref::<SpigotResourceError>(), Some(SpigotResourceError::DatabaseQueryFailed { .. })));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_not_insert_resource_with_invalid_slug_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_not_insert_resource_with_invalid_slug_into_db").await;
+
+        // Arrange
+        let mut incoming_resource = create_test_resources()[0].clone();
+        incoming_resource.file = Some(IncomingSpigotResourceNestedFile {
+            url: "resources/1/download?version=1".to_string()
+        });
+
+        // Act
+        let result = upsert_resource_into_db(&context.client, incoming_resource.clone()).await;
+        let error = result.unwrap_err();
+
+        // Assert
+        assert!(matches!(error.downcast_ref::<SpigotResourceError>(), Some(SpigotResourceError::InvalidSlugFromURL { .. })));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_not_insert_resource_with_no_file_into_db() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new("should_not_insert_resource_with_no_file_into_db").await;
+
+        // Arrange
+        let mut incoming_resource = create_test_resources()[0].clone();
+        incoming_resource.file = None;
+
+        // Act
+        let result = upsert_resource_into_db(&context.client, incoming_resource.clone()).await;
+        let error = result.unwrap_err();
+
+        // Assert
+        assert!(matches!(error.downcast_ref::<SpigotResourceError>(), Some(SpigotResourceError::FileDoesNotExist { .. })));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    fn create_test_resources() -> Vec<IncomingSpigotResource> {
+        vec![
+            IncomingSpigotResource {
+                id: 1,
+                name: "resource-1".to_string(),
+                tag: "resource-1-tag".to_string(),
+                release_date: 1577865600,
+                update_date: 1609488000,
+                file: Some(IncomingSpigotResourceNestedFile {
+                    url: "resources/foo.1/download?version=1".to_string()
+                }),
+                author: IncomingSpigotResourceNestedAuthor {
+                    id: 1
+                },
+                version: IncomingSpigotResourceNestedVersion {
+                    id: 1
+                },
+                premium: Some(false),
+                source_code_link: Some("https://github.com/Frumple/foo".to_string())
+            },
+            IncomingSpigotResource {
+                id: 2,
+                name: "resource-2".to_string(),
+                tag: "resource-2-tag".to_string(),
+                release_date: 1577865600,
+                update_date: 1609488000,
+                file: Some(IncomingSpigotResourceNestedFile {
+                    url: "resources/bar.2/download?version=2".to_string()
+                }),
+                author: IncomingSpigotResourceNestedAuthor {
+                    id: 2
+                },
+                version: IncomingSpigotResourceNestedVersion {
+                    id: 2
+                },
+                premium: Some(false),
+                source_code_link: Some("https://github.com/Frumple/bar".to_string())
+            }
+        ]
     }
 }
