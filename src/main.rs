@@ -49,7 +49,6 @@ mod test {
     const DEFAULT_POSTGRES_DB_NAME: &str = "postgres";
 
     pub struct DatabaseTestContext {
-        // db: Database,
         db_name: String,
         base_client: Client,
         pub client: Client
@@ -59,7 +58,6 @@ mod test {
         pub async fn new(db_name: &str) -> Self {
             let db = get_db();
 
-            // TODO: Have all tests use a single common base pool to the default postgres database
             let base_pool = db.create_pool(DEFAULT_POSTGRES_DB_NAME)
                 .await
                 .expect("could not create database pool");
@@ -86,7 +84,6 @@ mod test {
                 .expect("could not run migration");
 
             Self {
-                // db,
                 db_name: db_name.to_string(),
                 base_client,
                 client: new_client
@@ -104,9 +101,7 @@ mod test {
             let schema_text = read_to_string("schema.sql")?
                .parse::<String>()?;
 
-            for statement in schema_text.split(';') {
-                client.execute(statement, &[]).await?;
-            }
+            client.batch_execute(schema_text.as_str()).await?;
 
             Ok(())
         }
