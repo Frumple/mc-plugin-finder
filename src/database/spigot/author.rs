@@ -54,3 +54,50 @@ pub async fn get_highest_spigot_author_id(db_client: &Client) -> Result<i32> {
 
     Ok(id)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::database::spigot::author::{insert_spigot_author, get_highest_spigot_author_id};
+    use crate::test::DatabaseTestContext;
+
+    use ::function_name::named;
+
+    #[tokio::test]
+    #[named]
+    async fn should_get_highest_spigot_author_id() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let authors = vec![
+            SpigotAuthor {
+                id: 1,
+                name: "author-1".to_string()
+            },
+            SpigotAuthor {
+                id: 2,
+                name: "author-2".to_string()
+            },
+            SpigotAuthor {
+                id: 3,
+                name: "author-3".to_string()
+            }
+        ];
+
+        for author in authors {
+            insert_spigot_author(&context.client, author).await?;
+        }
+
+        // Act
+        let highest_id = get_highest_spigot_author_id(&context.client).await?;
+
+        // Assert
+        assert_eq!(highest_id, 3);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+}
