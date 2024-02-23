@@ -331,6 +331,7 @@ mod test {
     use crate::database::spigot::resource::get_spigot_resources;
     use crate::test::DatabaseTestContext;
 
+    use ::function_name::named;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
@@ -389,9 +390,10 @@ mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_insert_spigot_resource_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_insert_spigot_resource_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let incoming_author = &create_test_authors()[0];
@@ -425,9 +427,10 @@ mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_update_resource_in_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_update_resource_in_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let incoming_author = &create_test_authors()[0];
@@ -481,9 +484,10 @@ mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_not_insert_resource_with_nonexistent_author_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_not_insert_resource_with_nonexistent_author_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let incoming_resource = &create_test_resources()[0];
@@ -502,9 +506,10 @@ mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_not_insert_resource_with_invalid_slug_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_not_insert_resource_with_invalid_slug_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let mut incoming_resource = create_test_resources()[0].clone();
@@ -526,9 +531,10 @@ mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_not_insert_resource_with_no_file_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_not_insert_resource_with_no_file_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let mut incoming_resource = create_test_resources()[0].clone();

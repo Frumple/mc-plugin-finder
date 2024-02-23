@@ -234,6 +234,7 @@ pub mod test {
     use crate::database::spigot::author::get_spigot_authors;
     use crate::test::DatabaseTestContext;
 
+    use ::function_name::named;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
@@ -278,9 +279,10 @@ pub mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_insert_spigot_author_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_insert_spigot_author_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let incoming_author = &create_test_authors()[0];
@@ -303,9 +305,10 @@ pub mod test {
     }
 
     #[tokio::test]
+    #[named]
     async fn should_not_insert_author_with_duplicate_id_into_db() -> Result<()> {
         // Setup
-        let context = DatabaseTestContext::new("should_not_insert_author_with_duplicate_id_into_db").await;
+        let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
         let incoming_author = &create_test_authors()[0];
