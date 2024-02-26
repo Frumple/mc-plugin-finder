@@ -3,6 +3,7 @@ use crate::collector::spigot::{SpigotClient, SpigotServer};
 use crate::database::Database;
 
 use anyhow::Result;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 mod collector;
 mod database;
@@ -11,22 +12,28 @@ const LIVE_DB_NAME: &str = "mc_plugin_finder";
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize tracing
+    let subscriber = tracing_subscriber::fmt()
+        .with_span_events(FmtSpan::CLOSE)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)?;
+
+    // Initialize database client
     let db = get_db();
     let db_pool = db.create_pool(LIVE_DB_NAME).await?;
     let db_client = db_pool.get().await?;
-    let spigot_server = SpigotServer::new().await;
 
+    // Initialize API client
+    let spigot_server = SpigotServer::new().await;
     let spigot_client = SpigotClient::new(spigot_server)?;
 
-    let count = spigot_client.populate_spigot_authors(&db_client).await?;
+    spigot_client.populate_spigot_authors(&db_client).await?;
 
-    // let count = spigot_client.update_spigot_authors(&db_client).await?;
+    // spigot_client.update_spigot_authors(&db_client).await?;
 
-    // let count = spigot_client.populate_spigot_resources(&db_client).await?;
+    // spigot_client.populate_spigot_resources(&db_client).await?;
 
-    // let count = spigot_client.update_spigot_resources(&db_client).await?;
-
-    println!("Items added: {:?}", count);
+    // spigot_client.update_spigot_resources(&db_client).await?;
 
     Ok(())
 }
@@ -36,7 +43,7 @@ fn get_db() -> Database {
         user: "postgres".to_string(),
         password: "postgres".to_string(),
         host: "localhost".to_string(),
-        port: 5432
+        port: 5433
     }
 }
 

@@ -11,9 +11,10 @@ use regex::Regex;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
+use std::fmt::Debug;
 use std::rc::Rc;
-use std::time::Instant;
 use thiserror::Error;
+use tracing::{info, warn, instrument};
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
@@ -135,7 +136,10 @@ enum IncomingSpigotResourceError {
 // }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
-    pub async fn populate_spigot_resources(&self, db_client: &Client) -> Result<u32> {
+    #[instrument(
+        skip(self, db_client)
+    )]
+    pub async fn populate_spigot_resources(&self, db_client: &Client) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_populate_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -146,12 +150,18 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(None, |incoming_resource| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    let resource = process_incoming_resource(incoming_resource).await?;
-                    let db_result = upsert_spigot_resource(db_client, resource).await;
+                    let process_result = process_incoming_resource(incoming_resource).await;
 
-                    match db_result {
-                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("{}", err)
+                    match process_result {
+                        Ok(resource) => {
+                            let db_result = upsert_spigot_resource(db_client, resource).await;
+
+                            match db_result {
+                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                                Err(err) => warn!("{}", err)
+                            }
+                        }
+                        Err(err) => warn!("{}", err)
                     }
                     Ok(())
                 }
@@ -159,17 +169,18 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .await;
 
         let count = count_rc.get();
+        info!("Spigot resources populated: {}", count);
 
-        match result {
-            Ok(()) => Ok(count),
-            Err(err) => Err(err)
-        }
+        result
+
     }
 
-    pub async fn update_spigot_resources(&self, db_client: &Client) -> Result<u32> {
+    #[instrument(
+        skip(self, db_client)
+    )]
+    pub async fn update_spigot_resources(&self, db_client: &Client) -> Result<()> {
         let latest_update_date = get_latest_spigot_resource_update_date(db_client).await?;
-
-        println!("Latest update date: {:?}", latest_update_date);
+        info!("Latest update date: {:?}", latest_update_date);
 
         let request = GetSpigotResourcesRequest::create_update_request();
 
@@ -185,12 +196,18 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
                     // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
                     // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
 
-                    let resource = process_incoming_resource(incoming_resource).await?;
-                    let db_result = upsert_spigot_resource(db_client, resource).await;
+                    let process_result = process_incoming_resource(incoming_resource).await;
 
-                    match db_result {
-                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("{}", err)
+                    match process_result {
+                        Ok(resource) => {
+                            let db_result = upsert_spigot_resource(db_client, resource).await;
+
+                            match db_result {
+                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                                Err(err) => warn!("{}", err)
+                            }
+                        }
+                        Err(err) => warn!("{}", err)
                     }
                     Ok(())
                 }
@@ -198,13 +215,14 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .await;
 
         let count = count_rc.get();
+        info!("Spigot resources updated: {}", count);
 
-        match result {
-            Ok(()) => Ok(count),
-            Err(err) => Err(err)
-        }
+        result
     }
 
+    #[instrument(
+        skip(self)
+    )]
     async fn get_resources_from_api(&self, request: GetSpigotResourcesRequest) -> Result<GetSpigotResourcesResponse> {
         self.rate_limiter.until_ready().await;
 
@@ -252,11 +270,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     type PageError = anyhow::Error;
 
   async fn turn_page(&self, mut request: GetSpigotResourcesRequest) -> TurnedPageResult<Self, GetSpigotResourcesRequest> {
-        println!("API Start: {:?}", request);
-        let start = Instant::now();
         let response = self.get_resources_from_api(request.clone()).await?;
-        let duration = start.elapsed();
-        println!("API End: {:?} in {:?}", request, duration);
 
         if response.more_resources_available() {
             request.page += 1;

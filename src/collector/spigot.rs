@@ -15,6 +15,7 @@ mod resource;
 const SPIGOT_USER_AGENT: &str = "analysis";
 const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
 
+#[derive(Debug)]
 pub struct SpigotServer;
 impl HttpServer for SpigotServer {
     async fn new() -> Self {
@@ -51,6 +52,7 @@ mod test {
     use super::*;
     use wiremock::MockServer;
 
+    #[derive(Debug)]
     pub struct SpigotTestServer {
         mock_server: MockServer
     }

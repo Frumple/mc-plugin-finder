@@ -10,7 +10,8 @@ use page_turner::prelude::*;
 use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::rc::Rc;
-use std::time::Instant;
+use tracing::{info, warn, instrument};
+
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
 const SPIGOT_POPULATE_AUTHORS_REQUESTS_AHEAD: usize = 2;
@@ -88,7 +89,10 @@ impl From<IncomingSpigotAuthor> for SpigotAuthor {
 }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
-    pub async fn populate_spigot_authors(&self, db_client: &Client) -> Result<u32> {
+    #[instrument(
+        skip(self, db_client)
+    )]
+    pub async fn populate_spigot_authors(&self, db_client: &Client) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -98,12 +102,13 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .items()
             .try_for_each_concurrent(None, |author| {
                 let count_rc_clone = count_rc.clone();
+
                 async move {
                     let db_result = insert_spigot_author(db_client, author.into()).await;
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("{}", err)
+                        Err(err) => warn!("{}", err)
                     }
                     Ok(())
                 }
@@ -111,17 +116,17 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .await;
 
         let count = count_rc.get();
+        info!("Spigot authors populated: {}", count);
 
-        match result {
-            Ok(()) => Ok(count),
-            Err(err) => Err(err)
-        }
+        result
     }
 
-    pub async fn update_spigot_authors(&self, db_client: &Client) -> Result<u32> {
+    #[instrument(
+        skip(self, db_client)
+    )]
+    pub async fn update_spigot_authors(&self, db_client: &Client) -> Result<()> {
         let highest_author_id = get_highest_spigot_author_id(db_client).await?;
-
-        println!("Highest id: {:?}", highest_author_id);
+        info!("Highest id: {:?}", highest_author_id);
 
         let request = GetSpigotAuthorsRequest::create_update_request();
 
@@ -138,7 +143,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                        Err(err) => println!("{}", err)
+                        Err(err) => warn!("{}", err)
                     }
                     Ok(())
                 }
@@ -146,13 +151,14 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .await;
 
         let count = count_rc.get();
+        info!("Spigot authors updated: {}", count);
 
-        match result {
-            Ok(()) => Ok(count),
-            Err(err) => Err(err)
-        }
+        result
     }
 
+    #[instrument(
+        skip(self)
+    )]
     async fn get_authors_from_api(&self, request: GetSpigotAuthorsRequest) -> Result<GetSpigotAuthorsResponse> {
         self.rate_limiter.until_ready().await;
 
@@ -186,11 +192,7 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     type PageError = anyhow::Error;
 
     async fn turn_page(&self, mut request: GetSpigotAuthorsRequest) -> TurnedPageResult<Self, GetSpigotAuthorsRequest> {
-        println!("API Start: {:?}", request);
-        let start = Instant::now();
         let response = self.get_authors_from_api(request.clone()).await?;
-        let duration = start.elapsed();
-        println!("API End: {:?} in {:?}", request, duration);
 
         if response.more_authors_available() {
             request.page += 1;

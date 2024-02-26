@@ -5,6 +5,7 @@ use cornucopia_async::Params;
 use deadpool_postgres::Client;
 use thiserror::Error;
 use time::OffsetDateTime;
+use tracing::instrument;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpigotResource {
@@ -66,6 +67,10 @@ enum SpigotResourceError {
     }
 }
 
+#[instrument(
+    level = "trace",
+    skip(db_client)
+)]
 pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
     let resource_id = resource.id;
 

@@ -4,6 +4,7 @@ use anyhow::Result;
 use cornucopia_async::Params;
 use deadpool_postgres::Client;
 use thiserror::Error;
+use tracing::instrument;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpigotAuthor {
@@ -38,6 +39,10 @@ enum SpigotAuthorError {
     }
 }
 
+#[instrument(
+    level = "trace",
+    skip(db_client)
+)]
 pub async fn insert_spigot_author(db_client: &Client, author: SpigotAuthor) -> Result<()> {
     let author_id = author.id;
 
