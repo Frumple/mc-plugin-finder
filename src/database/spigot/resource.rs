@@ -3,8 +3,10 @@ use crate::database::cornucopia::queries::spigot_resource::{self, UpsertSpigotRe
 use anyhow::Result;
 use cornucopia_async::Params;
 use deadpool_postgres::Client;
+use thiserror::Error;
 use time::OffsetDateTime;
 
+#[derive(Clone, Debug)]
 pub struct SpigotResource {
     pub id: i32,
     pub name: String,
@@ -55,12 +57,31 @@ impl From<SpigotResourceEntity> for SpigotResource {
     }
 }
 
-pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
-    spigot_resource::upsert_spigot_resource()
-        .params(db_client, &resource.into())
-        .await?;
+#[derive(Debug, Error)]
+enum SpigotResourceError {
+    #[error("Skipping resource ID {resource_id}: Database query failed: {source}")]
+    DatabaseQueryFailed {
+        resource_id: i32,
+        source: anyhow::Error
+    }
+}
 
-    Ok(())
+pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
+    let resource_id = resource.id;
+
+    let db_result = spigot_resource::upsert_spigot_resource()
+        .params(db_client, &resource.into())
+        .await;
+
+    match db_result {
+        Ok(_) => Ok(()),
+        Err(err) => Err(
+            SpigotResourceError::DatabaseQueryFailed {
+                resource_id,
+                source: err.into()
+            }.into()
+        )
+    }
 }
 
 pub async fn get_spigot_resources(db_client: &Client) -> Result<Vec<SpigotResource>> {
@@ -91,6 +112,122 @@ mod test {
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
+    use time::macros::datetime;
+
+    #[tokio::test]
+    #[named]
+    async fn should_insert_spigot_resource() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let author = create_test_author();
+        insert_spigot_author(&context.client, author).await?;
+
+        let resource = &create_test_resources()[0];
+
+        // Act
+        upsert_spigot_resource(&context.client, resource.clone()).await?;
+
+        // Assert
+        let retrieved_resources = get_spigot_resources(&context.client).await?;
+        let retrieved_resource = &retrieved_resources[0];
+
+        assert_eq!(retrieved_resources.len(), 1);
+
+        assert_eq!(retrieved_resource.id, 1);
+        assert_eq!(retrieved_resource.name, "resource-1");
+        assert_eq!(retrieved_resource.tag, "resource-1-tag");
+        assert_eq!(retrieved_resource.slug, "foo.1");
+        assert_eq!(retrieved_resource.release_date, datetime!(2020-01-01 0:00 UTC));
+        assert_eq!(retrieved_resource.update_date, datetime!(2021-01-01 0:00 UTC));
+        assert_eq!(retrieved_resource.author_id, 1);
+        assert_eq!(retrieved_resource.version_id, 1);
+        assert_eq!(retrieved_resource.version_name, None);
+        assert_eq!(retrieved_resource.premium, Some(false));
+        assert_eq!(retrieved_resource.source_code_link, Some("https://github.com/Frumple/foo".to_string()));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_update_spigot_resource() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let author = create_test_author();
+        insert_spigot_author(&context.client, author).await?;
+
+        let resource = &create_test_resources()[0];
+        upsert_spigot_resource(&context.client, resource.clone()).await?;
+
+        let updated_resource = SpigotResource {
+            id: 1,
+            name: "resource-1-updated".to_string(),
+            tag: "resource-1-tag-updated".to_string(),
+            slug: "foo-updated.1".to_string(),
+            release_date: datetime!(2020-01-01 0:00 UTC),
+            update_date: datetime!(2021-07-01 0:00 UTC),
+            author_id: 1,
+            version_id: 2,
+            version_name: None,
+            premium: Some(true),
+            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string())
+        };
+
+        // Act
+        upsert_spigot_resource(&context.client, updated_resource.clone()).await?;
+
+        // Assert
+        let retrieved_resources = get_spigot_resources(&context.client).await?;
+        let retrieved_resource = &retrieved_resources[0];
+
+        assert_eq!(retrieved_resources.len(), 1);
+
+        assert_eq!(retrieved_resource.id, 1);
+        assert_eq!(retrieved_resource.name, "resource-1-updated");
+        assert_eq!(retrieved_resource.tag, "resource-1-tag-updated");
+        assert_eq!(retrieved_resource.slug, "foo-updated.1");
+        assert_eq!(retrieved_resource.release_date, datetime!(2020-01-01 0:00 UTC));
+        assert_eq!(retrieved_resource.update_date, datetime!(2021-07-01 0:00 UTC));
+        assert_eq!(retrieved_resource.author_id, 1);
+        assert_eq!(retrieved_resource.version_id, 2);
+        assert_eq!(retrieved_resource.version_name, None);
+        assert_eq!(retrieved_resource.premium, Some(true));
+        assert_eq!(retrieved_resource.source_code_link, Some("https://github.com/Frumple/foo-updated".to_string()));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_not_insert_resource_with_nonexistent_author() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let resource = &create_test_resources()[0];
+
+        // Act
+        let result = upsert_spigot_resource(&context.client, resource.clone()).await;
+        let error = result.unwrap_err();
+
+        // Assert
+        assert!(matches!(error.downcast_ref::<SpigotResourceError>(), Some(SpigotResourceError::DatabaseQueryFailed { .. })));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
 
     #[tokio::test]
     #[named]
@@ -99,21 +236,43 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = SpigotAuthor {
-            id: 1,
-            name: "author-1".to_string()
-        };
+        let author = create_test_author();
 
         insert_spigot_author(&context.client, author).await?;
 
-        let resources = vec![
+        let resources = create_test_resources();
+        for resource in resources {
+            upsert_spigot_resource(&context.client, resource).await?;
+        }
+
+        // Act
+        let latest_update_date = get_latest_spigot_resource_update_date(&context.client).await?;
+
+        // Assert
+        assert_eq!(latest_update_date, datetime!(2023-01-01 0:00 UTC));
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    fn create_test_author() -> SpigotAuthor {
+        SpigotAuthor {
+            id: 1,
+            name: "author-1".to_string()
+        }
+    }
+
+    fn create_test_resources() -> Vec<SpigotResource> {
+        vec![
             SpigotResource {
                 id: 1,
                 name: "resource-1".to_string(),
                 tag: "resource-1-tag".to_string(),
                 slug: "foo.1".to_string(),
-                release_date: OffsetDateTime::from_unix_timestamp(1577865600)?,
-                update_date: OffsetDateTime::from_unix_timestamp(1609488000)?,
+                release_date: datetime!(2020-01-01 0:00 UTC),
+                update_date: datetime!(2021-01-01 0:00 UTC),
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
@@ -125,8 +284,8 @@ mod test {
                 name: "resource-2".to_string(),
                 tag: "resource-2-tag".to_string(),
                 slug: "bar.2".to_string(),
-                release_date: OffsetDateTime::from_unix_timestamp(1577865600)?,
-                update_date: OffsetDateTime::from_unix_timestamp(1641024000)?,
+                release_date: datetime!(2020-01-01 0:00 UTC),
+                update_date: datetime!(2022-01-01 0:00 UTC),
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
@@ -138,30 +297,14 @@ mod test {
                 name: "resource-3".to_string(),
                 tag: "resource-3-tag".to_string(),
                 slug: "baz.3".to_string(),
-                release_date: OffsetDateTime::from_unix_timestamp(1577865600)?,
-                update_date: OffsetDateTime::from_unix_timestamp(1672560000)?,
+                release_date: datetime!(2020-01-01 0:00 UTC),
+                update_date: datetime!(2023-01-01 0:00 UTC),
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
                 source_code_link: Some("https://github.com/Frumple/baz".to_string())
             }
-        ];
-
-        for resource in resources {
-            upsert_spigot_resource(&context.client, resource).await?;
-        }
-
-        // Act
-        let latest_update_date = get_latest_spigot_resource_update_date(&context.client).await?;
-
-        // Assert
-        assert_eq!(latest_update_date, OffsetDateTime::from_unix_timestamp(1672560000)?);
-
-        // Teardown
-        context.drop().await?;
-
-        Ok(())
+        ]
     }
-
 }

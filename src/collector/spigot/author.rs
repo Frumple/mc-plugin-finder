@@ -11,7 +11,6 @@ use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Instant;
-use thiserror::Error;
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
 const SPIGOT_POPULATE_AUTHORS_REQUESTS_AHEAD: usize = 2;
@@ -88,15 +87,6 @@ impl From<IncomingSpigotAuthor> for SpigotAuthor {
     }
 }
 
-#[derive(Debug, Error)]
-enum SpigotAuthorError {
-    #[error("Skipping author ID {author_id}: Database query failed: {source}")]
-    DatabaseQueryFailed {
-        author_id: i32,
-        source: anyhow::Error
-    }
-}
-
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_spigot_authors(&self, db_client: &Client) -> Result<u32> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
@@ -109,7 +99,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(None, |author| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    let db_result = insert_author_into_db(db_client, author).await;
+                    let db_result = insert_spigot_author(db_client, author.into()).await;
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
@@ -144,7 +134,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each(|author| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    let db_result = insert_author_into_db(db_client, author).await;
+                    let db_result = insert_spigot_author(db_client, author.into()).await;
 
                     match db_result {
                         Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
@@ -211,30 +201,11 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
-pub async fn insert_author_into_db(db_client: &Client, author: IncomingSpigotAuthor) -> Result<()> {
-    let author_id = author.id;
-
-    let db_result = insert_spigot_author(db_client, author.into()).await;
-
-    match db_result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(
-            SpigotAuthorError::DatabaseQueryFailed {
-                author_id,
-                source: err
-            }.into()
-        )
-    }
-}
-
 #[cfg(test)]
 pub mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
-    use crate::database::spigot::author::get_spigot_authors;
-    use crate::test::DatabaseTestContext;
 
-    use ::function_name::named;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
@@ -274,63 +245,6 @@ pub mod test {
 
         // Assert
         assert_eq!(response, expected_response);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[named]
-    async fn should_insert_spigot_author_into_db() -> Result<()> {
-        // Setup
-        let context = DatabaseTestContext::new(function_name!()).await;
-
-        // Arrange
-        let incoming_author = &create_test_authors()[0];
-
-        // Act
-        insert_author_into_db(&context.client, incoming_author.clone()).await?;
-
-        // Assert
-        let authors = get_spigot_authors(&context.client).await?;
-        let author = &authors[0];
-
-        assert_eq!(authors.len(), 1);
-        assert_eq!(author.id, 1);
-        assert_eq!(author.name, "author-1");
-
-        // Teardown
-        context.drop().await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[named]
-    async fn should_not_insert_author_with_duplicate_id_into_db() -> Result<()> {
-        // Setup
-        let context = DatabaseTestContext::new(function_name!()).await;
-
-        // Arrange
-        let incoming_author = &create_test_authors()[0];
-
-        // Act
-        insert_author_into_db(&context.client, incoming_author.clone()).await?;
-
-        let result = insert_author_into_db(&context.client, incoming_author.clone()).await;
-        let error = result.unwrap_err();
-
-        // Assert
-        assert!(matches!(error.downcast_ref::<SpigotAuthorError>(), Some(SpigotAuthorError::DatabaseQueryFailed{ .. })));
-
-        let authors = get_spigot_authors(&context.client).await?;
-        let author = &authors[0];
-
-        assert_eq!(authors.len(), 1);
-        assert_eq!(author.id, 1);
-        assert_eq!(author.name, "author-1");
-
-        // Teardown
-        context.drop().await?;
 
         Ok(())
     }
