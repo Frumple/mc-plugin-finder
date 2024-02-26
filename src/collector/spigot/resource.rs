@@ -315,21 +315,23 @@ mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
 
+    use speculoos::prelude::*;
+    use time::macros::datetime;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
     #[test]
     fn should_extract_slug_from_file_download_url() {
-        let url = "resources/luckperms.28140/download?version=511529";
+        let url = "resources/foo.1/download?version=1";
         let slug = extract_slug_from_file_download_url(url);
-        assert_eq!(slug, Some("luckperms.28140".to_string()));
+        assert_that(&slug).is_some().is_equal_to("foo.1".to_string());
     }
 
     #[test]
     fn should_not_extract_slug_if_file_download_url_has_no_name() {
-        let url = "resources/40087/download?version=156669";
+        let url = "resources/1/download?version=1";
         let slug = extract_slug_from_file_download_url(url);
-        assert_eq!(slug, None);
+        assert_that(&slug).is_none();
     }
 
     #[tokio::test]
@@ -367,7 +369,7 @@ mod test {
         let response = spigot_client.get_resources_from_api(request).await?;
 
         // Assert
-        assert_eq!(response, expected_response);
+        assert_that(&response).is_equal_to(expected_response);
 
         Ok(())
     }
@@ -381,16 +383,17 @@ mod test {
         let resource = process_incoming_resource(incoming_resource).await?;
 
         // Assert
-        assert_eq!(resource.id, 1);
-        assert_eq!(resource.name, "resource-1");
-        assert_eq!(resource.tag, "resource-1-tag");
-        assert_eq!(resource.slug, "foo.1");
-        assert_eq!(resource.release_date.unix_timestamp(), 1577865600);
-        assert_eq!(resource.update_date.unix_timestamp(), 1609488000);
-        assert_eq!(resource.author_id, 1);
-        assert_eq!(resource.version_id, 1);
-        assert_eq!(resource.premium, Some(false));
-        assert_eq!(resource.source_code_link, Some("https://github.com/Frumple/foo".to_string()));
+        assert_that(&resource.id).is_equal_to(1);
+
+        assert_that(&resource.name).is_equal_to("resource-1".to_string());
+        assert_that(&resource.tag).is_equal_to("resource-1-tag".to_string());
+        assert_that(&resource.slug).is_equal_to("foo.1".to_string());
+        assert_that(&resource.release_date).is_equal_to(datetime!(2020-01-01 0:00 UTC));
+        assert_that(&resource.update_date).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&resource.author_id).is_equal_to(1);
+        assert_that(&resource.version_id).is_equal_to(1);
+        assert_that(&resource.premium).is_some().is_false();
+        assert_that(&resource.source_code_link).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
 
         Ok(())
     }
@@ -435,8 +438,8 @@ mod test {
                 id: 1,
                 name: "resource-1".to_string(),
                 tag: "resource-1-tag".to_string(),
-                release_date: 1577865600,
-                update_date: 1609488000,
+                release_date: 1577836800,
+                update_date: 1609459200,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/foo.1/download?version=1".to_string()
                 }),
@@ -453,8 +456,8 @@ mod test {
                 id: 2,
                 name: "resource-2".to_string(),
                 tag: "resource-2-tag".to_string(),
-                release_date: 1577865600,
-                update_date: 1609488000,
+                release_date: 1577836800,
+                update_date: 1640995200,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/bar.2/download?version=2".to_string()
                 }),

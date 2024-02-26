@@ -5,7 +5,7 @@ use cornucopia_async::Params;
 use deadpool_postgres::Client;
 use thiserror::Error;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SpigotAuthor {
     pub id: i32,
     pub name: String
@@ -83,6 +83,7 @@ mod test {
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
+    use speculoos::prelude::*;
 
     #[tokio::test]
     #[named]
@@ -100,9 +101,8 @@ mod test {
         let retrieved_authors = get_spigot_authors(&context.client).await?;
         let retrieved_author = &retrieved_authors[0];
 
-        assert_eq!(retrieved_authors.len(), 1);
-        assert_eq!(retrieved_author.id, 1);
-        assert_eq!(retrieved_author.name, "author-1");
+        assert_that(&retrieved_authors).has_length(1);
+        assert_that(&retrieved_author).is_equal_to(author);
 
         // Teardown
         context.drop().await?;
@@ -131,9 +131,8 @@ mod test {
         let retrieved_authors = get_spigot_authors(&context.client).await?;
         let retrieved_author = &retrieved_authors[0];
 
-        assert_eq!(retrieved_authors.len(), 1);
-        assert_eq!(retrieved_author.id, 1);
-        assert_eq!(retrieved_author.name, "author-1");
+        assert_that(&retrieved_authors).has_length(1);
+        assert_that(&retrieved_author).is_equal_to(author);
 
         // Teardown
         context.drop().await?;
@@ -158,7 +157,7 @@ mod test {
         let highest_id = get_highest_spigot_author_id(&context.client).await?;
 
         // Assert
-        assert_eq!(highest_id, 3);
+        assert_that(&highest_id).is_equal_to(3);
 
         // Teardown
         context.drop().await?;

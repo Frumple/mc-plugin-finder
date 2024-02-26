@@ -206,6 +206,7 @@ pub mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
 
+    use speculoos::prelude::*;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
@@ -244,7 +245,7 @@ pub mod test {
         let response = spigot_client.get_authors_from_api(request).await?;
 
         // Assert
-        assert_eq!(response, expected_response);
+        assert_that(&response).is_equal_to(expected_response);
 
         Ok(())
     }

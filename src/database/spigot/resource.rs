@@ -6,7 +6,7 @@ use deadpool_postgres::Client;
 use thiserror::Error;
 use time::OffsetDateTime;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SpigotResource {
     pub id: i32,
     pub name: String,
@@ -112,6 +112,7 @@ mod test {
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
+    use speculoos::prelude::*;
     use time::macros::datetime;
 
     #[tokio::test]
@@ -133,19 +134,8 @@ mod test {
         let retrieved_resources = get_spigot_resources(&context.client).await?;
         let retrieved_resource = &retrieved_resources[0];
 
-        assert_eq!(retrieved_resources.len(), 1);
-
-        assert_eq!(retrieved_resource.id, 1);
-        assert_eq!(retrieved_resource.name, "resource-1");
-        assert_eq!(retrieved_resource.tag, "resource-1-tag");
-        assert_eq!(retrieved_resource.slug, "foo.1");
-        assert_eq!(retrieved_resource.release_date, datetime!(2020-01-01 0:00 UTC));
-        assert_eq!(retrieved_resource.update_date, datetime!(2021-01-01 0:00 UTC));
-        assert_eq!(retrieved_resource.author_id, 1);
-        assert_eq!(retrieved_resource.version_id, 1);
-        assert_eq!(retrieved_resource.version_name, None);
-        assert_eq!(retrieved_resource.premium, Some(false));
-        assert_eq!(retrieved_resource.source_code_link, Some("https://github.com/Frumple/foo".to_string()));
+        assert_that(&retrieved_resources).has_length(1);
+        assert_that(&retrieved_resource).is_equal_to(resource);
 
         // Teardown
         context.drop().await?;
@@ -187,19 +177,8 @@ mod test {
         let retrieved_resources = get_spigot_resources(&context.client).await?;
         let retrieved_resource = &retrieved_resources[0];
 
-        assert_eq!(retrieved_resources.len(), 1);
-
-        assert_eq!(retrieved_resource.id, 1);
-        assert_eq!(retrieved_resource.name, "resource-1-updated");
-        assert_eq!(retrieved_resource.tag, "resource-1-tag-updated");
-        assert_eq!(retrieved_resource.slug, "foo-updated.1");
-        assert_eq!(retrieved_resource.release_date, datetime!(2020-01-01 0:00 UTC));
-        assert_eq!(retrieved_resource.update_date, datetime!(2021-07-01 0:00 UTC));
-        assert_eq!(retrieved_resource.author_id, 1);
-        assert_eq!(retrieved_resource.version_id, 2);
-        assert_eq!(retrieved_resource.version_name, None);
-        assert_eq!(retrieved_resource.premium, Some(true));
-        assert_eq!(retrieved_resource.source_code_link, Some("https://github.com/Frumple/foo-updated".to_string()));
+        assert_that(&retrieved_resources).has_length(1);
+        assert_that(&retrieved_resource).is_equal_to(&updated_resource);
 
         // Teardown
         context.drop().await?;
@@ -249,7 +228,7 @@ mod test {
         let latest_update_date = get_latest_spigot_resource_update_date(&context.client).await?;
 
         // Assert
-        assert_eq!(latest_update_date, datetime!(2023-01-01 0:00 UTC));
+        assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));
 
         // Teardown
         context.drop().await?;
