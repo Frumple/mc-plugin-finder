@@ -16,5 +16,8 @@ CREATE TABLE spigot_resource (
   version_name text,
   premium boolean,
   source_code_link text,
+  source_repository_host text,
+  source_repository_owner text,
+  source_repository_name text,
   PRIMARY KEY (id)
 );

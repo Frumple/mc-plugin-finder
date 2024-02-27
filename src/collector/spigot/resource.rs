@@ -1,5 +1,6 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
+use crate::collector::util::extract_source_repository_from_url;
 use crate::database::spigot::resource::{SpigotResource, get_latest_spigot_resource_update_date, upsert_spigot_resource};
 
 use anyhow::Result;
@@ -286,7 +287,7 @@ async fn process_incoming_resource(incoming_resource: IncomingSpigotResource) ->
 
     if let Some(file) = incoming_resource.file {
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
-            let resource = SpigotResource {
+            let mut resource = SpigotResource {
                 id: incoming_resource.id,
                 name: incoming_resource.name,
                 tag: incoming_resource.tag,
@@ -297,8 +298,23 @@ async fn process_incoming_resource(incoming_resource: IncomingSpigotResource) ->
                 version_id: incoming_resource.version.id,
                 version_name: None::<String>,
                 premium: incoming_resource.premium,
-                source_code_link: incoming_resource.source_code_link
+                source_code_link: incoming_resource.source_code_link.clone(),
+                source_repository_host: None,
+                source_repository_owner: None,
+                source_repository_name: None
             };
+
+            let option_repo = if let Some(url) = incoming_resource.source_code_link {
+                extract_source_repository_from_url(url.as_str())
+            } else {
+                None
+            };
+
+            if let Some(repo) = option_repo {
+                resource.source_repository_host = Some(repo.host);
+                resource.source_repository_owner = Some(repo.owner);
+                resource.source_repository_name = Some(repo.name);
+            }
 
             Ok(resource)
         } else {
@@ -321,7 +337,7 @@ async fn process_incoming_resource(incoming_resource: IncomingSpigotResource) ->
 fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
     let re = Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap();
     let caps = re.captures(url)?;
-    Some(String::from(&caps[1]))
+    Some(caps[1].to_string())
 }
 
 #[cfg(test)]
@@ -335,10 +351,24 @@ mod test {
     use wiremock::matchers::{method, path, query_param};
 
     #[test]
-    fn should_extract_slug_from_file_download_url() {
+    fn should_extract_slug_with_single_word_from_file_download_url() {
         let url = "resources/foo.1/download?version=1";
         let slug = extract_slug_from_file_download_url(url);
         assert_that(&slug).is_some().is_equal_to("foo.1".to_string());
+    }
+
+    #[test]
+    fn should_extract_slug_with_dashes_from_file_download_url() {
+        let url = "resources/foo-bar-baz.1/download?version=1";
+        let slug = extract_slug_from_file_download_url(url);
+        assert_that(&slug).is_some().is_equal_to("foo-bar-baz.1".to_string());
+    }
+
+    #[test]
+    fn should_extract_slug_with_special_character_from_file_download_url() {
+        let url = "resources/%C2%BB-foo.1/download?version=1";
+        let slug = extract_slug_from_file_download_url(url);
+        assert_that(&slug).is_some().is_equal_to("%C2%BB-foo.1".to_string());
     }
 
     #[test]
@@ -408,6 +438,9 @@ mod test {
         assert_that(&resource.version_id).is_equal_to(1);
         assert_that(&resource.premium).is_some().is_false();
         assert_that(&resource.source_code_link).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
+        assert_that(&resource.source_repository_host).is_some().is_equal_to("github.com".to_string());
+        assert_that(&resource.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
+        assert_that(&resource.source_repository_name).is_some().is_equal_to("foo".to_string());
 
         Ok(())
     }
@@ -482,7 +515,7 @@ mod test {
                     id: 2
                 },
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/bar".to_string())
+                source_code_link: Some("https://gitlab.com/Frumple/bar".to_string())
             }
         ]
     }

@@ -19,10 +19,13 @@ pub struct SpigotResource {
     pub version_id: i32,
     pub version_name: Option<String>,
     pub premium: Option<bool>,
-    pub source_code_link: Option<String>
+    pub source_code_link: Option<String>,
+    pub source_repository_host: Option<String>,
+    pub source_repository_owner: Option<String>,
+    pub source_repository_name: Option<String>
 }
 
-impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String> {
+impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String> {
     fn from(resource: SpigotResource) -> Self {
         UpsertSpigotResourceParams {
             id: resource.id,
@@ -35,7 +38,10 @@ impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String,
             version_id: resource.version_id,
             version_name: resource.version_name,
             premium: resource.premium,
-            source_code_link: resource.source_code_link
+            source_code_link: resource.source_code_link,
+            source_repository_host: resource.source_repository_host,
+            source_repository_owner: resource.source_repository_owner,
+            source_repository_name: resource.source_repository_name
         }
     }
 }
@@ -53,7 +59,10 @@ impl From<SpigotResourceEntity> for SpigotResource {
             version_id: entity.version_id,
             version_name: entity.version_name,
             premium: entity.premium,
-            source_code_link: entity.source_code_link
+            source_code_link: entity.source_code_link,
+            source_repository_host: entity.source_repository_host,
+            source_repository_owner: entity.source_repository_owner,
+            source_repository_name: entity.source_repository_name
         }
     }
 }
@@ -172,7 +181,10 @@ mod test {
             version_id: 2,
             version_name: None,
             premium: Some(true),
-            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string())
+            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string()),
+            source_repository_host: Some("github.com".to_string()),
+            source_repository_owner: Some("Frumple".to_string()),
+            source_repository_name: Some("foo-updated".to_string())
         };
 
         // Act
@@ -261,7 +273,10 @@ mod test {
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/foo".to_string())
+                source_code_link: Some("https://github.com/Frumple/foo".to_string()),
+                source_repository_host: Some("github.com".to_string()),
+                source_repository_owner: Some("Frumple".to_string()),
+                source_repository_name: Some("foo".to_string())
             },
             SpigotResource {
                 id: 2,
@@ -274,7 +289,10 @@ mod test {
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/bar".to_string())
+                source_code_link: Some("https://gitlab.com/Frumple/bar".to_string()),
+                source_repository_host: Some("gitlab.com".to_string()),
+                source_repository_owner: Some("Frumple".to_string()),
+                source_repository_name: Some("bar".to_string())
             },
             SpigotResource {
                 id: 3,
@@ -287,7 +305,10 @@ mod test {
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/baz".to_string())
+                source_code_link: Some("https://bitbucket.org/Frumple/baz".to_string()),
+                source_repository_host: Some("bitbucket.org".to_string()),
+                source_repository_owner: Some("Frumple".to_string()),
+                source_repository_name: Some("baz".to_string())
             }
         ]
     }

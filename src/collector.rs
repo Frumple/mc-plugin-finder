@@ -1,4 +1,5 @@
 pub mod spigot;
+pub mod util;
 
 use url::Url;
 

@@ -1,8 +1,8 @@
---: SpigotResourceEntity(version_name?, premium?, source_code_link?)
+--: SpigotResourceEntity(version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_spigot_resource (version_name?, premium?, source_code_link?)
-INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link)
-  VALUES (:id, :name, :tag, :slug, :release_date, :update_date, :author_id, :version_id, :version_name, :premium, :source_code_link)
+--! upsert_spigot_resource (version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :name, :tag, :slug, :release_date, :update_date, :author_id, :version_id, :version_name, :premium, :source_code_link, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (id)
   DO UPDATE SET
     name = EXCLUDED.name,
@@ -14,7 +14,10 @@ INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, aut
     version_id = EXCLUDED.version_id,
     version_name = EXCLUDED.version_name,
     premium = EXCLUDED.premium,
-    source_code_link = EXCLUDED.source_code_link;
+    source_code_link = EXCLUDED.source_code_link,
+    source_repository_host = EXCLUDED.source_repository_host,
+    source_repository_owner = EXCLUDED.source_repository_owner,
+    source_repository_name = EXCLUDED.source_repository_name;
 
 --! get_spigot_resources : SpigotResourceEntity
 SELECT * FROM spigot_resource;
