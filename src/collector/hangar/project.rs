@@ -1,5 +1,7 @@
 use crate::collector::HttpServer;
 use crate::collector::hangar::HangarClient;
+use crate::collector::util::extract_source_repository_from_url;
+use crate::database::hangar::project::{HangarProject, get_latest_hangar_project_update_date, upsert_hangar_project};
 
 use anyhow::Result;
 use deadpool_postgres::Client;
@@ -12,6 +14,7 @@ use std::cell::Cell;
 use std::fmt::Debug;
 use std::rc::Rc;
 use thiserror::Error;
+use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
 
 const HANGAR_POPULATE_PROJECTS_REQUESTS_AHEAD: usize = 2;
@@ -51,7 +54,7 @@ impl RequestAhead for GetHangarProjectsRequest {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct GetHangarProjectsResponse {
-    pagination: GetHangarProjectsResponsePagination,
+    pagination: HangarResponsePagination,
     result: Vec<IncomingHangarProject>
 }
 
@@ -59,13 +62,6 @@ impl GetHangarProjectsResponse {
     fn more_projects_available(&self) -> bool {
         self.pagination.offset + self.pagination.limit < self.pagination.count
     }
-}
-
-#[derive(Clone, Debug,  Deserialize, PartialEq, Serialize)]
-struct GetHangarProjectsResponsePagination {
-    limit: u32,
-    offset: u32,
-    count: u32
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -110,7 +106,47 @@ pub struct IncomingHangarProjectLink {
     url: Option<String>
 }
 
-// TODO: IncomingHangarProjectError?
+#[derive(Clone, Debug, Serialize)]
+pub struct GetHangarProjectVersionsRequest {
+    limit: u32,
+    offset: u32
+}
+
+impl GetHangarProjectVersionsRequest {
+    fn create_request() -> Self {
+        Self {
+            limit: 1,
+            offset: 0
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct GetHangarProjectVersionsResponse {
+    pagination: HangarResponsePagination,
+    result: Vec<IncomingHangarProjectVersion>
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct IncomingHangarProjectVersion {
+    name: String
+    // TODO: Get visibility and channel?
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+struct HangarResponsePagination {
+    limit: u32,
+    offset: u32,
+    count: u32
+}
+
+#[derive(Debug, Error)]
+enum IncomingHangarProjectError {
+    #[error("Skipping project {slug}: Latest version not found.")]
+    LatestVersionNotFound {
+        slug: String
+    }
+}
 
 impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
@@ -127,10 +163,26 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(None, |incoming_project| {
                 let count_rc_clone = count_rc.clone();
                 async move {
-                    // TODO: Process and upsert
-                    // println!("{:?}", incoming_project);
+                    let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
 
-                    count_rc_clone.set(count_rc_clone.get() + 1);
+                    match version_result {
+                        Ok(version) => {
+                            let process_result = process_incoming_project(incoming_project, &version).await;
+
+                            match process_result {
+                                Ok(project) => {
+                                    let db_result = upsert_hangar_project(db_client, project).await;
+
+                                    match db_result {
+                                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                                        Err(err) => warn!("{}", err)
+                                    }
+                                }
+                                Err(err) => warn!("{}", err)
+                            }
+                        }
+                        Err(err) => warn!("{}", err)
+                    }
 
                     Ok(())
                 }
@@ -161,6 +213,38 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
         Ok(response)
     }
+
+    #[instrument(
+        level = "trace",
+        skip(self)
+    )]
+    async fn get_project_latest_version_from_api(&self, slug: &str) -> Result<String> {
+        self.rate_limiter.until_ready().await;
+
+        // Hangar's "projects/{slug}/versions" seems to order versions for newest to oldest.
+        // This allows us to assume that the first version returned is the latest.
+        // However, there is no guarantee this behaviour will remain in the future.
+        let request = GetHangarProjectVersionsRequest::create_request();
+
+        let path = &["projects/", slug, "/versions"].concat();
+        let url = self.http_server.base_url().join(path)?;
+        let raw_response = self.api_client.get(url)
+            .query(&request)
+            .send()
+            .await?;
+
+        let response: GetHangarProjectVersionsResponse = raw_response.json().await?;
+
+        if response.result.is_empty() {
+            return Err(
+                IncomingHangarProjectError::LatestVersionNotFound {
+                    slug: slug.to_string()
+                }.into()
+            )
+        }
+
+        Ok(response.result[0].name.clone())
+    }
 }
 
 impl<T> PageTurner<GetHangarProjectsRequest> for HangarClient<T> where T: HttpServer + Send + Sync {
@@ -179,7 +263,51 @@ impl<T> PageTurner<GetHangarProjectsRequest> for HangarClient<T> where T: HttpSe
     }
 }
 
-// TODO: process_incoming_project
+async fn process_incoming_project(incoming_project: IncomingHangarProject, version: &str) -> Result<HangarProject> {
+    let source_code_link = find_source_code_link(incoming_project.settings);
+
+    let mut project = HangarProject {
+        slug: incoming_project.namespace.slug,
+        owner: incoming_project.namespace.owner,
+        name: incoming_project.name,
+        description: incoming_project.description,
+        created_at: OffsetDateTime::parse(&incoming_project.created_at, &Rfc3339)?,
+        last_updated: OffsetDateTime::parse(&incoming_project.last_updated, &Rfc3339)?,
+        visibility: incoming_project.visibility,
+        avatar_url: incoming_project.avatar_url,
+        version: version.to_string(),
+        source_code_link: source_code_link.clone(),
+        source_repository_host: None,
+        source_repository_owner: None,
+        source_repository_name: None
+    };
+
+    let option_repo = if let Some(url) = source_code_link {
+        extract_source_repository_from_url(url.as_str())
+    } else {
+        None
+    };
+
+    if let Some(repo) = option_repo {
+        project.source_repository_host = Some(repo.host);
+        project.source_repository_owner = Some(repo.owner);
+        project.source_repository_name = Some(repo.name);
+    }
+
+    Ok(project)
+}
+
+fn find_source_code_link(settings: IncomingHangarProjectSettings) -> Option<String> {
+    for link_group in settings.links {
+        for link in link_group.links {
+            if link.name.contains("Source") {
+                return link.url
+            }
+        }
+    }
+
+    None
+}
 
 #[cfg(test)]
 mod test {
@@ -199,7 +327,7 @@ mod test {
         let request = GetHangarProjectsRequest::create_request();
 
         let expected_response = GetHangarProjectsResponse {
-            pagination: GetHangarProjectsResponsePagination {
+            pagination: HangarResponsePagination {
                 limit: 25,
                 offset: 50,
                 count: 100
@@ -214,6 +342,7 @@ mod test {
             .and(path("/projects"))
             .and(query_param("limit", request.limit.to_string().as_str()))
             .and(query_param("offset", request.offset.to_string().as_str()))
+            .and(query_param("sort", request.sort.as_str()))
             .respond_with(response_template)
             .mount(hangar_server.mock())
             .await;
@@ -228,7 +357,76 @@ mod test {
         Ok(())
     }
 
-    // TODO: should_process_incoming_project
+    #[tokio::test]
+    async fn should_get_project_latest_version_from_api() -> Result<()> {
+        // Arrange
+        let hangar_server = HangarTestServer::new().await;
+
+        let request = GetHangarProjectVersionsRequest::create_request();
+
+        let expected_version = "v1.2.3";
+        let expected_response = GetHangarProjectVersionsResponse {
+            pagination: HangarResponsePagination {
+                limit: 0,
+                offset: 1,
+                count: 10
+            },
+            result: vec![
+                IncomingHangarProjectVersion {
+                    name: expected_version.to_string()
+                }
+            ]
+        };
+
+        let response_template = ResponseTemplate::new(200)
+            .set_body_json(expected_response);
+
+        let slug = "foo";
+        let request_path = &["projects/", slug, "/versions"].concat();
+        Mock::given(method("GET"))
+            .and(path(request_path))
+            .and(query_param("limit", request.limit.to_string().as_str()))
+            .and(query_param("offset", request.offset.to_string().as_str()))
+            .respond_with(response_template)
+            .mount(hangar_server.mock())
+            .await;
+
+        // Act
+        let hangar_client = HangarClient::new(hangar_server)?;
+        let version = hangar_client.get_project_latest_version_from_api(slug).await?;
+
+        // Assert
+        assert_that(&version).is_equal_to(expected_version.to_string());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_process_incoming_project() -> Result<()> {
+        // Arrange
+        let incoming_project = create_test_projects()[0].clone();
+        let version = "v1.2.3";
+
+        // Act
+        let project = process_incoming_project(incoming_project, version).await?;
+
+        // Assert
+        assert_that(&project.slug).is_equal_to("foo".to_string());
+        assert_that(&project.owner).is_equal_to("Frumple".to_string());
+        assert_that(&project.name).is_equal_to("project-1".to_string());
+        assert_that(&project.description).is_equal_to("project-1-description".to_string());
+        assert_that(&project.created_at).is_equal_to(datetime!(2020-01-01 0:00 UTC));
+        assert_that(&project.last_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&project.visibility).is_equal_to("public".to_string());
+        assert_that(&project.avatar_url).is_equal_to("https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string());
+        assert_that(&project.version).is_equal_to(version.to_string());
+        assert_that(&project.source_code_link).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
+        assert_that(&project.source_repository_host).is_some().is_equal_to("github.com".to_string());
+        assert_that(&project.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
+        assert_that(&project.source_repository_name).is_some().is_equal_to("foo".to_string());
+
+        Ok(())
+    }
 
     fn create_test_projects() -> Vec<IncomingHangarProject> {
         vec![

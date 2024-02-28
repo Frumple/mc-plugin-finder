@@ -1,5 +1,6 @@
 mod cornucopia;
 pub mod spigot;
+pub mod hangar;
 
 use anyhow::Result;
 use deadpool_postgres::{Config, CreatePoolError, Pool, Runtime};

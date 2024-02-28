@@ -23,4 +23,4 @@ INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, aut
 SELECT * FROM spigot_resource;
 
 --! get_latest_spigot_resource_update_date
-SELECT max(update_date) from spigot_resource;
+SELECT max(update_date) FROM spigot_resource;

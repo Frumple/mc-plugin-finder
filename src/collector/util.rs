@@ -32,10 +32,7 @@ pub fn extract_source_repository_from_url(url: &str) -> Option<SourceRepository>
 }
 
 fn is_source_repository_host(host: &str) -> bool {
-    match host {
-        "github.com" | "gitlab.com" | "bitbucket.org" => true,
-        _ => false
-    }
+    matches!(host, "github.com" | "gitlab.com" | "bitbucket.org")
 }
 
 #[cfg(test)]

@@ -415,14 +415,13 @@ mod test {
     #[tokio::test]
     async fn should_process_incoming_resource() -> Result<()> {
         // Arrange
-        let incoming_resource: IncomingSpigotResource = create_test_resources()[0].clone();
+        let incoming_resource = create_test_resources()[0].clone();
 
         // Act
         let resource = process_incoming_resource(incoming_resource).await?;
 
         // Assert
         assert_that(&resource.id).is_equal_to(1);
-
         assert_that(&resource.name).is_equal_to("resource-1".to_string());
         assert_that(&resource.tag).is_equal_to("resource-1-tag".to_string());
         assert_that(&resource.slug).is_equal_to("foo.1".to_string());
