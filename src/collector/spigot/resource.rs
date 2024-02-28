@@ -59,11 +59,6 @@ impl RequestAhead for GetSpigotResourcesRequest {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-struct GetSpigotResourcesRequestHeaders {
-
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize)]
 struct GetSpigotResourcesResponse {
     headers: GetSpigotResourcesResponseHeaders,
@@ -173,7 +168,6 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         info!("Spigot resources populated: {}", count);
 
         result
-
     }
 
     #[instrument(
@@ -399,14 +393,14 @@ mod test {
             .set_body_json(expected_response.resources.clone());
 
             Mock::given(method("GET"))
-            .and(path("/resources"))
-            .and(query_param("size", request.size.to_string().as_str()))
-            .and(query_param("page", expected_response.headers.x_page_index.to_string().as_str()))
-            .and(query_param("sort", request.sort.as_str()))
-            .and(query_param("fields", SPIGOT_RESOURCES_REQUEST_FIELDS))
-            .respond_with(response_template)
-            .mount(spigot_server.mock())
-            .await;
+                .and(path("/resources"))
+                .and(query_param("size", request.size.to_string().as_str()))
+                .and(query_param("page", expected_response.headers.x_page_index.to_string().as_str()))
+                .and(query_param("sort", request.sort.as_str()))
+                .and(query_param("fields", SPIGOT_RESOURCES_REQUEST_FIELDS))
+                .respond_with(response_template)
+                .mount(spigot_server.mock())
+                .await;
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
@@ -419,7 +413,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_process_resource() -> Result<()> {
+    async fn should_process_incoming_resource() -> Result<()> {
         // Arrange
         let incoming_resource: IncomingSpigotResource = create_test_resources()[0].clone();
 

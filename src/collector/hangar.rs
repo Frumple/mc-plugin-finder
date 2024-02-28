@@ -9,39 +9,40 @@ use reqwest::Client;
 use std::num::NonZeroU32;
 use url::Url;
 
-mod author;
-mod resource;
+mod project;
 
-const SPIGOT_USER_AGENT: &str = "mc-plugin-finder";
-const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
+const HANGAR_USER_AGENT: &str = "mc-plugin-finder";
+const HANGAR_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
 
 #[derive(Debug)]
-pub struct SpigotServer;
-impl HttpServer for SpigotServer {
+pub struct HangarServer;
+impl HttpServer for HangarServer {
     async fn new() -> Self {
         Self
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://api.spiget.org/v2/")
-          .expect("Spigot base URL could not be parsed")
+        // TODO: Switch to Hangar production when ready
+        // Url::parse("https://hangar.papermc.io/api/v1/")
+        Url::parse("https://hangar.papermc.dev/api/v1/")
+          .expect("Hangar base URL could not be parsed")
     }
 }
 
 #[derive(Debug)]
-pub struct SpigotClient<T> {
+pub struct HangarClient<T> {
     api_client: Client,
     rate_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     http_server: T
 }
 
-impl<T> SpigotClient<T> {
-    pub fn new(http_server: T) -> Result<SpigotClient<T>> {
+impl<T> HangarClient<T> {
+    pub fn new(http_server: T) -> Result<HangarClient<T>> {
         let api_client = reqwest::Client::builder()
-            .user_agent(SPIGOT_USER_AGENT)
+            .user_agent(HANGAR_USER_AGENT)
             .build()?;
 
-        let quota = Quota::per_second(SPIGOT_RATE_LIMIT_PER_SECOND);
+        let quota = Quota::per_second(HANGAR_RATE_LIMIT_PER_SECOND);
         let rate_limiter = RateLimiter::direct(quota);
 
         Ok(Self { api_client, rate_limiter, http_server })
@@ -54,17 +55,17 @@ mod test {
     use wiremock::MockServer;
 
     #[derive(Debug)]
-    pub struct SpigotTestServer {
+    pub struct HangarTestServer {
         mock_server: MockServer
     }
 
-    impl SpigotTestServer {
+    impl HangarTestServer {
         pub fn mock(&self) -> &MockServer {
             &self.mock_server
         }
     }
 
-    impl HttpServer for SpigotTestServer {
+    impl HttpServer for HangarTestServer {
         async fn new() -> Self {
             Self {
                 mock_server: MockServer::start().await
@@ -73,7 +74,7 @@ mod test {
 
         fn base_url(&self) -> Url {
             Url::parse(&self.mock_server.uri())
-                .expect("Spigot mock server base URL could not be parsed")
+                .expect("Hangar mock server base URL could not be parsed")
         }
     }
 }

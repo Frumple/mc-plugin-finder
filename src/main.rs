@@ -1,4 +1,5 @@
 use crate::collector::HttpServer;
+use crate::collector::hangar::{HangarClient, HangarServer};
 use crate::collector::spigot::{SpigotClient, SpigotServer};
 use crate::database::Database;
 
@@ -23,17 +24,22 @@ async fn main() -> Result<()> {
     let db_pool = db.create_pool(LIVE_DB_NAME).await?;
     let db_client = db_pool.get().await?;
 
-    // Initialize API client
+    // Initialize API clients
     let spigot_server = SpigotServer::new().await;
     let spigot_client = SpigotClient::new(spigot_server)?;
 
-    spigot_client.populate_spigot_authors(&db_client).await?;
+    let hangar_server = HangarServer::new().await;
+    let hangar_client = HangarClient::new(hangar_server)?;
+
+    // spigot_client.populate_spigot_authors(&db_client).await?;
 
     // spigot_client.update_spigot_authors(&db_client).await?;
 
     // spigot_client.populate_spigot_resources(&db_client).await?;
 
     // spigot_client.update_spigot_resources(&db_client).await?;
+
+    hangar_client.populate_hangar_projects(&db_client).await?;
 
     Ok(())
 }
