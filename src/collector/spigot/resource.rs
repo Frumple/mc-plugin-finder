@@ -13,7 +13,6 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::fmt::Debug;
-use std::rc::Rc;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
@@ -138,33 +137,15 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_spigot_resources(&self, db_client: &Client) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_populate_request();
 
-        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+        let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
             .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_resource| {
-                let count_rc_clone = count_rc.clone();
-                async move {
-                    let process_result = process_incoming_resource(incoming_resource).await;
-
-                    match process_result {
-                        Ok(resource) => {
-                            let db_result = upsert_spigot_resource(db_client, resource).await;
-
-                            match db_result {
-                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                Err(err) => warn!("{}", err)
-                            }
-                        }
-                        Err(err) => warn!("{}", err)
-                    }
-                    Ok(())
-                }
-            })
+            .try_for_each_concurrent(None, |incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
             .await;
 
-        let count = count_rc.get();
+        let count = count_cell.get();
         info!("Spigot resources populated: {}", count);
 
         result
@@ -176,37 +157,16 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn update_spigot_resources(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_update_request();
 
-        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+        let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each(|incoming_resource| {
-                let count_rc_clone = count_rc.clone();
-                async move {
-                    // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
-                    // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
-
-                    let process_result = process_incoming_resource(incoming_resource).await;
-
-                    match process_result {
-                        Ok(resource) => {
-                            let db_result = upsert_spigot_resource(db_client, resource).await;
-
-                            match db_result {
-                                Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                Err(err) => warn!("{}", err)
-                            }
-                        }
-                        Err(err) => warn!("{}", err)
-                    }
-                    Ok(())
-                }
-            })
+            .try_for_each(|incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
             .await;
 
-        let count = count_rc.get();
+        let count = count_cell.get();
         info!("Spigot resources updated: {}", count);
 
         result
@@ -273,7 +233,27 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn process_incoming_resource(incoming_resource: IncomingSpigotResource) -> Result<SpigotResource> {
+async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db_client: &Client, count_cell: &Cell<u32>) -> Result<()> {
+    // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
+    // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
+
+    let process_result = convert_incoming_resource(incoming_resource).await;
+
+    match process_result {
+        Ok(resource) => {
+            let db_result = upsert_spigot_resource(db_client, resource).await;
+
+            match db_result {
+                Ok(_) => count_cell.set(count_cell.get() + 1),
+                Err(err) => warn!("{}", err)
+            }
+        }
+        Err(err) => warn!("{}", err)
+    }
+    Ok(())
+}
+
+async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) -> Result<SpigotResource> {
     let resource_id = incoming_resource.id;
 
     if let Some(file) = incoming_resource.file {
@@ -415,7 +395,7 @@ mod test {
         let incoming_resource = create_test_resources()[0].clone();
 
         // Act
-        let resource = process_incoming_resource(incoming_resource).await?;
+        let resource = convert_incoming_resource(incoming_resource).await?;
 
         // Assert
         assert_that(&resource.id).is_equal_to(1);
@@ -444,7 +424,7 @@ mod test {
         });
 
         // Act
-        let result = process_incoming_resource(incoming_resource).await;
+        let result = convert_incoming_resource(incoming_resource).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -460,7 +440,7 @@ mod test {
         incoming_resource.file = None;
 
         // Act
-        let result = process_incoming_resource(incoming_resource).await;
+        let result = convert_incoming_resource(incoming_resource).await;
         let error = result.unwrap_err();
 
         // Assert

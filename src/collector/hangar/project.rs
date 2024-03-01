@@ -12,7 +12,6 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::fmt::Debug;
-use std::rc::Rc;
 use thiserror::Error;
 use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
@@ -155,41 +154,15 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_hangar_projects(&self, db_client: &Client) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
-        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+        let count_cell: Cell<u32> = Cell::new(0);
 
         let result= self
             .pages_ahead(HANGAR_POPULATE_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_project| {
-                let count_rc_clone = count_rc.clone();
-                async move {
-                    let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
-
-                    match version_result {
-                        Ok(version) => {
-                            let process_result = process_incoming_project(incoming_project, &version).await;
-
-                            match process_result {
-                                Ok(project) => {
-                                    let db_result = upsert_hangar_project(db_client, project).await;
-
-                                    match db_result {
-                                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                        Err(err) => warn!("{}", err)
-                                    }
-                                }
-                                Err(err) => warn!("{}", err)
-                            }
-                        }
-                        Err(err) => warn!("{}", err)
-                    }
-
-                    Ok(())
-                }
-            })
+            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_client, &count_cell))
             .await;
 
-        let count = count_rc.get();
+        let count = count_cell.get();
         info!("Hangar projects populated: {}", count);
 
         result
@@ -201,45 +174,44 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     pub async fn update_hangar_projects(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
-        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+        let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.last_updated.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each(|incoming_project| {
-                let count_rc_clone = count_rc.clone();
-                async move {
-                    let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
-
-                    match version_result {
-                        Ok(version) => {
-                            let process_result = process_incoming_project(incoming_project, &version).await;
-
-                            match process_result {
-                                Ok(project) => {
-                                    let db_result = upsert_hangar_project(db_client, project).await;
-
-                                    match db_result {
-                                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
-                                        Err(err) => warn!("{}", err)
-                                    }
-                                }
-                                Err(err) => warn!("{}", err)
-                            }
-                        }
-                        Err(err) => warn!("{}", err)
-                    }
-
-                    Ok(())
-                }
-            })
+            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_client, &count_cell))
             .await;
 
-        let count = count_rc.get();
+        let count = count_cell.get();
         info!("Hangar projects updated: {}", count);
 
         result
+    }
+
+    async fn process_incoming_project(&self, incoming_project: IncomingHangarProject, db_client: &Client, count_cell: &Cell<u32>) -> Result<()> {
+        let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
+
+        match version_result {
+            Ok(version) => {
+                let process_result = convert_incoming_project(incoming_project, &version).await;
+
+                match process_result {
+                    Ok(project) => {
+                        let db_result = upsert_hangar_project(db_client, project).await;
+
+                        match db_result {
+                            Ok(_) => count_cell.set(count_cell.get() + 1),
+                            Err(err) => warn!("{}", err)
+                        }
+                    }
+                    Err(err) => warn!("{}", err)
+                }
+            }
+            Err(err) => warn!("{}", err)
+        }
+
+        Ok(())
     }
 
     #[instrument(
@@ -308,7 +280,7 @@ impl<T> PageTurner<GetHangarProjectsRequest> for HangarClient<T> where T: HttpSe
     }
 }
 
-async fn process_incoming_project(incoming_project: IncomingHangarProject, version: &str) -> Result<HangarProject> {
+async fn convert_incoming_project(incoming_project: IncomingHangarProject, version: &str) -> Result<HangarProject> {
     let source_code_link = find_source_code_link(incoming_project.settings);
 
     let mut project = HangarProject {
@@ -453,7 +425,7 @@ mod test {
         let version = "v1.2.3";
 
         // Act
-        let project = process_incoming_project(incoming_project, version).await?;
+        let project = convert_incoming_project(incoming_project, version).await?;
 
         // Assert
         assert_that(&project.slug).is_equal_to("foo".to_string());
