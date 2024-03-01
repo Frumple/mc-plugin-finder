@@ -2,8 +2,12 @@ use crate::collector::HttpServer;
 use crate::collector::hangar::{HangarClient, HangarServer};
 use crate::collector::spigot::{SpigotClient, SpigotServer};
 use crate::database::Database;
+use crate::database::spigot::author::get_highest_spigot_author_id;
+use crate::database::spigot::resource::get_latest_spigot_resource_update_date;
 
 use anyhow::Result;
+use database::hangar::project::get_latest_hangar_project_update_date;
+use tracing::info;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 mod collector;
@@ -33,13 +37,21 @@ async fn main() -> Result<()> {
 
     // spigot_client.populate_spigot_authors(&db_client).await?;
 
-    // spigot_client.update_spigot_authors(&db_client).await?;
+    // let highest_author_id = get_highest_spigot_author_id(&db_client).await?;
+    // info!("Highest id: {:?}", highest_author_id);
+    // spigot_client.update_spigot_authors(&db_client, highest_author_id).await?;
 
     // spigot_client.populate_spigot_resources(&db_client).await?;
 
-    // spigot_client.update_spigot_resources(&db_client).await?;
+    // let latest_spigot_resource_update_date = get_latest_spigot_resource_update_date(&db_client).await?;
+    // info!("Latest update date: {:?}", latest_update_date);
+    // spigot_client.update_spigot_resources(&db_client, latest_spigot_resource_update_date).await?;
 
-    hangar_client.populate_hangar_projects(&db_client).await?;
+    // hangar_client.populate_hangar_projects(&db_client).await?;
+
+    // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_client).await?;
+    // info!("Latest update date: {:?}|", latest_hangar_project_update_date);
+    // hangar_client.update_hangar_projects(&db_client, latest_hangar_project_update_date).await?;
 
     Ok(())
 }

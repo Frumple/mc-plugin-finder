@@ -1,6 +1,6 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
-use crate::database::spigot::author::{SpigotAuthor, get_highest_spigot_author_id, insert_spigot_author};
+use crate::database::spigot::author::{SpigotAuthor, insert_spigot_author};
 
 use anyhow::Result;
 use deadpool_postgres::Client;
@@ -124,10 +124,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_client)
     )]
-    pub async fn update_spigot_authors(&self, db_client: &Client) -> Result<()> {
-        let highest_author_id = get_highest_spigot_author_id(db_client).await?;
-        info!("Highest id: {:?}", highest_author_id);
-
+    pub async fn update_spigot_authors(&self, db_client: &Client, author_id_higher_than: i32) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_update_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -135,7 +132,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages(request)
             .items()
-            .try_take_while(|x| future::ready(Ok(x.id > highest_author_id)))
+            .try_take_while(|x| future::ready(Ok(x.id > author_id_higher_than)))
             .try_for_each(|author| {
                 let count_rc_clone = count_rc.clone();
                 async move {

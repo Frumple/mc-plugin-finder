@@ -1,7 +1,7 @@
 use crate::collector::HttpServer;
 use crate::collector::hangar::HangarClient;
 use crate::collector::util::extract_source_repository_from_url;
-use crate::database::hangar::project::{HangarProject, get_latest_hangar_project_update_date, upsert_hangar_project};
+use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
 
 use anyhow::Result;
 use deadpool_postgres::Client;
@@ -195,7 +195,52 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         result
     }
 
-    // TODO: update_hangar_projects
+    #[instrument(
+        skip(self, db_client)
+    )]
+    pub async fn update_hangar_projects(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
+        let request = GetHangarProjectsRequest::create_request();
+
+        let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+
+        let result = self
+            .pages(request)
+            .items()
+            .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.last_updated.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
+            .try_for_each(|incoming_project| {
+                let count_rc_clone = count_rc.clone();
+                async move {
+                    let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
+
+                    match version_result {
+                        Ok(version) => {
+                            let process_result = process_incoming_project(incoming_project, &version).await;
+
+                            match process_result {
+                                Ok(project) => {
+                                    let db_result = upsert_hangar_project(db_client, project).await;
+
+                                    match db_result {
+                                        Ok(_) => count_rc_clone.set(count_rc_clone.get() + 1),
+                                        Err(err) => warn!("{}", err)
+                                    }
+                                }
+                                Err(err) => warn!("{}", err)
+                            }
+                        }
+                        Err(err) => warn!("{}", err)
+                    }
+
+                    Ok(())
+                }
+            })
+            .await;
+
+        let count = count_rc.get();
+        info!("Hangar projects updated: {}", count);
+
+        result
+    }
 
     #[instrument(
         skip(self)

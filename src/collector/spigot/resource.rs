@@ -173,10 +173,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_client)
     )]
-    pub async fn update_spigot_resources(&self, db_client: &Client) -> Result<()> {
-        let latest_update_date = get_latest_spigot_resource_update_date(db_client).await?;
-        info!("Latest update date: {:?}", latest_update_date);
-
+    pub async fn update_spigot_resources(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_update_request();
 
         let count_rc: Rc<Cell<u32>> = Rc::new(Cell::new(0));
@@ -184,7 +181,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages(request)
             .items()
-            .try_take_while(|x| future::ready(Ok(x.update_date > latest_update_date.unix_timestamp())))
+            .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
             .try_for_each(|incoming_resource| {
                 let count_rc_clone = count_rc.clone();
                 async move {
