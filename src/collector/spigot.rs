@@ -12,6 +12,8 @@ use url::Url;
 mod author;
 mod resource;
 
+const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2/";
+
 const SPIGOT_USER_AGENT: &str = "mc-plugin-finder";
 const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
 
@@ -23,7 +25,7 @@ impl HttpServer for SpigotServer {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://api.spiget.org/v2/")
+        Url::parse(SPIGOT_BASE_URL)
           .expect("Spigot base URL could not be parsed")
     }
 }

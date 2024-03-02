@@ -11,6 +11,10 @@ use url::Url;
 
 mod project;
 
+const HANGAR_IS_LIVE: bool = true;
+const HANGAR_DEV_BASE_URL: &str = "https://hangar.papermc.dev/api/v1/";
+const HANGAR_LIVE_BASE_URL: &str = "https://hangar.papermc.io/api/v1/";
+
 const HANGAR_USER_AGENT: &str = "mc-plugin-finder";
 const HANGAR_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
@@ -22,9 +26,8 @@ impl HttpServer for HangarServer {
     }
 
     fn base_url(&self) -> Url {
-        // TODO: Switch to Hangar production when ready
-        Url::parse("https://hangar.papermc.io/api/v1/")
-        // Url::parse("https://hangar.papermc.dev/api/v1/")
+        let url = if HANGAR_IS_LIVE { HANGAR_LIVE_BASE_URL } else { HANGAR_DEV_BASE_URL };
+        Url::parse(url)
           .expect("Hangar base URL could not be parsed")
     }
 }
