@@ -316,30 +316,19 @@ mod test {
     use super::*;
     use crate::collector::spigot::test::SpigotTestServer;
 
+    use rstest::*;
     use speculoos::prelude::*;
     use time::macros::datetime;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
-    #[test]
-    fn should_extract_slug_with_single_word_from_file_download_url() {
-        let url = "resources/foo.1/download?version=1";
+    #[rstest]
+    #[case::slug_single_word("resources/foo.1/download?version=1", "foo.1")]
+    #[case::slug_with_dashes("resources/foo-bar-baz.1/download?version=1", "foo-bar-baz.1")]
+    #[case::slug_with_special_character("resources/%C2%BB-foo.1/download?version=1", "%C2%BB-foo.1")]
+    fn should_extract_slug_from_url(#[case] url: &str, #[case] expected_slug: &str) {
         let slug = extract_slug_from_file_download_url(url);
-        assert_that(&slug).is_some().is_equal_to("foo.1".to_string());
-    }
-
-    #[test]
-    fn should_extract_slug_with_dashes_from_file_download_url() {
-        let url = "resources/foo-bar-baz.1/download?version=1";
-        let slug = extract_slug_from_file_download_url(url);
-        assert_that(&slug).is_some().is_equal_to("foo-bar-baz.1".to_string());
-    }
-
-    #[test]
-    fn should_extract_slug_with_special_character_from_file_download_url() {
-        let url = "resources/%C2%BB-foo.1/download?version=1";
-        let slug = extract_slug_from_file_download_url(url);
-        assert_that(&slug).is_some().is_equal_to("%C2%BB-foo.1".to_string());
+        assert_that(&slug).is_some().is_equal_to(expected_slug.to_string());
     }
 
     #[test]

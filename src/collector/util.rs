@@ -39,83 +39,25 @@ fn is_source_repository_host(host: &str) -> bool {
 mod test {
     use super::*;
 
+    use rstest::*;
     use speculoos::prelude::*;
 
-    #[test]
-    fn should_extract_source_repository_from_github_url() {
-        let expected_repo = SourceRepository {
-            host: "github.com".to_string(),
-            owner: "Frumple".to_string(),
-            name: "foo".to_string()
-        };
-
-        let url = "https://github.com/Frumple/foo";
+    #[rstest]
+    #[case::github_url("https://github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
+    #[case::gitlab_url("https://gitlab.com/Frumple/bar", SourceRepository {host: "gitlab.com".to_string(), owner: "Frumple".to_string(), name: "bar".to_string()})]
+    #[case::bitbucket_url("https://bitbucket.org/Frumple/baz", SourceRepository {host: "bitbucket.org".to_string(), owner: "Frumple".to_string(), name: "baz".to_string()})]
+    #[case::url_with_trailing_slash("https://github.com/Frumple/foo/", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
+    #[case::url_with_trailing_path("https://github.com/Frumple/foo/wiki", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
+    fn should_extract_source_repository_from_url(#[case] url: &str, #[case] expected_repo: SourceRepository) {
         let repo = extract_source_repository_from_url(url);
         assert_that(&repo).is_some().is_equal_to(expected_repo);
     }
 
-    #[test]
-    fn should_extract_source_repository_from_gitlab_url() {
-        let expected_repo = SourceRepository {
-            host: "gitlab.com".to_string(),
-            owner: "Frumple".to_string(),
-            name: "bar".to_string()
-        };
-
-        let url = "https://gitlab.com/Frumple/bar";
-        let repo = extract_source_repository_from_url(url);
-        assert_that(&repo).is_some().is_equal_to(expected_repo);
-    }
-
-    #[test]
-    fn should_extract_source_repository_from_bitbucket_url() {
-        let expected_repo = SourceRepository {
-            host: "bitbucket.org".to_string(),
-            owner: "Frumple".to_string(),
-            name: "baz".to_string()
-        };
-
-        let url = "https://bitbucket.org/Frumple/baz";
-        let repo = extract_source_repository_from_url(url);
-        assert_that(&repo).is_some().is_equal_to(expected_repo);
-    }
-
-    #[test]
-    fn should_extract_repository_from_url_with_trailing_slash() {
-        let expected_repo = SourceRepository {
-            host: "github.com".to_string(),
-            owner: "Frumple".to_string(),
-            name: "foo".to_string()
-        };
-
-        let url = "https://github.com/Frumple/foo/";
-        let repo = extract_source_repository_from_url(url);
-        assert_that(&repo).is_some().is_equal_to(expected_repo);
-    }
-
-    #[test]
-    fn should_extract_repository_from_url_with_trailing_path() {
-        let expected_repo = SourceRepository {
-            host: "github.com".to_string(),
-            owner: "Frumple".to_string(),
-            name: "foo".to_string()
-        };
-
-        let url = "https://github.com/Frumple/foo/wiki";
-        let repo = extract_source_repository_from_url(url);
-        assert_that(&repo).is_some().is_equal_to(expected_repo);
-    }
-
-    #[test]
-    fn should_not_extract_source_repository_from_invalid_github_url() {
-        let url = "https://github.com";
-        let repo = extract_source_repository_from_url(url);
-        assert_that(&repo).is_none();
-    }
-
-    #[test]
-    fn should_not_extract_source_repository_from_other_url() {
-        let url = "https://pastebin.com/AAAAAAAA";
+    #[rstest]
+    #[case::git_repository_url_without_owner_and_name("https://github.com")]
+    #[case::git_repository_url_without_name("https://github.com/Frumple")]
+    #[case::non_git_repository_url("https://pastebin.com/AAAAAAAA")]
+    fn should_not_extract_source_repository(#[case] url: &str) {
         let repo = extract_source_repository_from_url(url);
         assert_that(&repo).is_none();
     }
