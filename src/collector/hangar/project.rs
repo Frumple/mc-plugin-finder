@@ -299,16 +299,14 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, versi
         source_repository_name: None
     };
 
-    let option_repo = if let Some(url) = source_code_link {
-        extract_source_repository_from_url(url.as_str())
-    } else {
-        None
-    };
+    if let Some(url) = source_code_link {
+        let option_repo = extract_source_repository_from_url(url.as_str());
 
-    if let Some(repo) = option_repo {
-        project.source_repository_host = Some(repo.host);
-        project.source_repository_owner = Some(repo.owner);
-        project.source_repository_name = Some(repo.name);
+        if let Some(repo) = option_repo {
+            project.source_repository_host = Some(repo.host);
+            project.source_repository_owner = Some(repo.owner);
+            project.source_repository_name = Some(repo.name);
+        }
     }
 
     Ok(project)
