@@ -40,7 +40,7 @@ enum SpigotAuthorError {
 }
 
 #[instrument(
-    level = "trace",
+    level = "debug",
     skip(db_client)
 )]
 pub async fn insert_spigot_author(db_client: &Client, author: SpigotAuthor) -> Result<()> {

@@ -1,12 +1,13 @@
-CREATE TABLE spigot_author (
+CREATE TABLE IF NOT EXISTS spigot_author (
   id serial NOT NULL,
   name text NOT NULL,
   PRIMARY KEY (id)
 );
 
-CREATE TABLE spigot_resource (
+CREATE TABLE IF NOT EXISTS spigot_resource (
   id serial NOT NULL,
   name text NOT NULL,
+  parsed_name text,
   tag text NOT NULL,
   slug text NOT NULL,
   release_date timestamptz NOT NULL,
@@ -22,7 +23,7 @@ CREATE TABLE spigot_resource (
   PRIMARY KEY (id)
 );
 
-CREATE TABLE hangar_project (
+CREATE TABLE IF NOT EXISTS hangar_project (
   slug text NOT NULL,
   owner text NOT NULL,
   name text NOT NULL,

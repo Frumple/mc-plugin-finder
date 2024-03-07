@@ -232,7 +232,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     }
 
     #[instrument(
-        level = "trace",
+        level = "debug",
         skip(self)
     )]
     async fn get_project_latest_version_from_api(&self, slug: &str) -> Result<String> {

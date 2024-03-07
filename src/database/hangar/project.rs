@@ -74,7 +74,7 @@ enum HangarProjectError {
 }
 
 #[instrument(
-    level = "trace",
+    level = "debug",
     skip(db_client)
 )]
 pub async fn upsert_hangar_project(db_client: &Client, project: HangarProject) -> Result<()> {

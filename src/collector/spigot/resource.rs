@@ -13,11 +13,20 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::fmt::Debug;
+use std::sync::OnceLock;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
+use unicode_segmentation::UnicodeSegmentation;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES: usize = 100;
+
+// TODO: Replace OnceLock with LazyCell when it stabilizes in std: https://github.com/rust-lang/rust/issues/109736
+static BRACKETS_REGEX: OnceLock<Regex> = OnceLock::new();
+static RESOURCE_NAME_REGEX: OnceLock<Regex> = OnceLock::new();
+static DISCOUNT_REGEX: OnceLock<Regex> = OnceLock::new();
+static SLUG_REGEX: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
@@ -142,7 +151,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
+            .try_for_each_concurrent(SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES, |incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -258,9 +267,12 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) ->
 
     if let Some(file) = incoming_resource.file {
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
+            let parsed_name = parse_resource_name(&incoming_resource.name);
+
             let mut resource = SpigotResource {
                 id: incoming_resource.id,
                 name: incoming_resource.name,
+                parsed_name,
                 tag: incoming_resource.tag,
                 slug,
                 release_date: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
@@ -303,8 +315,81 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) ->
     }
 }
 
+/*
+    Attempts to find the actual Spigot resource name amidst the mess of emojis, special characters, and irrelevant text that are so common in the name field.
+
+    This function performs the following preparatory steps before running a regex to get the name:
+    1. Replace emoji with `|` separator characters.
+    2. Replace `[]` or `()` brackets and their contents with `|` separator characters.
+      - Unfortunately, there are a few resources that put their resource name in brackets. We won't attempt to try parsing the name from these resources.
+    3. Remove discount text such as "SALE" and "OFF" so that it does not get matched in the regex.
+
+    The regex will then find the first alphabetical word(s) (that may be in between `|` separators), and assume that is the actual name.
+ */
+fn parse_resource_name(name: &str) -> Option<String> {
+    let mut text = replace_emoji_with_separators(name);
+    text = replace_brackets_and_bracket_contents_with_separators(&text);
+    text = remove_discount_text(&text);
+
+    extract_resource_name(&text)
+}
+
+fn replace_emoji_with_separators(input: &str) -> String {
+    let graphemes = input.graphemes(true);
+
+    graphemes.map(|x: &str| {
+        match emojis::get(x) {
+            Some(_) => "|",
+            None => x
+        }
+    }).collect()
+}
+
+fn replace_brackets_and_bracket_contents_with_separators(input: &str) -> String {
+    let re = BRACKETS_REGEX.get_or_init(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
+    re.replace_all(input, "|").into_owned()
+}
+
+fn remove_discount_text(input: &str) -> String {
+    let re = DISCOUNT_REGEX.get_or_init(|| Regex::new( r"SALE|OFF").unwrap());
+    re.replace_all(input, "").into_owned()
+}
+
+/*
+    Breakdown of this regex:
+
+    `\p{letter}\p{mark}`
+        - Matches international characters such as `é` or `ü`. It is preferred over [A-Za-z].
+
+    `[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’-]*[\p{letter}\p{mark}]+`
+        - Includes starting words that contain dashes but no whitespace.
+        - This allows us to include resources that have dashes as part of their name, but not dashes that are intended to be used as separators from other text.
+        - Examples that are included:
+        - "Anti-Xray-Webhook"
+        - "T-ExplosiveSheep"
+        - "QuickShop-Hikari"
+        - Examples that are excluded:
+        - "ZMusic - 1.20 Ready - Powerful Music System"
+        - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin"
+
+    `...[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*`
+        - Includes resource names with multiple words.
+        - Examples:
+            - "HeadDatabase"
+            - "AFK Rewards Premium"
+        - Also includes names with trailing `+` characters.
+        - Examples:
+            - "Disguise+"
+            - "Economy++"
+ */
+fn extract_resource_name(input: &str) -> Option<String> {
+    let re = RESOURCE_NAME_REGEX.get_or_init(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’-]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
+    let mat = re.find(input)?;
+    Some(mat.as_str().to_string())
+}
+
 fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
-    let re = Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap();
+    let re = SLUG_REGEX.get_or_init(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
     let caps = re.captures(url)?;
     Some(caps[1].to_string())
 }

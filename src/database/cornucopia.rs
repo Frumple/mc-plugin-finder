@@ -279,14 +279,14 @@ i32, 0 >
         | row | { row.get(0) }, mapper : | it | { it },
     }
 } }}pub mod spigot_resource
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertSpigotResourceParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,> { pub id : i32,pub name : T1,pub tag : T2,pub slug : T3,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<T4>,pub premium : Option<bool>,pub source_code_link : Option<T5>,pub source_repository_host : Option<T6>,pub source_repository_owner : Option<T7>,pub source_repository_name : Option<T8>,}#[derive( Debug, Clone, PartialEq, )] pub struct SpigotResourceEntity
-{ pub id : i32,pub name : String,pub tag : String,pub slug : String,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<String>,pub premium : Option<bool>,pub source_code_link : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct SpigotResourceEntityBorrowed < 'a >
-{ pub id : i32,pub name : &'a str,pub tag : &'a str,pub slug : &'a str,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<&'a str>,pub premium : Option<bool>,pub source_code_link : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,} impl < 'a > From < SpigotResourceEntityBorrowed <
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertSpigotResourceParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,T9 : cornucopia_async::StringSql,> { pub id : i32,pub name : T1,pub parsed_name : Option<T2>,pub tag : T3,pub slug : T4,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<T5>,pub premium : Option<bool>,pub source_code_link : Option<T6>,pub source_repository_host : Option<T7>,pub source_repository_owner : Option<T8>,pub source_repository_name : Option<T9>,}#[derive( Debug, Clone, PartialEq, )] pub struct SpigotResourceEntity
+{ pub id : i32,pub name : String,pub parsed_name : Option<String>,pub tag : String,pub slug : String,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<String>,pub premium : Option<bool>,pub source_code_link : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct SpigotResourceEntityBorrowed < 'a >
+{ pub id : i32,pub name : &'a str,pub parsed_name : Option<&'a str>,pub tag : &'a str,pub slug : &'a str,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub author_id : i32,pub version_id : i32,pub version_name : Option<&'a str>,pub premium : Option<bool>,pub source_code_link : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,} impl < 'a > From < SpigotResourceEntityBorrowed <
 'a >> for SpigotResourceEntity
 {
     fn
-    from(SpigotResourceEntityBorrowed { id,name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,source_repository_host,source_repository_owner,source_repository_name,} : SpigotResourceEntityBorrowed < 'a >)
-    -> Self { Self { id,name: name.into(),tag: tag.into(),slug: slug.into(),release_date,update_date,author_id,version_id,version_name: version_name.map(|v| v.into()),premium,source_code_link: source_code_link.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
+    from(SpigotResourceEntityBorrowed { id,name,parsed_name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,source_repository_host,source_repository_owner,source_repository_name,} : SpigotResourceEntityBorrowed < 'a >)
+    -> Self { Self { id,name: name.into(),parsed_name: parsed_name.map(|v| v.into()),tag: tag.into(),slug: slug.into(),release_date,update_date,author_id,version_id,version_name: version_name.map(|v| v.into()),premium,source_code_link: source_code_link.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
 }pub struct SpigotResourceEntityQuery < 'a, C : GenericClient, T, const N : usize >
 {
     client : & 'a  C, params :
@@ -366,11 +366,12 @@ where C : GenericClient
         Ok(it)
     }
 }pub fn upsert_spigot_resource() -> UpsertSpigotResourceStmt
-{ UpsertSpigotResourceStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+{ UpsertSpigotResourceStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO spigot_resource (id, name, parsed_name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
   ON CONFLICT (id)
   DO UPDATE SET
     name = EXCLUDED.name,
+    parsed_name = EXCLUDED.parsed_name,
     tag = EXCLUDED.tag,
     slug = EXCLUDED.slug,
     release_date = EXCLUDED.release_date,
@@ -384,20 +385,20 @@ where C : GenericClient
     source_repository_owner = EXCLUDED.source_repository_owner,
     source_repository_name = EXCLUDED.source_repository_name")) } pub
 struct UpsertSpigotResourceStmt(cornucopia_async :: private :: Stmt) ; impl
-UpsertSpigotResourceStmt { pub async fn bind < 'a, C : GenericClient, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,>
+UpsertSpigotResourceStmt { pub async fn bind < 'a, C : GenericClient, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,T9 : cornucopia_async::StringSql,>
 (& 'a mut self, client : & 'a  C,
-id : & 'a i32,name : & 'a T1,tag : & 'a T2,slug : & 'a T3,release_date : & 'a time::OffsetDateTime,update_date : & 'a time::OffsetDateTime,author_id : & 'a i32,version_id : & 'a i32,version_name : & 'a Option<T4>,premium : & 'a Option<bool>,source_code_link : & 'a Option<T5>,source_repository_host : & 'a Option<T6>,source_repository_owner : & 'a Option<T7>,source_repository_name : & 'a Option<T8>,) -> Result < u64, tokio_postgres :: Error >
+id : & 'a i32,name : & 'a T1,parsed_name : & 'a Option<T2>,tag : & 'a T3,slug : & 'a T4,release_date : & 'a time::OffsetDateTime,update_date : & 'a time::OffsetDateTime,author_id : & 'a i32,version_id : & 'a i32,version_name : & 'a Option<T5>,premium : & 'a Option<bool>,source_code_link : & 'a Option<T6>,source_repository_host : & 'a Option<T7>,source_repository_owner : & 'a Option<T8>,source_repository_name : & 'a Option<T9>,) -> Result < u64, tokio_postgres :: Error >
 {
     let stmt = self.0.prepare(client) .await ? ;
-    client.execute(stmt, & [id,name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,source_repository_host,source_repository_owner,source_repository_name,]) .await
-} }impl < 'a, C : GenericClient + Send + Sync, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,>
-cornucopia_async :: Params < 'a, UpsertSpigotResourceParams < T1,T2,T3,T4,T5,T6,T7,T8,>, std::pin::Pin<Box<dyn futures::Future<Output = Result <
+    client.execute(stmt, & [id,name,parsed_name,tag,slug,release_date,update_date,author_id,version_id,version_name,premium,source_code_link,source_repository_host,source_repository_owner,source_repository_name,]) .await
+} }impl < 'a, C : GenericClient + Send + Sync, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,T9 : cornucopia_async::StringSql,>
+cornucopia_async :: Params < 'a, UpsertSpigotResourceParams < T1,T2,T3,T4,T5,T6,T7,T8,T9,>, std::pin::Pin<Box<dyn futures::Future<Output = Result <
 u64, tokio_postgres :: Error > > + Send + 'a>>, C > for UpsertSpigotResourceStmt
 {
     fn
     params(& 'a mut self, client : & 'a  C, params : & 'a
-    UpsertSpigotResourceParams < T1,T2,T3,T4,T5,T6,T7,T8,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
-    Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.name,& params.tag,& params.slug,& params.release_date,& params.update_date,& params.author_id,& params.version_id,& params.version_name,& params.premium,& params.source_code_link,& params.source_repository_host,& params.source_repository_owner,& params.source_repository_name,) ) }
+    UpsertSpigotResourceParams < T1,T2,T3,T4,T5,T6,T7,T8,T9,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
+    Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.name,& params.parsed_name,& params.tag,& params.slug,& params.release_date,& params.update_date,& params.author_id,& params.version_id,& params.version_name,& params.premium,& params.source_code_link,& params.source_repository_host,& params.source_repository_owner,& params.source_repository_name,) ) }
 }pub fn get_spigot_resources() -> GetSpigotResourcesStmt
 { GetSpigotResourcesStmt(cornucopia_async :: private :: Stmt :: new("SELECT * FROM spigot_resource")) } pub
 struct GetSpigotResourcesStmt(cornucopia_async :: private :: Stmt) ; impl
@@ -409,7 +410,7 @@ SpigotResourceEntity, 0 >
     SpigotResourceEntityQuery
     {
         client, params : [], stmt : & mut self.0, extractor :
-        | row | { SpigotResourceEntityBorrowed { id : row.get(0),name : row.get(1),tag : row.get(2),slug : row.get(3),release_date : row.get(4),update_date : row.get(5),author_id : row.get(6),version_id : row.get(7),version_name : row.get(8),premium : row.get(9),source_code_link : row.get(10),source_repository_host : row.get(11),source_repository_owner : row.get(12),source_repository_name : row.get(13),} }, mapper : | it | { <SpigotResourceEntity>::from(it) },
+        | row | { SpigotResourceEntityBorrowed { id : row.get(0),name : row.get(1),parsed_name : row.get(2),tag : row.get(3),slug : row.get(4),release_date : row.get(5),update_date : row.get(6),author_id : row.get(7),version_id : row.get(8),version_name : row.get(9),premium : row.get(10),source_code_link : row.get(11),source_repository_host : row.get(12),source_repository_owner : row.get(13),source_repository_name : row.get(14),} }, mapper : | it | { <SpigotResourceEntity>::from(it) },
     }
 } }pub fn get_latest_spigot_resource_update_date() -> GetLatestSpigotResourceUpdateDateStmt
 { GetLatestSpigotResourceUpdateDateStmt(cornucopia_async :: private :: Stmt :: new("SELECT max(update_date) FROM spigot_resource")) } pub

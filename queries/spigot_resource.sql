@@ -1,11 +1,12 @@
---: SpigotResourceEntity(version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SpigotResourceEntity(parsed_name?, version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_spigot_resource (version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO spigot_resource (id, name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:id, :name, :tag, :slug, :release_date, :update_date, :author_id, :version_id, :version_name, :premium, :source_code_link, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_spigot_resource (parsed_name?, version_name?, premium?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO spigot_resource (id, name, parsed_name, tag, slug, release_date, update_date, author_id, version_id, version_name, premium, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :name, :parsed_name, :tag, :slug, :release_date, :update_date, :author_id, :version_id, :version_name, :premium, :source_code_link, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (id)
   DO UPDATE SET
     name = EXCLUDED.name,
+    parsed_name = EXCLUDED.parsed_name,
     tag = EXCLUDED.tag,
     slug = EXCLUDED.slug,
     release_date = EXCLUDED.release_date,

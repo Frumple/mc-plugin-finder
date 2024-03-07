@@ -11,6 +11,7 @@ use tracing::instrument;
 pub struct SpigotResource {
     pub id: i32,
     pub name: String,
+    pub parsed_name: Option<String>,
     pub tag: String,
     pub slug: String,
     pub release_date: OffsetDateTime,
@@ -25,11 +26,12 @@ pub struct SpigotResource {
     pub source_repository_name: Option<String>
 }
 
-impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String> {
+impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String> {
     fn from(resource: SpigotResource) -> Self {
         UpsertSpigotResourceParams {
             id: resource.id,
             name: resource.name,
+            parsed_name: resource.parsed_name,
             tag: resource.tag,
             slug: resource.slug,
             release_date: resource.release_date,
@@ -51,6 +53,7 @@ impl From<SpigotResourceEntity> for SpigotResource {
         SpigotResource {
             id: entity.id,
             name: entity.name,
+            parsed_name: entity.parsed_name,
             tag: entity.tag,
             slug: entity.slug,
             release_date: entity.release_date,
@@ -77,7 +80,7 @@ enum SpigotResourceError {
 }
 
 #[instrument(
-    level = "trace",
+    level = "debug",
     skip(db_client)
 )]
 pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
@@ -173,6 +176,7 @@ mod test {
         let updated_resource = SpigotResource {
             id: 1,
             name: "resource-1-updated".to_string(),
+            parsed_name: Some("resource-1-updated".to_string()),
             tag: "resource-1-tag-updated".to_string(),
             slug: "foo-updated.1".to_string(),
             release_date: datetime!(2020-01-01 0:00 UTC),
@@ -265,6 +269,7 @@ mod test {
             SpigotResource {
                 id: 1,
                 name: "resource-1".to_string(),
+                parsed_name: Some("resource-1".to_string()),
                 tag: "resource-1-tag".to_string(),
                 slug: "foo.1".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
@@ -281,6 +286,7 @@ mod test {
             SpigotResource {
                 id: 2,
                 name: "resource-2".to_string(),
+                parsed_name: Some("resource-2".to_string()),
                 tag: "resource-2-tag".to_string(),
                 slug: "bar.2".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
@@ -297,6 +303,7 @@ mod test {
             SpigotResource {
                 id: 3,
                 name: "resource-3".to_string(),
+                parsed_name: Some("resource-3".to_string()),
                 tag: "resource-3-tag".to_string(),
                 slug: "baz.3".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
