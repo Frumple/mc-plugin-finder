@@ -406,8 +406,69 @@ mod test {
     use wiremock::matchers::{method, path, query_param};
 
     #[rstest]
+    #[case::word("Foo", "Foo")]
+
+    #[case::number_word("2Foo", "Foo")]
+    #[case::word_number("Foo2", "Foo")]
+
+    #[case::word_plus("Foo+", "Foo+")]
+    #[case::word_plus_plus("Foo++", "Foo++")]
+
+    #[case::hyphen_word("-Foo", "Foo")]
+    #[case::word_hyphen("Foo-", "Foo")]
+    #[case::word_hyphen_word("Foo-Bar", "Foo-Bar")]
+    #[case::word_space_word("Foo Bar", "Foo Bar")]
+    #[case::word_space_word_space_word("Foo Bar Baz", "Foo Bar Baz")]
+    #[case::word_hyphen_word_space_word("Foo-Bar Baz", "Foo-Bar Baz")]
+    #[case::word_space_word_hyphen_word("Foo Bar-Baz", "Foo Bar")]
+    #[case::word_hyphen_space_word("Foo- Bar", "Foo")]
+    #[case::word_space_hyphen_word("Foo -Bar", "Foo")]
+    #[case::word_space_hyphen_space_word("Foo - Bar", "Foo")]
+
+    #[case::emoji_word("✨Foo", "Foo")]
+    #[case::emoji_space_word("✨ Foo", "Foo")]
+    #[case::word_emoji("Foo✨", "Foo")]
+    #[case::word_space_emoji("Foo ✨", "Foo")]
+
+    #[case::square_brackets_word("[1.8.8 - 1.20.4]Foo", "Foo")]
+    #[case::square_brackets_space_word("[1.8.8 - 1.20.4] Foo", "Foo")]
+    #[case::word_square_brackets("Foo[1.8.8 - 1.20.4]", "Foo")]
+    #[case::word_space_square_brackets("Foo [1.8.8 - 1.20.4]", "Foo")]
+
+    #[case::round_brackets_word("(1.8.8 - 1.20.4)Foo", "Foo")]
+    #[case::round_brackets_space_word("(1.8.8 - 1.20.4) Foo", "Foo")]
+    #[case::word_round_brackets("Foo(1.8.8 - 1.20.4)", "Foo")]
+    #[case::word_space_round_brackets("Foo (1.8.8 - 1.20.4)", "Foo")]
+
+    #[case::discount_sale_word("25% SALE Foo", "Foo")]
+    #[case::discount_off_word("25% OFF Foo", "Foo")]
+    #[case::word_discount_sale("Foo 25% SALE", "Foo")]
+    #[case::word_discount_off("Foo 25% OFF", "Foo")]
+
+    #[case::words_with_apostrophe("Frumple's Foobar", "Frumple's Foobar")]
+    #[case::words_with_right_single_quotation_mark("Frumple’s Foobar", "Frumple’s Foobar")]
+    #[case::words_with_ampersand("Foo & Bar", "Foo & Bar")]
+
+    #[case::word_with_accent("Café", "Café")]
+    #[case::word_with_umlaut("Über", "Über")]
+
+    #[case::everything("SALE 30% ⚡ [1.15.1-1.20.4+] ⛏️ Foo-Bar Baz++ - Best Moderation Plugin | ✅ Database Support!", "Foo-Bar Baz++")]
+    fn should_parse_resource_name(#[case] input: &str, #[case] expected_name: &str) {
+        let parsed_name = parse_resource_name(input);
+        assert_that(&parsed_name).is_some().is_equal_to(expected_name.to_string());
+    }
+
+    #[rstest]
+    #[case::one_letter_word("F")]
+    #[case::two_letter_word("Fo")]
+    fn should_not_parse_resource_name(#[case] input: &str) {
+        let parsed_name = parse_resource_name(input);
+        assert_that(&parsed_name).is_none();
+    }
+
+    #[rstest]
     #[case::slug_single_word("resources/foo.1/download?version=1", "foo.1")]
-    #[case::slug_with_dashes("resources/foo-bar-baz.1/download?version=1", "foo-bar-baz.1")]
+    #[case::slug_with_hyphens("resources/foo-bar-baz.1/download?version=1", "foo-bar-baz.1")]
     #[case::slug_with_special_character("resources/%C2%BB-foo.1/download?version=1", "%C2%BB-foo.1")]
     fn should_extract_slug_from_url(#[case] url: &str, #[case] expected_slug: &str) {
         let slug = extract_slug_from_file_download_url(url);
