@@ -2,7 +2,7 @@ use crate::database::cornucopia::queries::hangar_project::{self, HangarProjectEn
 
 use anyhow::Result;
 use cornucopia_async::Params;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use thiserror::Error;
 use time::OffsetDateTime;
 use tracing::instrument;
@@ -75,13 +75,14 @@ enum HangarProjectError {
 
 #[instrument(
     level = "debug",
-    skip(db_client)
+    skip(db_pool)
 )]
-pub async fn upsert_hangar_project(db_client: &Client, project: HangarProject) -> Result<()> {
+pub async fn upsert_hangar_project(db_pool: &Pool, project: HangarProject) -> Result<()> {
+    let db_client = db_pool.get().await?;
     let slug = project.slug.clone();
 
     let db_result = hangar_project::upsert_hangar_project()
-        .params(db_client, &project.into())
+        .params(&db_client, &project.into())
         .await;
 
     match db_result {
@@ -95,9 +96,11 @@ pub async fn upsert_hangar_project(db_client: &Client, project: HangarProject) -
     }
 }
 
-pub async fn get_hangar_projects(db_client: &Client) -> Result<Vec<HangarProject>> {
+pub async fn get_hangar_projects(db_pool: &Pool) -> Result<Vec<HangarProject>> {
+    let db_client = db_pool.get().await?;
+
     let entities = hangar_project::get_hangar_projects()
-        .bind(db_client)
+        .bind(&db_client)
         .all()
         .await?;
 
@@ -106,9 +109,11 @@ pub async fn get_hangar_projects(db_client: &Client) -> Result<Vec<HangarProject
     Ok(projects)
 }
 
-pub async fn get_latest_hangar_project_update_date(db_client: &Client) -> Result<OffsetDateTime> {
+pub async fn get_latest_hangar_project_update_date(db_pool: &Pool) -> Result<OffsetDateTime> {
+    let db_client = db_pool.get().await?;
+
     let date = hangar_project::get_latest_hangar_project_update_date()
-        .bind(db_client)
+        .bind(&db_client)
         .one()
         .await?;
 
@@ -135,10 +140,10 @@ mod test {
         let project = &create_test_projects()[0];
 
         // Act
-        upsert_hangar_project(&context.client, project.clone()).await?;
+        upsert_hangar_project(&context.pool, project.clone()).await?;
 
         // Assert
-        let retrieved_projects = get_hangar_projects(&context.client).await?;
+        let retrieved_projects = get_hangar_projects(&context.pool).await?;
         let retrieved_project = &retrieved_projects[0];
 
         assert_that(&retrieved_projects).has_length(1);
@@ -158,7 +163,7 @@ mod test {
 
         // Arrange
         let project = &create_test_projects()[0];
-        upsert_hangar_project(&context.client, project.clone()).await?;
+        upsert_hangar_project(&context.pool, project.clone()).await?;
 
         let updated_project = HangarProject {
             slug: "foo".to_string(),
@@ -177,10 +182,10 @@ mod test {
         };
 
         // Act
-        upsert_hangar_project(&context.client, updated_project.clone()).await?;
+        upsert_hangar_project(&context.pool, updated_project.clone()).await?;
 
         // Assert
-        let retrieved_projects = get_hangar_projects(&context.client).await?;
+        let retrieved_projects = get_hangar_projects(&context.pool).await?;
         let retrieved_project = &retrieved_projects[0];
 
         assert_that(&retrieved_projects).has_length(1);
@@ -201,11 +206,11 @@ mod test {
         // Arrange
         let projects = create_test_projects();
         for project in projects {
-            upsert_hangar_project(&context.client, project).await?;
+            upsert_hangar_project(&context.pool, project).await?;
         }
 
         // Act
-        let latest_update_date = get_latest_hangar_project_update_date(&context.client).await?;
+        let latest_update_date = get_latest_hangar_project_update_date(&context.pool).await?;
 
         // Assert
         assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));

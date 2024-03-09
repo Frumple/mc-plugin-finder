@@ -4,7 +4,7 @@ use crate::collector::util::extract_source_repository_from_url;
 use crate::database::spigot::resource::{SpigotResource, get_latest_spigot_resource_update_date, upsert_spigot_resource};
 
 use anyhow::Result;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -141,9 +141,9 @@ enum IncomingSpigotResourceError {
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn populate_spigot_resources(&self, db_client: &Client) -> Result<()> {
+    pub async fn populate_spigot_resources(&self, db_pool: &Pool) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_populate_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -151,7 +151,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES, |incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
+            .try_for_each_concurrent(SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES, |incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -161,9 +161,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn update_spigot_resources(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
+    pub async fn update_spigot_resources(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_update_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -172,7 +172,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each(|incoming_resource| process_incoming_resource(incoming_resource, db_client, &count_cell))
+            .try_for_each(|incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -242,7 +242,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db_client: &Client, count_cell: &Cell<u32>) -> Result<()> {
+async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
     // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
     // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
 
@@ -250,7 +250,7 @@ async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db
 
     match process_result {
         Ok(resource) => {
-            let db_result = upsert_spigot_resource(db_client, resource).await;
+            let db_result = upsert_spigot_resource(db_pool, resource).await;
 
             match db_result {
                 Ok(_) => count_cell.set(count_cell.get() + 1),
@@ -365,12 +365,12 @@ fn remove_discount_text(input: &str) -> String {
         - Includes starting words that contain dashes but no whitespace.
         - This allows us to include resources that have dashes as part of their name, but not dashes that are intended to be used as separators from other text.
         - Examples that are included:
-        - "Anti-Xray-Webhook"
-        - "T-ExplosiveSheep"
-        - "QuickShop-Hikari"
+            - "Anti-Xray-Webhook"
+            - "T-ExplosiveSheep"
+            - "QuickShop-Hikari"
         - Examples that are excluded:
-        - "ZMusic - 1.20 Ready - Powerful Music System"
-        - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin"
+            - "ZMusic - 1.20 Ready - Powerful Music System"
+            - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin"
 
     `...[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*`
         - Includes resource names with multiple words.

@@ -2,7 +2,7 @@ use crate::database::cornucopia::queries::spigot_resource::{self, UpsertSpigotRe
 
 use anyhow::Result;
 use cornucopia_async::Params;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use thiserror::Error;
 use time::OffsetDateTime;
 use tracing::instrument;
@@ -81,13 +81,14 @@ enum SpigotResourceError {
 
 #[instrument(
     level = "debug",
-    skip(db_client)
+    skip(db_pool)
 )]
-pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource) -> Result<()> {
+pub async fn upsert_spigot_resource(db_pool: &Pool, resource: SpigotResource) -> Result<()> {
+    let db_client = db_pool.get().await?;
     let resource_id = resource.id;
 
     let db_result = spigot_resource::upsert_spigot_resource()
-        .params(db_client, &resource.into())
+        .params(&db_client, &resource.into())
         .await;
 
     match db_result {
@@ -101,9 +102,11 @@ pub async fn upsert_spigot_resource(db_client: &Client, resource: SpigotResource
     }
 }
 
-pub async fn get_spigot_resources(db_client: &Client) -> Result<Vec<SpigotResource>> {
+pub async fn get_spigot_resources(db_pool: &Pool) -> Result<Vec<SpigotResource>> {
+    let db_client = db_pool.get().await?;
+
     let entities = spigot_resource::get_spigot_resources()
-        .bind(db_client)
+        .bind(&db_client)
         .all()
         .await?;
 
@@ -112,9 +115,11 @@ pub async fn get_spigot_resources(db_client: &Client) -> Result<Vec<SpigotResour
     Ok(resources)
 }
 
-pub async fn get_latest_spigot_resource_update_date(db_client: &Client) -> Result<OffsetDateTime> {
-    let date = spigot_resource::get_latest_spigot_resource_update_date()
-        .bind(db_client)
+pub async fn get_latest_spigot_resource_update_date(db_pool: &Pool) -> Result<OffsetDateTime> {
+    let db_client = db_pool.get().await?;
+
+    let date: OffsetDateTime = spigot_resource::get_latest_spigot_resource_update_date()
+        .bind(&db_client)
         .one()
         .await?;
 
@@ -140,15 +145,15 @@ mod test {
 
         // Arrange
         let author = create_test_author();
-        insert_spigot_author(&context.client, author).await?;
+        insert_spigot_author(&context.pool, author).await?;
 
         let resource = &create_test_resources()[0];
 
         // Act
-        upsert_spigot_resource(&context.client, resource.clone()).await?;
+        upsert_spigot_resource(&context.pool, resource.clone()).await?;
 
         // Assert
-        let retrieved_resources = get_spigot_resources(&context.client).await?;
+        let retrieved_resources = get_spigot_resources(&context.pool).await?;
         let retrieved_resource = &retrieved_resources[0];
 
         assert_that(&retrieved_resources).has_length(1);
@@ -168,10 +173,10 @@ mod test {
 
         // Arrange
         let author = create_test_author();
-        insert_spigot_author(&context.client, author).await?;
+        insert_spigot_author(&context.pool, author).await?;
 
         let resource = &create_test_resources()[0];
-        upsert_spigot_resource(&context.client, resource.clone()).await?;
+        upsert_spigot_resource(&context.pool, resource.clone()).await?;
 
         let updated_resource = SpigotResource {
             id: 1,
@@ -192,10 +197,10 @@ mod test {
         };
 
         // Act
-        upsert_spigot_resource(&context.client, updated_resource.clone()).await?;
+        upsert_spigot_resource(&context.pool, updated_resource.clone()).await?;
 
         // Assert
-        let retrieved_resources = get_spigot_resources(&context.client).await?;
+        let retrieved_resources = get_spigot_resources(&context.pool).await?;
         let retrieved_resource = &retrieved_resources[0];
 
         assert_that(&retrieved_resources).has_length(1);
@@ -217,7 +222,7 @@ mod test {
         let resource = &create_test_resources()[0];
 
         // Act
-        let result = upsert_spigot_resource(&context.client, resource.clone()).await;
+        let result = upsert_spigot_resource(&context.pool, resource.clone()).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -238,15 +243,15 @@ mod test {
         // Arrange
         let author = create_test_author();
 
-        insert_spigot_author(&context.client, author).await?;
+        insert_spigot_author(&context.pool, author).await?;
 
         let resources = create_test_resources();
         for resource in resources {
-            upsert_spigot_resource(&context.client, resource).await?;
+            upsert_spigot_resource(&context.pool, resource).await?;
         }
 
         // Act
-        let latest_update_date = get_latest_spigot_resource_update_date(&context.client).await?;
+        let latest_update_date = get_latest_spigot_resource_update_date(&context.pool).await?;
 
         // Assert
         assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));

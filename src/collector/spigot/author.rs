@@ -3,7 +3,7 @@ use crate::collector::spigot::SpigotClient;
 use crate::database::spigot::author::{SpigotAuthor, insert_spigot_author};
 
 use anyhow::Result;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -88,9 +88,9 @@ impl From<IncomingSpigotAuthor> for SpigotAuthor {
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn populate_spigot_authors(&self, db_client: &Client) -> Result<()> {
+    pub async fn populate_spigot_authors(&self, db_pool: &Pool) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -98,7 +98,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_POPULATE_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_author| process_incoming_author(incoming_author, db_client, &count_cell))
+            .try_for_each_concurrent(None, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -108,9 +108,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn update_spigot_authors(&self, db_client: &Client, author_id_higher_than: i32) -> Result<()> {
+    pub async fn update_spigot_authors(&self, db_pool: &Pool, author_id_higher_than: i32) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_update_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -119,7 +119,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.id > author_id_higher_than)))
-            .try_for_each(|incoming_author| process_incoming_author(incoming_author, db_client, &count_cell))
+            .try_for_each(|incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -175,8 +175,8 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
-async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_client: &Client, count_cell: &Cell<u32>) -> Result<()> {
-    let db_result = insert_spigot_author(db_client, incoming_author.into()).await;
+async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+    let db_result = insert_spigot_author(db_pool, incoming_author.into()).await;
 
     match db_result {
         Ok(_) => count_cell.set(count_cell.get() + 1),

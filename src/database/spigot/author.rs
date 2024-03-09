@@ -2,7 +2,7 @@ use crate::database::cornucopia::queries::spigot_author::{self, InsertSpigotAuth
 
 use anyhow::Result;
 use cornucopia_async::Params;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use thiserror::Error;
 use tracing::instrument;
 
@@ -41,13 +41,14 @@ enum SpigotAuthorError {
 
 #[instrument(
     level = "debug",
-    skip(db_client)
+    skip(db_pool)
 )]
-pub async fn insert_spigot_author(db_client: &Client, author: SpigotAuthor) -> Result<()> {
+pub async fn insert_spigot_author(db_pool: &Pool, author: SpigotAuthor) -> Result<()> {
+    let db_client = db_pool.get().await?;
     let author_id = author.id;
 
     let db_result = spigot_author::insert_spigot_author()
-        .params(db_client, &author.into())
+        .params(&db_client, &author.into())
         .await;
 
     match db_result {
@@ -61,9 +62,11 @@ pub async fn insert_spigot_author(db_client: &Client, author: SpigotAuthor) -> R
     }
 }
 
-pub async fn get_spigot_authors(db_client: &Client) -> Result<Vec<SpigotAuthor>> {
+pub async fn get_spigot_authors(db_pool: &Pool) -> Result<Vec<SpigotAuthor>> {
+    let db_client = db_pool.get().await?;
+
     let entities = spigot_author::get_spigot_authors()
-        .bind(db_client)
+        .bind(&db_client)
         .all()
         .await?;
 
@@ -72,9 +75,11 @@ pub async fn get_spigot_authors(db_client: &Client) -> Result<Vec<SpigotAuthor>>
     Ok(authors)
 }
 
-pub async fn get_highest_spigot_author_id(db_client: &Client) -> Result<i32> {
+pub async fn get_highest_spigot_author_id(db_pool: &Pool) -> Result<i32> {
+    let db_client = db_pool.get().await?;
+
     let id = spigot_author::get_highest_spigot_author_id()
-        .bind(db_client)
+        .bind(&db_client)
         .one()
         .await?;
 
@@ -100,10 +105,10 @@ mod test {
         let author = &create_test_authors()[0];
 
         // Act
-        insert_spigot_author(&context.client, author.clone()).await?;
+        insert_spigot_author(&context.pool, author.clone()).await?;
 
         // Assert
-        let retrieved_authors = get_spigot_authors(&context.client).await?;
+        let retrieved_authors = get_spigot_authors(&context.pool).await?;
         let retrieved_author = &retrieved_authors[0];
 
         assert_that(&retrieved_authors).has_length(1);
@@ -125,15 +130,15 @@ mod test {
         let author = &create_test_authors()[0];
 
         // Act
-        insert_spigot_author(&context.client, author.clone()).await?;
+        insert_spigot_author(&context.pool, author.clone()).await?;
 
-        let result = insert_spigot_author(&context.client, author.clone()).await;
+        let result = insert_spigot_author(&context.pool, author.clone()).await;
         let error = result.unwrap_err();
 
         // Assert
         assert!(matches!(error.downcast_ref::<SpigotAuthorError>(), Some(SpigotAuthorError::DatabaseQueryFailed{ .. })));
 
-        let retrieved_authors = get_spigot_authors(&context.client).await?;
+        let retrieved_authors = get_spigot_authors(&context.pool).await?;
         let retrieved_author = &retrieved_authors[0];
 
         assert_that(&retrieved_authors).has_length(1);
@@ -155,11 +160,11 @@ mod test {
         let authors = create_test_authors();
 
         for author in authors {
-            insert_spigot_author(&context.client, author).await?;
+            insert_spigot_author(&context.pool, author).await?;
         }
 
         // Act
-        let highest_id = get_highest_spigot_author_id(&context.client).await?;
+        let highest_id = get_highest_spigot_author_id(&context.pool).await?;
 
         // Assert
         assert_that(&highest_id).is_equal_to(3);

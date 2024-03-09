@@ -4,7 +4,7 @@ use crate::collector::util::extract_source_repository_from_url;
 use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
 
 use anyhow::Result;
-use deadpool_postgres::Client;
+use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
@@ -149,9 +149,9 @@ enum IncomingHangarProjectError {
 
 impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn populate_hangar_projects(&self, db_client: &Client) -> Result<()> {
+    pub async fn populate_hangar_projects(&self, db_pool: &Pool) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -159,7 +159,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         let result= self
             .pages_ahead(HANGAR_POPULATE_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_client, &count_cell))
+            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -169,9 +169,9 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     }
 
     #[instrument(
-        skip(self, db_client)
+        skip(self, db_pool)
     )]
-    pub async fn update_hangar_projects(&self, db_client: &Client, update_date_later_than: OffsetDateTime) -> Result<()> {
+    pub async fn update_hangar_projects(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
@@ -180,7 +180,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.last_updated.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_client, &count_cell))
+            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -189,7 +189,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         result
     }
 
-    async fn process_incoming_project(&self, incoming_project: IncomingHangarProject, db_client: &Client, count_cell: &Cell<u32>) -> Result<()> {
+    async fn process_incoming_project(&self, incoming_project: IncomingHangarProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
         let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
 
         match version_result {
@@ -198,7 +198,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
                 match process_result {
                     Ok(project) => {
-                        let db_result = upsert_hangar_project(db_client, project).await;
+                        let db_result = upsert_hangar_project(db_pool, project).await;
 
                         match db_result {
                             Ok(_) => count_cell.set(count_cell.get() + 1),

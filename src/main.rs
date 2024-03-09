@@ -19,6 +19,7 @@ const LIVE_DB_NAME: &str = "mc_plugin_finder";
 async fn main() -> Result<()> {
     // Initialize tracing
     let subscriber = tracing_subscriber::fmt()
+        // .with_max_level(tracing::Level::DEBUG)
         .with_span_events(FmtSpan::CLOSE)
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
@@ -26,7 +27,6 @@ async fn main() -> Result<()> {
     // Initialize database client
     let db = get_db();
     let db_pool = db.create_pool(LIVE_DB_NAME).await?;
-    let db_client = db_pool.get().await?;
 
     // Initialize API clients
     let spigot_server = SpigotServer::new().await;
@@ -35,23 +35,23 @@ async fn main() -> Result<()> {
     let hangar_server = HangarServer::new().await;
     let hangar_client = HangarClient::new(hangar_server)?;
 
-    // spigot_client.populate_spigot_authors(&db_client).await?;
+    // spigot_client.populate_spigot_authors(&db_pool).await?;
 
-    // let highest_author_id = get_highest_spigot_author_id(&db_client).await?;
+    // let highest_author_id = get_highest_spigot_author_id(&db_pool).await?;
     // info!("Highest id: {:?}", highest_author_id);
-    // spigot_client.update_spigot_authors(&db_client, highest_author_id).await?;
+    // spigot_client.update_spigot_authors(&db_pool, highest_author_id).await?;
 
-    // spigot_client.populate_spigot_resources(&db_client).await?;
+    // spigot_client.populate_spigot_resources(&db_pool).await?;
 
-    // let latest_spigot_resource_update_date = get_latest_spigot_resource_update_date(&db_client).await?;
-    // info!("Latest update date: {:?}", latest_update_date);
-    // spigot_client.update_spigot_resources(&db_client, latest_spigot_resource_update_date).await?;
+    // let latest_spigot_resource_update_date = get_latest_spigot_resource_update_date(&db_pool).await?;
+    // info!("Latest update date: {:?}", latest_spigot_resource_update_date);
+    // spigot_client.update_spigot_resources(&db_pool, latest_spigot_resource_update_date).await?;
 
-    // hangar_client.populate_hangar_projects(&db_client).await?;
+    // hangar_client.populate_hangar_projects(&db_pool).await?;
 
-    // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_client).await?;
+    // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_pool).await?;
     // info!("Latest update date: {:?}|", latest_hangar_project_update_date);
-    // hangar_client.update_hangar_projects(&db_client, latest_hangar_project_update_date).await?;
+    // hangar_client.update_hangar_projects(&db_pool, latest_hangar_project_update_date).await?;
 
     Ok(())
 }
@@ -68,15 +68,15 @@ fn get_db() -> Database {
 #[cfg(test)]
 mod test {
     use super::*;
-    use deadpool_postgres::Client;
+    use deadpool_postgres::Pool;
     use std::fs::read_to_string;
 
     const DEFAULT_POSTGRES_DB_NAME: &str = "postgres";
 
     pub struct DatabaseTestContext {
         db_name: String,
-        base_client: Client,
-        pub client: Client
+        base_pool: Pool,
+        pub pool: Pool
     }
 
     impl DatabaseTestContext {
@@ -86,43 +86,41 @@ mod test {
             let base_pool = db.create_pool(DEFAULT_POSTGRES_DB_NAME)
                 .await
                 .expect("could not create database pool");
-            let base_client = base_pool.get()
-                .await
-                .expect("could not get database client");
 
-            Self::drop_database(&base_client, db_name)
+            Self::drop_database(&base_pool, db_name)
                 .await
                 .expect("could not drop database before re-creating it");
-            Self::create_database(&base_client, db_name)
+            Self::create_database(&base_pool, db_name)
                 .await
                 .expect("could not create database");
 
-            let new_pool = db.create_pool(db_name)
+            let pool = db.create_pool(db_name)
                 .await
                 .expect("could not create database pool");
-            let new_client = new_pool.get()
-                .await
-                .expect("could not get database client");
 
-            Self::run_migration(&new_client)
+            Self::run_migration(&pool)
                 .await
                 .expect("could not run migration");
 
             Self {
                 db_name: db_name.to_string(),
-                base_client,
-                client: new_client
+                base_pool,
+                pool
             }
         }
 
-        async fn create_database(client: &Client, db_name: &str) -> Result<()> {
+        async fn create_database(pool: &Pool, db_name: &str) -> Result<()> {
+            let client = pool.get().await?;
+
             let statement = format!("CREATE DATABASE {};", db_name);
             client.execute(&statement, &[]).await?;
 
             Ok(())
         }
 
-        async fn run_migration(client: &Client) -> Result<()> {
+        async fn run_migration(pool: &Pool) -> Result<()> {
+            let client = pool.get().await?;
+
             let schema_text = read_to_string("schema.sql")?
                .parse::<String>()?;
 
@@ -131,7 +129,9 @@ mod test {
             Ok(())
         }
 
-        async fn drop_database(client: &Client, db_name: &str) -> Result<()> {
+        async fn drop_database(pool: &Pool, db_name: &str) -> Result<()> {
+            let client = pool.get().await?;
+
             let disconnect_users_statement =
                 "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1;";
             client.execute(disconnect_users_statement, &[&db_name]).await?;
@@ -144,7 +144,7 @@ mod test {
 
         // TODO: When async drop trait is implemented in Rust, use that instead
         pub async fn drop(&self) -> Result<()> {
-            Self::drop_database(&self.base_client, &self.db_name).await?;
+            Self::drop_database(&self.base_pool, &self.db_name).await?;
 
             Ok(())
         }
