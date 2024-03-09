@@ -20,7 +20,6 @@ use unicode_segmentation::UnicodeSegmentation;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
-const SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES: usize = 100;
 
 // TODO: Replace OnceLock with LazyCell when it stabilizes in std: https://github.com/rust-lang/rust/issues/109736
 static BRACKETS_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -151,7 +150,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(SPIGOT_POPULATE_RESOURCES_MAX_CONCURRENT_PROCESSES, |incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
+            .try_for_each_concurrent(None, |incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
