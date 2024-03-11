@@ -11,17 +11,19 @@ pub fn extract_source_repository_from_url(url: &str) -> Option<SourceRepository>
     let parse_result = Url::parse(url);
 
     if let Ok(parsed_url) = parse_result {
-        if let Some(host) = parsed_url.host_str() {
-            if is_source_repository_host(host) {
-                if let Some(path_segments) = parsed_url.path_segments().map(|x| x.collect::<Vec<_>>()) {
-                    if path_segments.len() >= 2 {
-                        let source_repository = SourceRepository {
-                            host: host.to_string(),
-                            owner: path_segments[0].to_string(),
-                            name: path_segments[1].to_string()
-                        };
+        if let Some(host_str) = parsed_url.host_str() {
+            if let Some(host) = remove_www_from_host(host_str) {
+                if is_source_repository_host(host) {
+                    if let Some(path_segments) = parsed_url.path_segments().map(|x| x.collect::<Vec<_>>()) {
+                        if path_segments.len() >= 2 {
+                            let source_repository = SourceRepository {
+                                host: host.to_string(),
+                                owner: path_segments[0].to_string(),
+                                name: path_segments[1].to_string()
+                            };
 
-                        return Some(source_repository)
+                            return Some(source_repository)
+                        }
                     }
                 }
             }
@@ -31,8 +33,20 @@ pub fn extract_source_repository_from_url(url: &str) -> Option<SourceRepository>
     None
 }
 
+fn remove_www_from_host(host: &str) -> Option<&str> {
+    if host.starts_with("www.") {
+        return host.get(4..)
+    }
+
+    Some(host)
+}
+
 fn is_source_repository_host(host: &str) -> bool {
-    matches!(host, "github.com" | "gitlab.com" | "bitbucket.org")
+    matches!(host,
+        "github.com" |
+        "gitlab.com" |
+        "bitbucket.org"
+    )
 }
 
 #[cfg(test)]
@@ -46,6 +60,7 @@ mod test {
     #[case::github_url("https://github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::gitlab_url("https://gitlab.com/Frumple/bar", SourceRepository {host: "gitlab.com".to_string(), owner: "Frumple".to_string(), name: "bar".to_string()})]
     #[case::bitbucket_url("https://bitbucket.org/Frumple/baz", SourceRepository {host: "bitbucket.org".to_string(), owner: "Frumple".to_string(), name: "baz".to_string()})]
+    #[case::host_with_leading_www("https://www.github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::url_with_trailing_slash("https://github.com/Frumple/foo/", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::url_with_trailing_path("https://github.com/Frumple/foo/wiki", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     fn should_extract_source_repository_from_url(#[case] url: &str, #[case] expected_repo: SourceRepository) {
