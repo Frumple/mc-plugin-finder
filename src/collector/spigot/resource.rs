@@ -249,7 +249,7 @@ async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db
 
     match process_result {
         Ok(resource) => {
-            let db_result = upsert_spigot_resource(db_pool, resource).await;
+            let db_result = upsert_spigot_resource(db_pool, &resource).await;
 
             match db_result {
                 Ok(_) => count_cell.set(count_cell.get() + 1),

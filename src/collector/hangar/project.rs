@@ -198,7 +198,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
                 match process_result {
                     Ok(project) => {
-                        let db_result = upsert_hangar_project(db_pool, project).await;
+                        let db_result = upsert_hangar_project(db_pool, &project).await;
 
                         match db_result {
                             Ok(_) => count_cell.set(count_cell.get() + 1),

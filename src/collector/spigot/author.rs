@@ -176,7 +176,7 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
 }
 
 async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-    let db_result = insert_spigot_author(db_pool, incoming_author.into()).await;
+    let db_result = insert_spigot_author(db_pool, &incoming_author.into()).await;
 
     match db_result {
         Ok(_) => count_cell.set(count_cell.get() + 1),

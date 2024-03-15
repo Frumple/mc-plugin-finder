@@ -77,19 +77,18 @@ enum HangarProjectError {
     level = "debug",
     skip(db_pool)
 )]
-pub async fn upsert_hangar_project(db_pool: &Pool, project: HangarProject) -> Result<()> {
+pub async fn upsert_hangar_project(db_pool: &Pool, project: &HangarProject) -> Result<()> {
     let db_client = db_pool.get().await?;
-    let slug = project.slug.clone();
 
     let db_result = hangar_project::upsert_hangar_project()
-        .params(&db_client, &project.into())
+        .params(&db_client, &project.clone().into())
         .await;
 
     match db_result {
         Ok(_) => Ok(()),
         Err(err) => Err(
             HangarProjectError::DatabaseQueryFailed {
-                slug,
+                slug: project.slug.clone(),
                 source: err.into()
             }.into()
         )
@@ -121,9 +120,8 @@ pub async fn get_latest_hangar_project_update_date(db_pool: &Pool) -> Result<Off
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
-    use crate::database::hangar::project::{upsert_hangar_project, get_latest_hangar_project_update_date};
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -140,7 +138,7 @@ mod test {
         let project = &create_test_projects()[0];
 
         // Act
-        upsert_hangar_project(&context.pool, project.clone()).await?;
+        upsert_hangar_project(&context.pool, project).await?;
 
         // Assert
         let retrieved_projects = get_hangar_projects(&context.pool).await?;
@@ -162,8 +160,7 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let project = &create_test_projects()[0];
-        upsert_hangar_project(&context.pool, project.clone()).await?;
+        let project = populate_test_hangar_project(&context.pool);
 
         let updated_project = HangarProject {
             slug: "foo".to_string(),
@@ -182,7 +179,7 @@ mod test {
         };
 
         // Act
-        upsert_hangar_project(&context.pool, updated_project.clone()).await?;
+        upsert_hangar_project(&context.pool, &updated_project).await?;
 
         // Assert
         let retrieved_projects = get_hangar_projects(&context.pool).await?;
@@ -206,7 +203,7 @@ mod test {
         // Arrange
         let projects = create_test_projects();
         for project in projects {
-            upsert_hangar_project(&context.pool, project).await?;
+            upsert_hangar_project(&context.pool, &project).await?;
         }
 
         // Act
@@ -219,6 +216,12 @@ mod test {
         context.drop().await?;
 
         Ok(())
+    }
+
+    pub async fn populate_test_hangar_project(db_pool: &Pool) -> Result<HangarProject> {
+        let project = &create_test_projects()[0];
+        upsert_hangar_project(db_pool, project).await?;
+        Ok(project.clone())
     }
 
     fn create_test_projects() -> Vec<HangarProject> {

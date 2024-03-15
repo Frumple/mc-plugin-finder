@@ -1,4 +1,5 @@
 mod cornucopia;
+pub mod r#final;
 pub mod spigot;
 pub mod hangar;
 

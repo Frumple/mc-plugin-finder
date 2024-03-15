@@ -43,19 +43,18 @@ enum SpigotAuthorError {
     level = "debug",
     skip(db_pool)
 )]
-pub async fn insert_spigot_author(db_pool: &Pool, author: SpigotAuthor) -> Result<()> {
+pub async fn insert_spigot_author(db_pool: &Pool, author: &SpigotAuthor) -> Result<()> {
     let db_client = db_pool.get().await?;
-    let author_id = author.id;
 
     let db_result = spigot_author::insert_spigot_author()
-        .params(&db_client, &author.into())
+        .params(&db_client, &author.clone().into())
         .await;
 
     match db_result {
         Ok(_) => Ok(()),
         Err(err) => Err(
             SpigotAuthorError::DatabaseQueryFailed {
-                author_id,
+                author_id: author.id,
                 source: err.into()
             }.into()
         )
@@ -87,9 +86,8 @@ pub async fn get_highest_spigot_author_id(db_pool: &Pool) -> Result<i32> {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
-    use crate::database::spigot::author::{insert_spigot_author, get_highest_spigot_author_id};
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -102,10 +100,10 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = &create_test_authors()[0];
+        let author = &test_authors()[0];
 
         // Act
-        insert_spigot_author(&context.pool, author.clone()).await?;
+        insert_spigot_author(&context.pool, author).await?;
 
         // Assert
         let retrieved_authors = get_spigot_authors(&context.pool).await?;
@@ -127,12 +125,12 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = &create_test_authors()[0];
+        let author = &test_authors()[0];
 
         // Act
-        insert_spigot_author(&context.pool, author.clone()).await?;
+        insert_spigot_author(&context.pool, author).await?;
 
-        let result = insert_spigot_author(&context.pool, author.clone()).await;
+        let result = insert_spigot_author(&context.pool, author).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -157,10 +155,10 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let authors = create_test_authors();
+        let authors = test_authors();
 
         for author in authors {
-            insert_spigot_author(&context.pool, author).await?;
+            insert_spigot_author(&context.pool, &author).await?;
         }
 
         // Act
@@ -175,7 +173,13 @@ mod test {
         Ok(())
     }
 
-    fn create_test_authors() -> Vec<SpigotAuthor> {
+    pub async fn populate_test_spigot_author(db_pool: &Pool) -> Result<SpigotAuthor> {
+        let author = &test_authors()[0];
+        insert_spigot_author(db_pool, author).await?;
+        Ok(author.clone())
+    }
+
+    fn test_authors() -> Vec<SpigotAuthor> {
         vec![
             SpigotAuthor {
                 id: 1,

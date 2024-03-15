@@ -3,7 +3,123 @@
 #[allow(clippy :: all, clippy :: pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod types { }#[allow(clippy :: all, clippy :: pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
-{ pub mod hangar_project
+{ pub mod final_project
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertFinalProjectParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,> { pub id : Option<i64>,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<T1>,pub spigot_author : Option<T2>,pub spigot_tag : Option<T3>,pub hangar_slug : Option<T4>,pub hangar_name : Option<T5>,pub hangar_owner : Option<T6>,pub hangar_description : Option<T7>,}#[derive( Debug, Clone, PartialEq, )] pub struct FinalProjectEntity
+{ pub id : Option<i32>,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<String>,pub spigot_author : Option<String>,pub spigot_tag : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_owner : Option<String>,pub hangar_description : Option<String>,}pub struct FinalProjectEntityBorrowed < 'a >
+{ pub id : Option<i32>,pub release_date : time::OffsetDateTime,pub update_date : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_tag : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_owner : Option<&'a str>,pub hangar_description : Option<&'a str>,} impl < 'a > From < FinalProjectEntityBorrowed <
+'a >> for FinalProjectEntity
+{
+    fn
+    from(FinalProjectEntityBorrowed { id,release_date,update_date,spigot_id,spigot_name,spigot_author,spigot_tag,hangar_slug,hangar_name,hangar_owner,hangar_description,} : FinalProjectEntityBorrowed < 'a >)
+    -> Self { Self { id,release_date,update_date,spigot_id,spigot_name: spigot_name.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),spigot_tag: spigot_tag.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_owner: hangar_owner.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),} }
+}pub struct FinalProjectEntityQuery < 'a, C : GenericClient, T, const N : usize >
+{
+    client : & 'a  C, params :
+    [& 'a (dyn postgres_types :: ToSql + Sync) ; N], stmt : & 'a mut cornucopia_async
+    :: private :: Stmt, extractor : fn(& tokio_postgres :: Row) -> FinalProjectEntityBorrowed,
+    mapper : fn(FinalProjectEntityBorrowed) -> T,
+} impl < 'a, C, T : 'a, const N : usize > FinalProjectEntityQuery < 'a, C, T, N >
+where C : GenericClient
+{
+    pub fn map < R > (self, mapper : fn(FinalProjectEntityBorrowed) -> R) -> FinalProjectEntityQuery
+    < 'a, C, R, N >
+    {
+        FinalProjectEntityQuery
+        {
+            client : self.client, params : self.params, stmt : self.stmt,
+            extractor : self.extractor, mapper,
+        }
+    } pub async fn one(self) -> Result < T, tokio_postgres :: Error >
+    {
+        let stmt = self.stmt.prepare(self.client) .await ? ; let row =
+        self.client.query_one(stmt, & self.params) .await ? ;
+        Ok((self.mapper) ((self.extractor) (& row)))
+    } pub async fn all(self) -> Result < Vec < T >, tokio_postgres :: Error >
+    { self.iter() .await ?.try_collect().await } pub async fn opt(self) -> Result
+    < Option < T >, tokio_postgres :: Error >
+    {
+        let stmt = self.stmt.prepare(self.client) .await ? ;
+        Ok(self.client.query_opt(stmt, & self.params) .await
+        ?.map(| row | (self.mapper) ((self.extractor) (& row))))
+    } pub async fn iter(self,) -> Result < impl futures::Stream < Item = Result
+    < T, tokio_postgres :: Error >> + 'a, tokio_postgres :: Error >
+    {
+        let stmt = self.stmt.prepare(self.client) .await ? ; let it =
+        self.client.query_raw(stmt, cornucopia_async :: private ::
+        slice_iter(& self.params)) .await ?
+        .map(move | res |
+        res.map(| row | (self.mapper) ((self.extractor) (& row)))) .into_stream() ;
+        Ok(it)
+    }
+}pub fn get_merged_projects() -> GetMergedProjectsStmt
+{ GetMergedProjectsStmt(cornucopia_async :: private :: Stmt :: new("SELECT f.id AS id, GREATEST(s.release_date, h.created_at) AS release_date, GREATEST(s.update_date, h.last_updated) AS update_date, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
+  FROM spigot_resource s
+  INNER JOIN spigot_author a
+  ON  s.author_id = a.id
+
+  FULL OUTER JOIN hangar_project h
+  ON  s.source_repository_host = h.source_repository_host
+  AND s.source_repository_owner = h.source_repository_owner
+  AND s.source_repository_name = h.source_repository_name
+
+  LEFT JOIN final_project f
+  ON  f.spigot_id = spigot_id
+  OR  f.hangar_slug = hangar_slug")) } pub
+struct GetMergedProjectsStmt(cornucopia_async :: private :: Stmt) ; impl
+GetMergedProjectsStmt { pub fn bind < 'a, C : GenericClient, >
+(& 'a mut self, client : & 'a  C,
+) -> FinalProjectEntityQuery < 'a, C,
+FinalProjectEntity, 0 >
+{
+    FinalProjectEntityQuery
+    {
+        client, params : [], stmt : & mut self.0, extractor :
+        | row | { FinalProjectEntityBorrowed { id : row.get(0),release_date : row.get(1),update_date : row.get(2),spigot_id : row.get(3),spigot_name : row.get(4),spigot_author : row.get(5),spigot_tag : row.get(6),hangar_slug : row.get(7),hangar_name : row.get(8),hangar_owner : row.get(9),hangar_description : row.get(10),} }, mapper : | it | { <FinalProjectEntity>::from(it) },
+    }
+} }pub fn upsert_final_project() -> UpsertFinalProjectStmt
+{ UpsertFinalProjectStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO final_project (id, release_date, update_date, spigot_id, spigot_name, spigot_author, spigot_tag, hangar_slug, hangar_name, hangar_owner, hangar_description)
+  VALUES (COALESCE($1, nextval('final_project_id_seq')), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+  ON CONFLICT (id)
+  DO UPDATE SET
+    release_date = EXCLUDED.release_date,
+    update_date = EXCLUDED.update_date,
+    spigot_id = EXCLUDED.spigot_id,
+    spigot_name = EXCLUDED.spigot_name,
+    spigot_author = EXCLUDED.spigot_author,
+    spigot_tag = EXCLUDED.spigot_tag,
+    hangar_slug = EXCLUDED.hangar_slug,
+    hangar_name = EXCLUDED.hangar_name,
+    hangar_owner = EXCLUDED.hangar_owner,
+    hangar_description = EXCLUDED.hangar_description")) } pub
+struct UpsertFinalProjectStmt(cornucopia_async :: private :: Stmt) ; impl
+UpsertFinalProjectStmt { pub async fn bind < 'a, C : GenericClient, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,>
+(& 'a mut self, client : & 'a  C,
+id : & 'a Option<i64>,release_date : & 'a time::OffsetDateTime,update_date : & 'a time::OffsetDateTime,spigot_id : & 'a Option<i32>,spigot_name : & 'a Option<T1>,spigot_author : & 'a Option<T2>,spigot_tag : & 'a Option<T3>,hangar_slug : & 'a Option<T4>,hangar_name : & 'a Option<T5>,hangar_owner : & 'a Option<T6>,hangar_description : & 'a Option<T7>,) -> Result < u64, tokio_postgres :: Error >
+{
+    let stmt = self.0.prepare(client) .await ? ;
+    client.execute(stmt, & [id,release_date,update_date,spigot_id,spigot_name,spigot_author,spigot_tag,hangar_slug,hangar_name,hangar_owner,hangar_description,]) .await
+} }impl < 'a, C : GenericClient + Send + Sync, T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,>
+cornucopia_async :: Params < 'a, UpsertFinalProjectParams < T1,T2,T3,T4,T5,T6,T7,>, std::pin::Pin<Box<dyn futures::Future<Output = Result <
+u64, tokio_postgres :: Error > > + Send + 'a>>, C > for UpsertFinalProjectStmt
+{
+    fn
+    params(& 'a mut self, client : & 'a  C, params : & 'a
+    UpsertFinalProjectParams < T1,T2,T3,T4,T5,T6,T7,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result < u64, tokio_postgres ::
+    Error > > + Send + 'a>> { Box::pin(self.bind(client, & params.id,& params.release_date,& params.update_date,& params.spigot_id,& params.spigot_name,& params.spigot_author,& params.spigot_tag,& params.hangar_slug,& params.hangar_name,& params.hangar_owner,& params.hangar_description,) ) }
+}pub fn get_final_projects() -> GetFinalProjectsStmt
+{ GetFinalProjectsStmt(cornucopia_async :: private :: Stmt :: new("SELECT * FROM final_project")) } pub
+struct GetFinalProjectsStmt(cornucopia_async :: private :: Stmt) ; impl
+GetFinalProjectsStmt { pub fn bind < 'a, C : GenericClient, >
+(& 'a mut self, client : & 'a  C,
+) -> FinalProjectEntityQuery < 'a, C,
+FinalProjectEntity, 0 >
+{
+    FinalProjectEntityQuery
+    {
+        client, params : [], stmt : & mut self.0, extractor :
+        | row | { FinalProjectEntityBorrowed { id : row.get(0),release_date : row.get(1),update_date : row.get(2),spigot_id : row.get(3),spigot_name : row.get(4),spigot_author : row.get(5),spigot_tag : row.get(6),hangar_slug : row.get(7),hangar_name : row.get(8),hangar_owner : row.get(9),hangar_description : row.get(10),} }, mapper : | it | { <FinalProjectEntity>::from(it) },
+    }
+} }}pub mod hangar_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams < T1 : cornucopia_async::StringSql,T2 : cornucopia_async::StringSql,T3 : cornucopia_async::StringSql,T4 : cornucopia_async::StringSql,T5 : cornucopia_async::StringSql,T6 : cornucopia_async::StringSql,T7 : cornucopia_async::StringSql,T8 : cornucopia_async::StringSql,T9 : cornucopia_async::StringSql,T10 : cornucopia_async::StringSql,T11 : cornucopia_async::StringSql,> { pub slug : T1,pub owner : T2,pub name : T3,pub description : T4,pub created_at : time::OffsetDateTime,pub last_updated : time::OffsetDateTime,pub visibility : T5,pub avatar_url : T6,pub version : T7,pub source_code_link : Option<T8>,pub source_repository_host : Option<T9>,pub source_repository_owner : Option<T10>,pub source_repository_name : Option<T11>,}#[derive( Debug, Clone, PartialEq, )] pub struct HangarProjectEntity
 { pub slug : String,pub owner : String,pub name : String,pub description : String,pub created_at : time::OffsetDateTime,pub last_updated : time::OffsetDateTime,pub visibility : String,pub avatar_url : String,pub version : String,pub source_code_link : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct HangarProjectEntityBorrowed < 'a >
 { pub slug : &'a str,pub owner : &'a str,pub name : &'a str,pub description : &'a str,pub created_at : time::OffsetDateTime,pub last_updated : time::OffsetDateTime,pub visibility : &'a str,pub avatar_url : &'a str,pub version : &'a str,pub source_code_link : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,} impl < 'a > From < HangarProjectEntityBorrowed <

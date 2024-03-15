@@ -83,19 +83,18 @@ enum SpigotResourceError {
     level = "debug",
     skip(db_pool)
 )]
-pub async fn upsert_spigot_resource(db_pool: &Pool, resource: SpigotResource) -> Result<()> {
+pub async fn upsert_spigot_resource(db_pool: &Pool, resource: &SpigotResource) -> Result<()> {
     let db_client = db_pool.get().await?;
-    let resource_id = resource.id;
 
     let db_result = spigot_resource::upsert_spigot_resource()
-        .params(&db_client, &resource.into())
+        .params(&db_client, &resource.clone().into())
         .await;
 
     match db_result {
         Ok(_) => Ok(()),
         Err(err) => Err(
             SpigotResourceError::DatabaseQueryFailed {
-                resource_id,
+                resource_id: resource.id,
                 source: err.into()
             }.into()
         )
@@ -127,10 +126,10 @@ pub async fn get_latest_spigot_resource_update_date(db_pool: &Pool) -> Result<Of
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
-    use crate::database::spigot::author::{SpigotAuthor, insert_spigot_author};
-    use crate::database::spigot::resource::{upsert_spigot_resource, get_latest_spigot_resource_update_date};
+    use crate::database::spigot::author::SpigotAuthor;
+    use crate::database::spigot::author::test::populate_test_spigot_author;
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -144,13 +143,11 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = create_test_author();
-        insert_spigot_author(&context.pool, author).await?;
-
-        let resource = &create_test_resources()[0];
+        let author = populate_test_spigot_author(&context.pool).await?;
+        let resource = &test_resources()[0];
 
         // Act
-        upsert_spigot_resource(&context.pool, resource.clone()).await?;
+        upsert_spigot_resource(&context.pool, resource).await?;
 
         // Assert
         let retrieved_resources = get_spigot_resources(&context.pool).await?;
@@ -172,17 +169,16 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = create_test_author();
-        insert_spigot_author(&context.pool, author).await?;
+        let author = populate_test_spigot_author(&context.pool).await?;
 
-        let resource = &create_test_resources()[0];
-        upsert_spigot_resource(&context.pool, resource.clone()).await?;
+        let resource = &test_resources()[0];
+        upsert_spigot_resource(&context.pool, resource).await?;
 
         let updated_resource = SpigotResource {
             id: 1,
-            name: "resource-1-updated".to_string(),
-            parsed_name: Some("resource-1-updated".to_string()),
-            tag: "resource-1-tag-updated".to_string(),
+            name: "foo-updated".to_string(),
+            parsed_name: Some("foo-updated".to_string()),
+            tag: "foo-tag-updated".to_string(),
             slug: "foo-updated.1".to_string(),
             release_date: datetime!(2020-01-01 0:00 UTC),
             update_date: datetime!(2021-07-01 0:00 UTC),
@@ -197,7 +193,7 @@ mod test {
         };
 
         // Act
-        upsert_spigot_resource(&context.pool, updated_resource.clone()).await?;
+        upsert_spigot_resource(&context.pool, &updated_resource).await?;
 
         // Assert
         let retrieved_resources = get_spigot_resources(&context.pool).await?;
@@ -219,10 +215,10 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let resource = &create_test_resources()[0];
+        let resource = &test_resources()[0];
 
         // Act
-        let result = upsert_spigot_resource(&context.pool, resource.clone()).await;
+        let result = upsert_spigot_resource(&context.pool, resource).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -241,13 +237,11 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = create_test_author();
+        let author = populate_test_spigot_author(&context.pool).await?;
 
-        insert_spigot_author(&context.pool, author).await?;
-
-        let resources = create_test_resources();
+        let resources = test_resources();
         for resource in resources {
-            upsert_spigot_resource(&context.pool, resource).await?;
+            upsert_spigot_resource(&context.pool, &resource).await?;
         }
 
         // Act
@@ -262,20 +256,21 @@ mod test {
         Ok(())
     }
 
-    fn create_test_author() -> SpigotAuthor {
-        SpigotAuthor {
-            id: 1,
-            name: "author-1".to_string()
-        }
+    pub async fn populate_test_spigot_author_and_resource(db_pool: &Pool) -> Result<(SpigotAuthor, SpigotResource)> {
+        let author = populate_test_spigot_author(db_pool).await?;
+
+        let resource = &test_resources()[0];
+        upsert_spigot_resource(db_pool, resource).await?;
+        Ok((author.clone(), resource.clone()))
     }
 
-    fn create_test_resources() -> Vec<SpigotResource> {
+    fn test_resources() -> Vec<SpigotResource> {
         vec![
             SpigotResource {
                 id: 1,
-                name: "resource-1".to_string(),
-                parsed_name: Some("resource-1".to_string()),
-                tag: "resource-1-tag".to_string(),
+                name: "foo".to_string(),
+                parsed_name: Some("foo".to_string()),
+                tag: "foo-tag".to_string(),
                 slug: "foo.1".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2021-01-01 0:00 UTC),
@@ -290,9 +285,9 @@ mod test {
             },
             SpigotResource {
                 id: 2,
-                name: "resource-2".to_string(),
-                parsed_name: Some("resource-2".to_string()),
-                tag: "resource-2-tag".to_string(),
+                name: "bar".to_string(),
+                parsed_name: Some("bar".to_string()),
+                tag: "bar-tag".to_string(),
                 slug: "bar.2".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2022-01-01 0:00 UTC),
@@ -307,9 +302,9 @@ mod test {
             },
             SpigotResource {
                 id: 3,
-                name: "resource-3".to_string(),
-                parsed_name: Some("resource-3".to_string()),
-                tag: "resource-3-tag".to_string(),
+                name: "baz".to_string(),
+                parsed_name: Some("baz".to_string()),
+                tag: "baz-tag".to_string(),
                 slug: "baz.3".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2023-01-01 0:00 UTC),

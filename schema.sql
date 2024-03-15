@@ -1,11 +1,10 @@
 CREATE TABLE IF NOT EXISTS spigot_author (
-  id serial NOT NULL,
-  name text NOT NULL,
-  PRIMARY KEY (id)
+  id SERIAL NOT NULL PRIMARY KEY,
+  name text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS spigot_resource (
-  id serial NOT NULL,
+  id SERIAL NOT NULL PRIMARY KEY,
   name text NOT NULL,
   parsed_name text,
   tag text NOT NULL,
@@ -19,12 +18,11 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   source_code_link text,
   source_repository_host text,
   source_repository_owner text,
-  source_repository_name text,
-  PRIMARY KEY (id)
+  source_repository_name text
 );
 
 CREATE TABLE IF NOT EXISTS hangar_project (
-  slug text NOT NULL,
+  slug text NOT NULL PRIMARY KEY,
   owner text NOT NULL,
   name text NOT NULL,
   description text NOT NULL,
@@ -36,6 +34,19 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   source_code_link text,
   source_repository_host text,
   source_repository_owner text,
-  source_repository_name text,
-  PRIMARY KEY (slug)
+  source_repository_name text
+);
+
+CREATE TABLE IF NOT EXISTS final_project (
+  id SERIAL NOT NULL PRIMARY KEY,
+  release_date timestamptz NOT NULL,
+  update_date timestamptz NOT NULL,
+  spigot_id integer REFERENCES spigot_resource,
+  spigot_name text,
+  spigot_author text,
+  spigot_tag text,
+  hangar_slug text REFERENCES hangar_project,
+  hangar_name text,
+  hangar_owner text,
+  hangar_description text
 );
