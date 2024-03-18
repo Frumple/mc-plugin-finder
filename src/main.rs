@@ -2,11 +2,13 @@ use crate::collector::HttpServer;
 use crate::collector::hangar::{HangarClient, HangarServer};
 use crate::collector::spigot::{SpigotClient, SpigotServer};
 use crate::database::Database;
+use crate::database::r#final::project::{get_merged_projects, upsert_final_projects};
+use crate::database::hangar::project::get_latest_hangar_project_update_date;
 use crate::database::spigot::author::get_highest_spigot_author_id;
 use crate::database::spigot::resource::get_latest_spigot_resource_update_date;
 
 use anyhow::Result;
-use database::hangar::project::get_latest_hangar_project_update_date;
+
 use tracing::info;
 use tracing_subscriber::fmt::format::FmtSpan;
 
@@ -35,23 +37,33 @@ async fn main() -> Result<()> {
     let hangar_server = HangarServer::new().await;
     let hangar_client = HangarClient::new(hangar_server)?;
 
+    /* Populate Spigot Authors */
     // spigot_client.populate_spigot_authors(&db_pool).await?;
 
+    /* Update Spigot Authors */
     // let highest_author_id = get_highest_spigot_author_id(&db_pool).await?;
     // info!("Highest id: {:?}", highest_author_id);
     // spigot_client.update_spigot_authors(&db_pool, highest_author_id).await?;
 
+    /* Populate Spigot Resources without versions */
     // spigot_client.populate_spigot_resources(&db_pool).await?;
 
+    /* Update Spigot Resources without versions */
     // let latest_spigot_resource_update_date = get_latest_spigot_resource_update_date(&db_pool).await?;
     // info!("Latest update date: {:?}", latest_spigot_resource_update_date);
     // spigot_client.update_spigot_resources(&db_pool, latest_spigot_resource_update_date).await?;
 
+    /* Populate Hangar Projects */
     // hangar_client.populate_hangar_projects(&db_pool).await?;
 
+    /* Update Hangar Projects */
     // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_pool).await?;
     // info!("Latest update date: {:?}|", latest_hangar_project_update_date);
     // hangar_client.update_hangar_projects(&db_pool, latest_hangar_project_update_date).await?;
+
+    /* Merge Final Projects */
+    // let final_projects = get_merged_projects(&db_pool).await?;
+    // upsert_final_projects(&db_pool, &final_projects).await?;
 
     Ok(())
 }

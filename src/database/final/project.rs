@@ -5,7 +5,7 @@ use cornucopia_async::Params;
 use deadpool_postgres::Pool;
 use thiserror::Error;
 use time::OffsetDateTime;
-use tracing::instrument;
+use tracing::{info, instrument};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FinalProject {
@@ -68,7 +68,7 @@ enum FinalProjectError {
 }
 
 #[instrument(
-    level = "debug",
+    level = "info",
     skip(db_pool)
 )]
 pub async fn get_merged_projects(db_pool: &Pool) -> Result<Vec<FinalProject>> {
@@ -82,6 +82,23 @@ pub async fn get_merged_projects(db_pool: &Pool) -> Result<Vec<FinalProject>> {
     let projects = entities.into_iter().map(|x| x.into()).collect();
 
     Ok(projects)
+}
+
+#[instrument(
+    level = "info",
+    skip(db_pool, final_projects)
+)]
+pub async fn upsert_final_projects(db_pool: &Pool, final_projects: &Vec<FinalProject>) -> Result<()> {
+    let mut count = 0;
+
+    for project in final_projects {
+        upsert_final_project(db_pool, project).await?;
+        count += 1;
+    }
+
+    info!("Final projects merged: {}", count);
+
+    Ok(())
 }
 
 #[instrument(
