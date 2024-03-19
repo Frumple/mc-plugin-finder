@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   source_repository_name text
 );
 
-CREATE TABLE IF NOT EXISTS final_project (
+CREATE TABLE IF NOT EXISTS common_project (
   id SERIAL NOT NULL PRIMARY KEY,
   release_date timestamptz NOT NULL,
   update_date timestamptz NOT NULL,

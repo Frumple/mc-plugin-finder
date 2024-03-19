@@ -2,7 +2,7 @@ use crate::collector::HttpServer;
 use crate::collector::hangar::{HangarClient, HangarServer};
 use crate::collector::spigot::{SpigotClient, SpigotServer};
 use crate::database::Database;
-use crate::database::r#final::project::{get_merged_projects, upsert_final_projects};
+use crate::database::common::project::{get_merged_common_projects, upsert_common_projects};
 use crate::database::hangar::project::get_latest_hangar_project_update_date;
 use crate::database::spigot::author::get_highest_spigot_author_id;
 use crate::database::spigot::resource::get_latest_spigot_resource_update_date;
@@ -61,9 +61,9 @@ async fn main() -> Result<()> {
     // info!("Latest update date: {:?}|", latest_hangar_project_update_date);
     // hangar_client.update_hangar_projects(&db_pool, latest_hangar_project_update_date).await?;
 
-    /* Merge Final Projects */
-    // let final_projects = get_merged_projects(&db_pool).await?;
-    // upsert_final_projects(&db_pool, &final_projects).await?;
+    /* Merge Common Projects */
+    // let common_projects = get_merged_common_projects(&db_pool).await?;
+    // upsert_common_projects(&db_pool, &common_projects).await?;
 
     Ok(())
 }
