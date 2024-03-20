@@ -1,3 +1,9 @@
+-- Enable trigram module for text search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Tables
+
+-- Spigot
 CREATE TABLE IF NOT EXISTS spigot_author (
   id SERIAL NOT NULL PRIMARY KEY,
   name text NOT NULL
@@ -21,6 +27,7 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   source_repository_name text
 );
 
+-- Hangar
 CREATE TABLE IF NOT EXISTS hangar_project (
   slug text NOT NULL PRIMARY KEY,
   owner text NOT NULL,
@@ -37,6 +44,7 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   source_repository_name text
 );
 
+-- Common
 CREATE TABLE IF NOT EXISTS common_project (
   id SERIAL NOT NULL PRIMARY KEY,
   date_created timestamptz NOT NULL,
@@ -50,3 +58,25 @@ CREATE TABLE IF NOT EXISTS common_project (
   hangar_owner text,
   hangar_description text
 );
+
+-- Indexes
+
+-- Trigram indexes for text search on name, description, and author
+CREATE INDEX IF NOT EXISTS common_project_name_index
+ON common_project
+USING gin (spigot_name gin_trgm_ops, hangar_name gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS common_project_description_index
+ON common_project
+USING gin (spigot_tag gin_trgm_ops, hangar_description gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS common_project_author_index
+ON common_project
+USING gin (spigot_author gin_trgm_ops, hangar_owner gin_trgm_ops);
+
+-- B-tree indexes for ordering by date_created and date_updated
+CREATE INDEX IF NOT EXISTS common_project_date_created_index
+ON common_project (date_created);
+
+CREATE INDEX IF NOT EXISTS common_project_date_updated_index
+ON common_project (date_updated);
