@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS hangar_project (
 
 CREATE TABLE IF NOT EXISTS common_project (
   id SERIAL NOT NULL PRIMARY KEY,
-  release_date timestamptz NOT NULL,
-  update_date timestamptz NOT NULL,
+  date_created timestamptz NOT NULL,
+  date_updated timestamptz NOT NULL,
   spigot_id integer REFERENCES spigot_resource,
   spigot_name text,
   spigot_author text,

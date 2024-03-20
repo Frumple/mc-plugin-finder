@@ -10,8 +10,8 @@ use tracing::{info, instrument};
 #[derive(Clone, Debug, PartialEq)]
 pub struct CommonProject {
     pub id: Option<i32>,
-    pub release_date: OffsetDateTime,
-    pub update_date: OffsetDateTime,
+    pub date_created: OffsetDateTime,
+    pub date_updated: OffsetDateTime,
     pub spigot_id: Option<i32>,
     pub spigot_name: Option<String>,
     pub spigot_author: Option<String>,
@@ -26,8 +26,8 @@ impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, S
     fn from(project: CommonProject) -> Self {
         UpsertCommonProjectParams {
             id: project.id.map(i64::from),
-            release_date: project.release_date,
-            update_date: project.update_date,
+            date_created: project.date_created,
+            date_updated: project.date_updated,
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
             spigot_author: project.spigot_author,
@@ -44,8 +44,8 @@ impl From<CommonProjectEntity> for CommonProject {
     fn from(entity: CommonProjectEntity) -> Self {
         CommonProject {
             id: entity.id,
-            release_date: entity.release_date,
-            update_date: entity.update_date,
+            date_created: entity.date_created,
+            date_updated: entity.date_updated,
             spigot_id: entity.spigot_id,
             spigot_name: entity.spigot_name,
             spigot_author: entity.spigot_author,
@@ -429,13 +429,13 @@ mod test {
     }
 
     fn assert_dates_are_equal_to_spigot_resource(common_project: &CommonProject, spigot_resource: &SpigotResource) {
-        assert_that(&common_project.release_date).is_equal_to(spigot_resource.release_date);
-        assert_that(&common_project.update_date).is_equal_to(spigot_resource.update_date);
+        assert_that(&common_project.date_created).is_equal_to(spigot_resource.release_date);
+        assert_that(&common_project.date_updated).is_equal_to(spigot_resource.update_date);
     }
 
     fn assert_dates_are_equal_to_hangar_project(common_project: &CommonProject, hangar_project: &HangarProject) {
-        assert_that(&common_project.release_date).is_equal_to(hangar_project.created_at);
-        assert_that(&common_project.update_date).is_equal_to(hangar_project.last_updated);
+        assert_that(&common_project.date_created).is_equal_to(hangar_project.created_at);
+        assert_that(&common_project.date_updated).is_equal_to(hangar_project.last_updated);
     }
 
     fn assert_spigot_fields_are_equal(common_project: &CommonProject, spigot_author: &SpigotAuthor, spigot_resource: &SpigotResource) {
