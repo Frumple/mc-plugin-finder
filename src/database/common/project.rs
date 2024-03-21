@@ -5,6 +5,7 @@ use cornucopia_async::Params;
 use deadpool_postgres::Pool;
 use thiserror::Error;
 use time::OffsetDateTime;
+use time::macros::datetime;
 use tracing::{info, instrument};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -71,11 +72,17 @@ enum CommonProjectError {
     level = "info",
     skip(db_pool)
 )]
-pub async fn get_merged_common_projects(db_pool: &Pool) -> Result<Vec<CommonProject>> {
+pub async fn get_merged_common_projects(db_pool: &Pool, update_date_later_than: Option<OffsetDateTime>) -> Result<Vec<CommonProject>> {
     let db_client = db_pool.get().await?;
 
+    // If no update date is provided, default to January 1st 2000, which should merge all projects ever created
+    let update_date = match update_date_later_than {
+        Some(date) => date,
+        None => datetime!(2000-01-01 0:00 UTC)
+    };
+
     let entities = common_project::get_merged_common_projects()
-        .bind(&db_client)
+        .bind(&db_client, &update_date)
         .all()
         .await?;
 
@@ -146,13 +153,46 @@ mod test {
     use crate::database::spigot::author::SpigotAuthor;
 
     use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
-    use crate::database::spigot::resource::test::populate_test_spigot_author_and_resource;
+    use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, test_resources};
 
     use crate::test::DatabaseTestContext;
 
     use ::function_name::named;
     use speculoos::prelude::*;
-    use time::macros::datetime;
+
+    #[tokio::test]
+    #[named]
+    async fn should_only_merge_after_provided_update_date() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        // Create two resources with update_dates 2021-01-01 and 2022-01-01 respectively.
+        let (spigot_author, _spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
+
+        let spigot_resource2 = &test_resources()[1];
+        upsert_spigot_resource(&context.pool, spigot_resource2).await?;
+
+        // Act
+        // Get merged common projects with update date greater than 2021-07-01.
+        let merged_projects = get_merged_common_projects(&context.pool, Some(datetime!(2021-07-01 0:00 UTC))).await?;
+
+        // Assert
+        // Only the resource with update_date 2022-01-01 should be merged.
+        assert_that(&merged_projects).has_length(1);
+
+        let merged_project = &merged_projects[0];
+        assert_that(&merged_project.id).is_none();
+        assert_dates_are_equal_to_spigot_resource(merged_project, spigot_resource2);
+
+        assert_spigot_fields_are_equal(merged_project, &spigot_author, spigot_resource2);
+        assert_hangar_fields_are_none(merged_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
 
     #[tokio::test]
     #[named]
@@ -164,7 +204,7 @@ mod test {
         let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
 
         // Act 1 - Get merged project
-        let merged_projects = get_merged_common_projects(&context.pool).await?;
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
 
         // Assert 1 - Verify merged project
         assert_that(&merged_projects).has_length(1);
@@ -197,7 +237,7 @@ mod test {
         spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
-        let new_merged_projects = get_merged_common_projects(&context.pool).await?;
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
 
         // Assert 3 - Verify project was updated
@@ -228,7 +268,7 @@ mod test {
         let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
 
         // Act 1 - Get merged project
-        let merged_projects = get_merged_common_projects(&context.pool).await?;
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
 
         // Assert 1 - Verify merged project
         assert_that(&merged_projects).has_length(1);
@@ -261,7 +301,7 @@ mod test {
         hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
-        let new_merged_projects = get_merged_common_projects(&context.pool).await?;
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
 
         // Assert 3 - Verify project was updated
@@ -293,7 +333,7 @@ mod test {
         let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
 
         // Act 1 - Get merged project
-        let merged_projects = get_merged_common_projects(&context.pool).await?;
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
 
         // Assert 1 - Verify merged project
         assert_that(&merged_projects).has_length(1);
@@ -331,7 +371,7 @@ mod test {
         hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
-        let new_merged_projects = get_merged_common_projects(&context.pool).await?;
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
 
         // Assert 3 - Verify project was updated
@@ -361,7 +401,7 @@ mod test {
         // Arrange
         let (spigot_author, spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
 
-        let common_projects = get_merged_common_projects(&context.pool).await?;
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &common_projects[0]).await?;
 
         // Act
@@ -369,7 +409,7 @@ mod test {
         hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
-        let new_common_projects = get_merged_common_projects(&context.pool).await?;
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &new_common_projects[0]).await?;
 
         // Assert
@@ -399,7 +439,7 @@ mod test {
         // Arrange
         let hangar_project = populate_test_hangar_project(&context.pool).await?;
 
-        let common_projects = get_merged_common_projects(&context.pool).await?;
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &common_projects[0]).await?;
 
         // Act
@@ -407,7 +447,7 @@ mod test {
         spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
-        let new_common_projects = get_merged_common_projects(&context.pool).await?;
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
         upsert_common_project(&context.pool, &new_common_projects[0]).await?;
 
         // Assert

@@ -15,7 +15,9 @@ SELECT COALESCE(cs.id, ch.id) AS id, GREATEST(s.release_date, h.created_at) AS d
   ON  s.id = cs.spigot_id
 
   LEFT JOIN common_project ch
-  ON  h.slug = ch.hangar_slug;
+  ON  h.slug = ch.hangar_slug
+
+  WHERE GREATEST(s.update_date, h.last_updated) > :date_updated;
 
 --! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_author?, spigot_tag?, hangar_slug?, hangar_name?, hangar_owner?, hangar_description?)
 INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_author, spigot_tag, hangar_slug, hangar_name, hangar_owner, hangar_description)

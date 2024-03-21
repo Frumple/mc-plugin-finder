@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     // hangar_client.update_hangar_projects(&db_pool, latest_hangar_project_update_date).await?;
 
     /* Merge Common Projects */
-    // let common_projects = get_merged_common_projects(&db_pool).await?;
+    // let common_projects = get_merged_common_projects(&db_pool, None).await?;
     // upsert_common_projects(&db_pool, &common_projects).await?;
 
     Ok(())

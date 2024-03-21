@@ -64,16 +64,18 @@ GenericClient
   ON  s.id = cs.spigot_id
 
   LEFT JOIN common_project ch
-  ON  h.slug = ch.hangar_slug")) } pub struct
+  ON  h.slug = ch.hangar_slug
+
+  WHERE GREATEST(s.update_date, h.last_updated) > $1")) } pub struct
 GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetMergedCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
-) -> CommonProjectEntityQuery<'a,C,
-CommonProjectEntity, 0>
+date_updated: &'a time::OffsetDateTime,) -> CommonProjectEntityQuery<'a,C,
+CommonProjectEntity, 1>
 {
     CommonProjectEntityQuery
     {
-        client, params: [], stmt: &mut self.0, extractor:
+        client, params: [date_updated,], stmt: &mut self.0, extractor:
         |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_author: row.get(5),spigot_tag: row.get(6),hangar_slug: row.get(7),hangar_name: row.get(8),hangar_owner: row.get(9),hangar_description: row.get(10),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }pub fn upsert_common_project() -> UpsertCommonProjectStmt

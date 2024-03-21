@@ -264,7 +264,7 @@ pub mod test {
         Ok((author.clone(), resource.clone()))
     }
 
-    fn test_resources() -> Vec<SpigotResource> {
+    pub fn test_resources() -> Vec<SpigotResource> {
         vec![
             SpigotResource {
                 id: 1,
