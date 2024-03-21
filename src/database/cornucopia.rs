@@ -50,7 +50,7 @@ GenericClient
         Ok(it)
     }
 }pub fn get_merged_common_projects() -> GetMergedCommonProjectsStmt
-{ GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT f.id AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREATEST(s.update_date, h.last_updated) AS date_updated, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
+{ GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT COALESCE(cs.id, ch.id) AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREATEST(s.update_date, h.last_updated) AS date_updated, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
   FROM spigot_resource s
   INNER JOIN spigot_author a
   ON  s.author_id = a.id
@@ -60,9 +60,11 @@ GenericClient
   AND s.source_repository_owner = h.source_repository_owner
   AND s.source_repository_name = h.source_repository_name
 
-  LEFT JOIN common_project f
-  ON  f.spigot_id = spigot_id
-  OR  f.hangar_slug = hangar_slug")) } pub struct
+  LEFT JOIN common_project cs
+  ON  s.id = cs.spigot_id
+
+  LEFT JOIN common_project ch
+  ON  h.slug = ch.hangar_slug")) } pub struct
 GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetMergedCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,

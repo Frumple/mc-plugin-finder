@@ -1,7 +1,7 @@
 --: CommonProjectEntity(id?, spigot_id?, spigot_name?, spigot_author?, spigot_tag?, hangar_slug?, hangar_name?, hangar_owner?, hangar_description?)
 
 --! get_merged_common_projects : CommonProjectEntity
-SELECT f.id AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREATEST(s.update_date, h.last_updated) AS date_updated, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
+SELECT COALESCE(cs.id, ch.id) AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREATEST(s.update_date, h.last_updated) AS date_updated, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
   FROM spigot_resource s
   INNER JOIN spigot_author a
   ON  s.author_id = a.id
@@ -11,9 +11,11 @@ SELECT f.id AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREAT
   AND s.source_repository_owner = h.source_repository_owner
   AND s.source_repository_name = h.source_repository_name
 
-  LEFT JOIN common_project f
-  ON  f.spigot_id = spigot_id
-  OR  f.hangar_slug = hangar_slug;
+  LEFT JOIN common_project cs
+  ON  s.id = cs.spigot_id
+
+  LEFT JOIN common_project ch
+  ON  h.slug = ch.hangar_slug;
 
 --! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_author?, spigot_tag?, hangar_slug?, hangar_name?, hangar_owner?, hangar_description?)
 INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_author, spigot_tag, hangar_slug, hangar_name, hangar_owner, hangar_description)
