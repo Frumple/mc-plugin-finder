@@ -135,7 +135,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let project = &create_test_projects()[0];
+        let project = &create_test_hangar_projects()[0];
 
         // Act
         upsert_hangar_project(&context.pool, project).await?;
@@ -201,7 +201,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let projects = create_test_projects();
+        let projects = create_test_hangar_projects();
         for project in projects {
             upsert_hangar_project(&context.pool, &project).await?;
         }
@@ -219,12 +219,12 @@ pub mod test {
     }
 
     pub async fn populate_test_hangar_project(db_pool: &Pool) -> Result<HangarProject> {
-        let project = &create_test_projects()[0];
+        let project = &create_test_hangar_projects()[0];
         upsert_hangar_project(db_pool, project).await?;
         Ok(project.clone())
     }
 
-    fn create_test_projects() -> Vec<HangarProject> {
+    fn create_test_hangar_projects() -> Vec<HangarProject> {
         vec![
             HangarProject {
                 slug: "foo".to_string(),

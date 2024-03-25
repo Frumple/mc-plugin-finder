@@ -144,7 +144,7 @@ pub mod test {
 
         // Arrange
         let author = populate_test_spigot_author(&context.pool).await?;
-        let resource = &test_resources()[0];
+        let resource = &create_test_spigot_resources()[0];
 
         // Act
         upsert_spigot_resource(&context.pool, resource).await?;
@@ -171,7 +171,7 @@ pub mod test {
         // Arrange
         let author = populate_test_spigot_author(&context.pool).await?;
 
-        let resource = &test_resources()[0];
+        let resource = &create_test_spigot_resources()[0];
         upsert_spigot_resource(&context.pool, resource).await?;
 
         let updated_resource = SpigotResource {
@@ -215,7 +215,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let resource = &test_resources()[0];
+        let resource = &create_test_spigot_resources()[0];
 
         // Act
         let result = upsert_spigot_resource(&context.pool, resource).await;
@@ -239,7 +239,7 @@ pub mod test {
         // Arrange
         let author = populate_test_spigot_author(&context.pool).await?;
 
-        let resources = test_resources();
+        let resources = create_test_spigot_resources();
         for resource in resources {
             upsert_spigot_resource(&context.pool, &resource).await?;
         }
@@ -259,12 +259,12 @@ pub mod test {
     pub async fn populate_test_spigot_author_and_resource(db_pool: &Pool) -> Result<(SpigotAuthor, SpigotResource)> {
         let author = populate_test_spigot_author(db_pool).await?;
 
-        let resource = &test_resources()[0];
+        let resource = &create_test_spigot_resources()[0];
         upsert_spigot_resource(db_pool, resource).await?;
         Ok((author.clone(), resource.clone()))
     }
 
-    pub fn test_resources() -> Vec<SpigotResource> {
+    pub fn create_test_spigot_resources() -> Vec<SpigotResource> {
         vec![
             SpigotResource {
                 id: 1,

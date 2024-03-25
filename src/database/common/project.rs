@@ -153,7 +153,7 @@ mod test {
     use crate::database::spigot::author::SpigotAuthor;
 
     use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
-    use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, test_resources};
+    use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, create_test_spigot_resources};
 
     use crate::test::DatabaseTestContext;
 
@@ -170,7 +170,7 @@ mod test {
         // Create two resources with update_dates 2021-01-01 and 2022-01-01 respectively.
         let (spigot_author, _spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
 
-        let spigot_resource2 = &test_resources()[1];
+        let spigot_resource2 = &create_test_spigot_resources()[1];
         upsert_spigot_resource(&context.pool, spigot_resource2).await?;
 
         // Act

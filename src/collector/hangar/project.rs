@@ -25,12 +25,6 @@ struct GetHangarProjectsRequest {
     sort: String
 }
 
-#[derive(Clone, Debug, Serialize)]
-struct GetHangarProjectsRequestPagination {
-    limit: u32,
-    offset: u32
-}
-
 impl GetHangarProjectsRequest {
     fn create_request() -> Self {
         Self {
@@ -194,9 +188,9 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
         match version_result {
             Ok(version) => {
-                let process_result = convert_incoming_project(incoming_project, &version).await;
+                let convert_result = convert_incoming_project(incoming_project, &version).await;
 
-                match process_result {
+                match convert_result {
                     Ok(project) => {
                         let db_result = upsert_hangar_project(db_pool, &project).await;
 

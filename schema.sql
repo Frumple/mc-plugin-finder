@@ -5,12 +5,12 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Spigot
 CREATE TABLE IF NOT EXISTS spigot_author (
-  id SERIAL NOT NULL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS spigot_resource (
-  id SERIAL NOT NULL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name text NOT NULL,
   parsed_name text,
   tag text NOT NULL,
@@ -27,9 +27,29 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   source_repository_name text
 );
 
+-- Modrinth
+CREATE TABLE IF NOT EXISTS modrinth_project (
+  id text PRIMARY KEY,
+  slug text NOT NULL,
+  title text NOT NULL,
+  description text NOT NULL,
+  author text NOT NULL,
+  date_created timestamptz NOT NULL,
+  date_modified timestamptz NOT NULL,
+  downloads integer NOT NULL,
+  version_id text NOT NULL,
+  version_name text,
+  icon_url text,
+  monetization_status text,
+  source_code_link text,
+  source_repository_host text,
+  source_repository_owner text,
+  source_repository_name text
+);
+
 -- Hangar
 CREATE TABLE IF NOT EXISTS hangar_project (
-  slug text NOT NULL PRIMARY KEY,
+  slug text PRIMARY KEY,
   owner text NOT NULL,
   name text NOT NULL,
   description text NOT NULL,
@@ -46,7 +66,7 @@ CREATE TABLE IF NOT EXISTS hangar_project (
 
 -- Common
 CREATE TABLE IF NOT EXISTS common_project (
-  id SERIAL NOT NULL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
   spigot_id integer REFERENCES spigot_resource,

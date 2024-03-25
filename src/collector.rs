@@ -1,5 +1,6 @@
-pub mod spigot;
 pub mod hangar;
+pub mod modrinth;
+pub mod spigot;
 pub mod util;
 
 use url::Url;
