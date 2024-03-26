@@ -1,7 +1,8 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
+use crate::collector::spigot::version::GetLatestSpigotResourceVersionRequest;
 use crate::collector::util::extract_source_repository_from_url;
-use crate::database::spigot::resource::{SpigotResource, get_latest_spigot_resource_update_date, upsert_spigot_resource};
+use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -18,7 +19,7 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
 
-const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,file,author,version,premium,sourceCodeLink";
+const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,downloads,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 // TODO: Replace OnceLock with LazyCell when it stabilizes in std: https://github.com/rust-lang/rust/issues/109736
@@ -38,7 +39,7 @@ struct GetSpigotResourcesRequest {
 impl GetSpigotResourcesRequest {
     fn create_populate_request() -> Self {
         Self {
-            size: 1000,
+            size: 500,
             page: 1,
             sort: "+id".to_string(),
             fields: SPIGOT_RESOURCES_REQUEST_FIELDS.to_string()
@@ -92,6 +93,7 @@ pub struct IncomingSpigotResource {
     tag: String,
     release_date: i64,
     update_date: i64,
+    downloads: i32,
     file: Option<IncomingSpigotResourceNestedFile>,
     author: IncomingSpigotResourceNestedAuthor,
     version: IncomingSpigotResourceNestedVersion,
@@ -109,7 +111,6 @@ pub struct IncomingSpigotResourceNestedAuthor {
     id: i32
 }
 
-
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct IncomingSpigotResourceNestedVersion {
     id: i32
@@ -122,21 +123,11 @@ enum IncomingSpigotResourceError {
         resource_id: i32,
         url: String
     },
-    #[error("Skipping resource ID {resource_id}: File does not exist")]
-    FileDoesNotExist {
+    #[error("Skipping resource ID {resource_id}: File not found")]
+    FileNotFound {
         resource_id: i32
     }
 }
-
-// #[derive(Clone, Debug, Serialize)]
-// struct GetLatestResourceVersionRequest {
-//     resource: i32
-// }
-
-// #[derive(Debug, Deserialize)]
-// struct SpigotResourceVersion {
-//     name: String
-// }
 
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
@@ -150,7 +141,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
+            .try_for_each_concurrent(None, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, false))
             .await;
 
         let count = count_cell.get();
@@ -171,7 +162,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each(|incoming_resource| process_incoming_resource(incoming_resource, db_pool, &count_cell))
+            .try_for_each(|incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();
@@ -209,20 +200,32 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         Ok(response)
     }
 
-    // async fn get_latest_resource_version_name(&self, request: GetLatestResourceVersionRequest) -> Result<String> {
-    //     self.rate_limiter.until_ready().await;
+    async fn process_incoming_resource(&self, incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
+        let version_name = {
+            if get_version {
+                let latest_resource_version_request = GetLatestSpigotResourceVersionRequest { resource_id: incoming_resource.id };
+                let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
+                Some(latest_resource_version_name)
+            } else {
+                None
+            }
+        };
 
-    //     let resource_id = request.resource;
-    //     let url = format!("{SPIGOT_BASE_URL}/resources/{resource_id}/versions/latest");
+        let process_result = convert_incoming_resource(incoming_resource, version_name).await;
 
-    //     let raw_response = self.api_client.get(url)
-    //         .send()
-    //         .await?;
+        match process_result {
+            Ok(resource) => {
+                let db_result = upsert_spigot_resource(db_pool, &resource).await;
 
-    //     let version: SpigotResourceVersion = raw_response.json().await?;
-
-    //     Ok(version.name)
-    // }
+                match db_result {
+                    Ok(_) => count_cell.set(count_cell.get() + 1),
+                    Err(err) => warn!("{}", err)
+                }
+            }
+            Err(err) => warn!("{}", err)
+        }
+        Ok(())
+    }
 }
 
 impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpServer + Send + Sync {
@@ -241,27 +244,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn process_incoming_resource(incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-    // let latest_resource_version_request = GetLatestResourceVersionRequest { resource: resource.id };
-    // let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
-
-    let process_result = convert_incoming_resource(incoming_resource).await;
-
-    match process_result {
-        Ok(resource) => {
-            let db_result = upsert_spigot_resource(db_pool, &resource).await;
-
-            match db_result {
-                Ok(_) => count_cell.set(count_cell.get() + 1),
-                Err(err) => warn!("{}", err)
-            }
-        }
-        Err(err) => warn!("{}", err)
-    }
-    Ok(())
-}
-
-async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) -> Result<SpigotResource> {
+async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, version_name: Option<String>) -> Result<SpigotResource> {
     let resource_id = incoming_resource.id;
 
     if let Some(file) = incoming_resource.file {
@@ -276,11 +259,12 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) ->
                 slug,
                 release_date: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
                 update_date: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
+                downloads: incoming_resource.downloads,
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
-                version_name: None::<String>,
+                version_name,
                 premium: incoming_resource.premium,
-                source_code_link: incoming_resource.source_code_link.clone(),
+                source_url: incoming_resource.source_code_link.clone(),
                 source_repository_host: None,
                 source_repository_owner: None,
                 source_repository_name: None
@@ -307,7 +291,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource) ->
         }
     } else {
         Err(
-            IncomingSpigotResourceError::FileDoesNotExist {
+            IncomingSpigotResourceError::FileNotFound {
                 resource_id
             }.into()
         )
@@ -501,15 +485,15 @@ mod test {
             .append_header("x-page-count", expected_response.headers.x_page_count.to_string().as_str())
             .set_body_json(expected_response.resources.clone());
 
-            Mock::given(method("GET"))
-                .and(path("/resources"))
-                .and(query_param("size", request.size.to_string().as_str()))
-                .and(query_param("page", expected_response.headers.x_page_index.to_string().as_str()))
-                .and(query_param("sort", request.sort.as_str()))
-                .and(query_param("fields", SPIGOT_RESOURCES_REQUEST_FIELDS))
-                .respond_with(response_template)
-                .mount(spigot_server.mock())
-                .await;
+        Mock::given(method("GET"))
+            .and(path("/resources"))
+            .and(query_param("size", request.size.to_string().as_str()))
+            .and(query_param("page", expected_response.headers.x_page_index.to_string().as_str()))
+            .and(query_param("sort", request.sort.as_str()))
+            .and(query_param("fields", SPIGOT_RESOURCES_REQUEST_FIELDS))
+            .respond_with(response_template)
+            .mount(spigot_server.mock())
+            .await;
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
@@ -522,12 +506,13 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_process_incoming_resource() -> Result<()> {
+    async fn should_convert_incoming_resource() -> Result<()> {
         // Arrange
         let incoming_resource = create_test_resources()[0].clone();
+        let version_name = "v1.2.3";
 
         // Act
-        let resource = convert_incoming_resource(incoming_resource).await?;
+        let resource = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&resource.id).is_equal_to(1);
@@ -536,10 +521,12 @@ mod test {
         assert_that(&resource.slug).is_equal_to("foo.1".to_string());
         assert_that(&resource.release_date).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&resource.update_date).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&resource.downloads).is_equal_to(100);
         assert_that(&resource.author_id).is_equal_to(1);
         assert_that(&resource.version_id).is_equal_to(1);
+        assert_that(&resource.version_name).is_some().is_equal_to(version_name.to_string());
         assert_that(&resource.premium).is_some().is_false();
-        assert_that(&resource.source_code_link).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
+        assert_that(&resource.source_url).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
         assert_that(&resource.source_repository_host).is_some().is_equal_to("github.com".to_string());
         assert_that(&resource.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
         assert_that(&resource.source_repository_name).is_some().is_equal_to("foo".to_string());
@@ -548,15 +535,16 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_not_process_resource_with_invalid_slug() -> Result<()> {
+    async fn should_not_convert_resource_with_invalid_slug() -> Result<()> {
         // Arrange
         let mut incoming_resource: IncomingSpigotResource = create_test_resources()[0].clone();
         incoming_resource.file = Some(IncomingSpigotResourceNestedFile {
             url: "resources/1/download?version=1".to_string()
         });
+        let version_name = "v1.2.3";
 
         // Act
-        let result = convert_incoming_resource(incoming_resource).await;
+        let result = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -566,17 +554,18 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_not_process_resource_with_no_file() -> Result<()> {
+    async fn should_not_convert_resource_with_no_file() -> Result<()> {
         // Arrange
         let mut incoming_resource = create_test_resources()[0].clone();
         incoming_resource.file = None;
+        let version_name = "v1.2.3";
 
         // Act
-        let result = convert_incoming_resource(incoming_resource).await;
+        let result = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await;
         let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceError>(), Some(IncomingSpigotResourceError::FileDoesNotExist { .. })));
+        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceError>(), Some(IncomingSpigotResourceError::FileNotFound { .. })));
 
         Ok(())
     }
@@ -589,6 +578,7 @@ mod test {
                 tag: "resource-1-tag".to_string(),
                 release_date: 1577836800,
                 update_date: 1609459200,
+                downloads: 100,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/foo.1/download?version=1".to_string()
                 }),
@@ -607,6 +597,7 @@ mod test {
                 tag: "resource-2-tag".to_string(),
                 release_date: 1577836800,
                 update_date: 1640995200,
+                downloads: 100,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/bar.2/download?version=2".to_string()
                 }),

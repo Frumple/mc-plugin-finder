@@ -17,11 +17,12 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   slug text NOT NULL,
   release_date timestamptz NOT NULL,
   update_date timestamptz NOT NULL,
+  downloads integer NOT NULL,
   author_id integer NOT NULL REFERENCES spigot_author,
   version_id integer NOT NULL,
   version_name text,
   premium boolean,
-  source_code_link text,
+  source_url text,
   source_repository_host text,
   source_repository_owner text,
   source_repository_name text

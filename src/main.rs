@@ -37,6 +37,8 @@ async fn main() -> Result<()> {
     let hangar_server = HangarServer::new().await;
     let hangar_client = HangarClient::new(hangar_server)?;
 
+    /* Spigot */
+
     /* Populate Spigot Authors */
     // spigot_client.populate_spigot_authors(&db_pool).await?;
 
@@ -45,13 +47,18 @@ async fn main() -> Result<()> {
     // info!("Highest id: {:?}", highest_author_id);
     // spigot_client.update_spigot_authors(&db_pool, highest_author_id).await?;
 
-    /* Populate Spigot Resources without versions */
+    /* Populate Spigot Resources (without versions) */
     // spigot_client.populate_spigot_resources(&db_pool).await?;
 
-    /* Update Spigot Resources without versions */
+    /* Populate Spigot Resource Versions */
+    // spigot_client.populate_spigot_resource_versions(&db_pool).await?;
+
+    /* Update Spigot Resources */
     // let latest_spigot_resource_update_date = get_latest_spigot_resource_update_date(&db_pool).await?;
     // info!("Latest update date: {:?}", latest_spigot_resource_update_date);
     // spigot_client.update_spigot_resources(&db_pool, latest_spigot_resource_update_date).await?;
+
+    /* Hangar */
 
     /* Populate Hangar Projects */
     // hangar_client.populate_hangar_projects(&db_pool).await?;
@@ -60,6 +67,8 @@ async fn main() -> Result<()> {
     // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_pool).await?;
     // info!("Latest update date: {:?}|", latest_hangar_project_update_date);
     // hangar_client.update_hangar_projects(&db_pool, latest_hangar_project_update_date).await?;
+
+    /* Common */
 
     /* Merge Common Projects */
     // let common_projects = get_merged_common_projects(&db_pool, None).await?;

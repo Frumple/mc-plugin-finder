@@ -11,11 +11,12 @@ use url::Url;
 
 mod author;
 mod resource;
+mod version;
 
 const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2/";
 
 const SPIGOT_USER_AGENT: &str = "mc-plugin-finder";
-const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(2u32);
+const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
 #[derive(Debug)]
 pub struct SpigotServer;

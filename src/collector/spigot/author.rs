@@ -25,7 +25,7 @@ struct GetSpigotAuthorsRequest {
 impl GetSpigotAuthorsRequest {
     fn create_populate_request() -> Self {
         Self {
-            size: 1000,
+            size: 500,
             page: 1,
             sort: "+id".to_string(),
             fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()

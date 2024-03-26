@@ -16,11 +16,12 @@ pub struct SpigotResource {
     pub slug: String,
     pub release_date: OffsetDateTime,
     pub update_date: OffsetDateTime,
+    pub downloads: i32,
     pub author_id: i32,
     pub version_id: i32,
     pub version_name: Option<String>,
     pub premium: Option<bool>,
-    pub source_code_link: Option<String>,
+    pub source_url: Option<String>,
     pub source_repository_host: Option<String>,
     pub source_repository_owner: Option<String>,
     pub source_repository_name: Option<String>
@@ -36,11 +37,12 @@ impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String,
             slug: resource.slug,
             release_date: resource.release_date,
             update_date: resource.update_date,
+            downloads: resource.downloads,
             author_id: resource.author_id,
             version_id: resource.version_id,
             version_name: resource.version_name,
             premium: resource.premium,
-            source_code_link: resource.source_code_link,
+            source_url: resource.source_url,
             source_repository_host: resource.source_repository_host,
             source_repository_owner: resource.source_repository_owner,
             source_repository_name: resource.source_repository_name
@@ -58,11 +60,12 @@ impl From<SpigotResourceEntity> for SpigotResource {
             slug: entity.slug,
             release_date: entity.release_date,
             update_date: entity.update_date,
+            downloads: entity.downloads,
             author_id: entity.author_id,
             version_id: entity.version_id,
             version_name: entity.version_name,
             premium: entity.premium,
-            source_code_link: entity.source_code_link,
+            source_url: entity.source_url,
             source_repository_host: entity.source_repository_host,
             source_repository_owner: entity.source_repository_owner,
             source_repository_name: entity.source_repository_name
@@ -143,7 +146,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = populate_test_spigot_author(&context.pool).await?;
+        let _author = populate_test_spigot_author(&context.pool).await?;
         let resource = &create_test_spigot_resources()[0];
 
         // Act
@@ -169,7 +172,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = populate_test_spigot_author(&context.pool).await?;
+        let _author = populate_test_spigot_author(&context.pool).await?;
 
         let resource = &create_test_spigot_resources()[0];
         upsert_spigot_resource(&context.pool, resource).await?;
@@ -182,11 +185,12 @@ pub mod test {
             slug: "foo-updated.1".to_string(),
             release_date: datetime!(2020-01-01 0:00 UTC),
             update_date: datetime!(2021-07-01 0:00 UTC),
+            downloads: 101,
             author_id: 1,
             version_id: 2,
             version_name: None,
             premium: Some(true),
-            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string()),
+            source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
             source_repository_host: Some("github.com".to_string()),
             source_repository_owner: Some("Frumple".to_string()),
             source_repository_name: Some("foo-updated".to_string())
@@ -274,11 +278,12 @@ pub mod test {
                 slug: "foo.1".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2021-01-01 0:00 UTC),
+                downloads: 100,
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/foo".to_string()),
+                source_url: Some("https://github.com/Frumple/foo".to_string()),
                 source_repository_host: Some("github.com".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("foo".to_string())
@@ -291,11 +296,12 @@ pub mod test {
                 slug: "bar.2".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2022-01-01 0:00 UTC),
+                downloads: 100,
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://gitlab.com/Frumple/bar".to_string()),
+                source_url: Some("https://gitlab.com/Frumple/bar".to_string()),
                 source_repository_host: Some("gitlab.com".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("bar".to_string())
@@ -308,11 +314,12 @@ pub mod test {
                 slug: "baz.3".to_string(),
                 release_date: datetime!(2020-01-01 0:00 UTC),
                 update_date: datetime!(2023-01-01 0:00 UTC),
+                downloads: 100,
                 author_id: 1,
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_code_link: Some("https://bitbucket.org/Frumple/baz".to_string()),
+                source_url: Some("https://bitbucket.org/Frumple/baz".to_string()),
                 source_repository_host: Some("bitbucket.org".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("baz".to_string())
