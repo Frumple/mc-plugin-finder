@@ -21,7 +21,7 @@ pub struct ModrinthProject {
     pub version_name: Option<String>,
     pub icon_url: Option<String>,
     pub monetization_status: Option<String>,
-    pub source_code_link: Option<String>,
+    pub source_url: Option<String>,
     pub source_repository_host: Option<String>,
     pub source_repository_owner: Option<String>,
     pub source_repository_name: Option<String>
@@ -42,7 +42,7 @@ impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, Strin
             version_name: project.version_name,
             icon_url: project.icon_url,
             monetization_status: project.monetization_status,
-            source_code_link: project.source_code_link,
+            source_url: project.source_url,
             source_repository_host: project.source_repository_host,
             source_repository_owner: project.source_repository_owner,
             source_repository_name: project.source_repository_name
@@ -65,7 +65,7 @@ impl From<ModrinthProjectEntity> for ModrinthProject {
             version_name: entity.version_name,
             icon_url: entity.icon_url,
             monetization_status: entity.monetization_status,
-            source_code_link: entity.source_code_link,
+            source_url: entity.source_url,
             source_repository_host: entity.source_repository_host,
             source_repository_owner: entity.source_repository_owner,
             source_repository_name: entity.source_repository_name
@@ -184,7 +184,7 @@ pub mod test {
             version_name: Some("v2.3.4".to_string()),
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
             monetization_status: None,
-            source_code_link: Some("https://github.com/Frumple/foo-updated".to_string()),
+            source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
             source_repository_host: Some("github.com".to_string()),
             source_repository_owner: Some("Frumple".to_string()),
             source_repository_name: Some("foo-updated".to_string())
@@ -251,7 +251,7 @@ pub mod test {
                 version_name: Some("v1.2.3".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
                 monetization_status: None,
-                source_code_link: Some("https://github.com/Frumple/foo".to_string()),
+                source_url: Some("https://github.com/Frumple/foo".to_string()),
                 source_repository_host: Some("github.com".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("foo".to_string())
@@ -269,7 +269,7 @@ pub mod test {
                 version_name: Some("v1.2.3".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
                 monetization_status: None,
-                source_code_link: Some("https://github.com/Frumple/bar".to_string()),
+                source_url: Some("https://github.com/Frumple/bar".to_string()),
                 source_repository_host: Some("github.com".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("foo".to_string())
@@ -287,7 +287,7 @@ pub mod test {
                 version_name: Some("v1.2.3".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/cccccccc/icon.png".to_string()),
                 monetization_status: None,
-                source_code_link: Some("https://github.com/Frumple/baz".to_string()),
+                source_url: Some("https://github.com/Frumple/baz".to_string()),
                 source_repository_host: Some("github.com".to_string()),
                 source_repository_owner: Some("Frumple".to_string()),
                 source_repository_name: Some("foo".to_string())

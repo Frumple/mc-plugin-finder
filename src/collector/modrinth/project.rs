@@ -225,7 +225,7 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
             version_name: None,
             icon_url: incoming_project.icon_url,
             monetization_status: incoming_project.monetization_status,
-            source_code_link: source_url.clone(),
+            source_url: source_url.clone(),
             source_repository_host: None,
             source_repository_owner: None,
             source_repository_name: None
@@ -350,7 +350,7 @@ mod test {
         assert_that(&project.version_name).is_none();
         assert_that(&project.icon_url).is_some().is_equal_to("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string());
         assert_that(&project.monetization_status).is_none();
-        assert_that(&project.source_code_link).is_some().is_equal_to(source_url.to_string());
+        assert_that(&project.source_url).is_some().is_equal_to(source_url.to_string());
         assert_that(&project.source_repository_host).is_some().is_equal_to("github.com".to_string());
         assert_that(&project.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
         assert_that(&project.source_repository_name).is_some().is_equal_to("foo".to_string());

@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS modrinth_project (
   version_name text,
   icon_url text,
   monetization_status text,
-  source_code_link text,
+  source_url text,
   source_repository_host text,
   source_repository_owner text,
   source_repository_name text

@@ -1,8 +1,8 @@
---: ModrinthProjectEntity(version_name?, icon_url?, monetization_status?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: ModrinthProjectEntity(version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_modrinth_project (version_name?, icon_url?, monetization_status?, source_code_link?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO modrinth_project (id, slug, title, description, author, date_created, date_modified, downloads, version_id, version_name, icon_url, monetization_status, source_code_link, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:id, :slug, :title, :description, :author, :date_created, :date_modified, :downloads, :version_id, :version_name, :icon_url, :monetization_status, :source_code_link, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_modrinth_project (version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO modrinth_project (id, slug, title, description, author, date_created, date_modified, downloads, version_id, version_name, icon_url, monetization_status, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :slug, :title, :description, :author, :date_created, :date_modified, :downloads, :version_id, :version_name, :icon_url, :monetization_status, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT(id)
   DO UPDATE SET
     id = EXCLUDED.id,
@@ -17,7 +17,7 @@ INSERT INTO modrinth_project (id, slug, title, description, author, date_created
     version_name = EXCLUDED.version_name,
     icon_url = EXCLUDED.icon_url,
     monetization_status = EXCLUDED.monetization_status,
-    source_code_link = EXCLUDED.source_code_link,
+    source_url = EXCLUDED.source_url,
     source_repository_host = EXCLUDED.source_repository_host,
     source_repository_owner = EXCLUDED.source_repository_owner,
     source_repository_name = EXCLUDED.source_repository_name;
