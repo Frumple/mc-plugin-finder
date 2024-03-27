@@ -10,11 +10,6 @@ use std::cell::Cell;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
-#[derive(Clone, Debug, Serialize)]
-pub struct GetLatestSpigotResourceVersionRequest {
-    pub resource_id: i32
-}
-
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct IncomingSpigotResourceVersion {
     name: Option<String>
@@ -22,8 +17,8 @@ struct IncomingSpigotResourceVersion {
 
 #[derive(Debug, Error)]
 enum IncomingSpigotResourceVersionError {
-    #[error("Skipping resource ID {resource_id}: Version name not found")]
-    VersionNameNotFound {
+    #[error("Resource ID {resource_id}: Latest version not found")]
+    LatestVersionNotFound {
         resource_id: i32
     }
 }
@@ -40,7 +35,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 
         let result = resource_stream
             .map(Ok)
-            .try_for_each_concurrent(None, |resource| self.process_resource(resource, db_pool, &count_cell))
+            .try_for_each_concurrent(None, |resource| self.process_spigot_resource(resource, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -49,9 +44,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         result
     }
 
-    async fn process_resource(&self, resource: SpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-        let request = GetLatestSpigotResourceVersionRequest { resource_id: resource.id };
-        let version_result = self.get_latest_resource_version_name(request).await;
+    async fn process_spigot_resource(&self, resource: SpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+        let version_result = self.get_latest_spigot_resource_version_name_from_api(resource.id).await;
+
         match version_result {
             Ok(version_name) => {
                 let mut new_resource = resource.clone();
@@ -72,10 +67,10 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self)
     )]
-    pub async fn get_latest_resource_version_name(&self, request: GetLatestSpigotResourceVersionRequest) -> Result<String> {
+    pub async fn get_latest_spigot_resource_version_name_from_api(&self, resource_id: i32) -> Result<String> {
         self.rate_limiter.until_ready().await;
 
-        let path = &["resources/", request.resource_id.to_string().as_str(), "/versions/latest"].concat();
+        let path = &["resources/", resource_id.to_string().as_str(), "/versions/latest"].concat();
         let url = self.http_server.base_url().join(path)?;
 
         let raw_response = self.api_client.get(url)
@@ -88,8 +83,8 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             Ok(version_name)
         } else {
             Err(
-                IncomingSpigotResourceVersionError::VersionNameNotFound {
-                    resource_id: request.resource_id
+                IncomingSpigotResourceVersionError::LatestVersionNotFound {
+                    resource_id
                 }.into()
             )
         }
@@ -115,17 +110,14 @@ mod test {
         // Arrange
         let spigot_server = SpigotTestServer::new().await;
 
-        let resource_id = 1;
-        let request = GetLatestSpigotResourceVersionRequest { resource_id };
-
         let expected_version_name = "v1.2.3";
         let expected_version = IncomingSpigotResourceVersion {
             name: Some(expected_version_name.to_string())
         };
-
         let response_template = ResponseTemplate::new(200)
-            .set_body_json(expected_version.clone());
+            .set_body_json(expected_version);
 
+        let resource_id = 1;
         let api_path = &["/resources/", resource_id.to_string().as_str(), "/versions/latest"].concat();
         Mock::given(method("GET"))
             .and(path(api_path))
@@ -135,7 +127,7 @@ mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let result = spigot_client.get_latest_resource_version_name(request).await;
+        let result = spigot_client.get_latest_spigot_resource_version_name_from_api(resource_id).await;
 
         // Assert
         assert_that(&result).is_ok().is_equal_to(expected_version_name.to_string());
@@ -148,16 +140,13 @@ mod test {
         // Arrange
         let spigot_server = SpigotTestServer::new().await;
 
-        let resource_id = 1;
-        let request = GetLatestSpigotResourceVersionRequest { resource_id };
-
         let response = SpigotResourceVersionErrorResponse {
             error: "version not found".to_string()
         };
-
         let response_template = ResponseTemplate::new(404)
-            .set_body_json(response.clone());
+            .set_body_json(response);
 
+        let resource_id = 1;
         let api_path = &["/resources/", resource_id.to_string().as_str(), "/versions/latest"].concat();
         Mock::given(method("GET"))
             .and(path(api_path))
@@ -167,11 +156,11 @@ mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let result = spigot_client.get_latest_resource_version_name(request).await;
+        let result = spigot_client.get_latest_spigot_resource_version_name_from_api(resource_id).await;
         let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceVersionError>(), Some(IncomingSpigotResourceVersionError::VersionNameNotFound { .. })));
+        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceVersionError>(), Some(IncomingSpigotResourceVersionError::LatestVersionNotFound { .. })));
 
         Ok(())
     }

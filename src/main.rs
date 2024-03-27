@@ -60,8 +60,11 @@ async fn main() -> Result<()> {
 
     /* Hangar */
 
-    /* Populate Hangar Projects */
+    /* Populate Hangar Projects (without versions) */
     // hangar_client.populate_hangar_projects(&db_pool).await?;
+
+    /* Populate Hangar Project Versions */
+    // hangar_client.populate_hangar_project_versions(&db_pool).await?;
 
     /* Update Hangar Projects */
     // let latest_hangar_project_update_date = get_latest_hangar_project_update_date(&db_pool).await?;

@@ -10,6 +10,7 @@ use std::num::NonZeroU32;
 use url::Url;
 
 mod project;
+mod version;
 
 const HANGAR_IS_LIVE: bool = true;
 const HANGAR_DEV_BASE_URL: &str = "https://hangar.papermc.dev/api/v1/";

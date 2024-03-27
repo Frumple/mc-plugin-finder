@@ -1,6 +1,5 @@
 use crate::collector::HttpServer;
 use crate::collector::spigot::SpigotClient;
-use crate::collector::spigot::version::GetLatestSpigotResourceVersionRequest;
 use crate::collector::util::extract_source_repository_from_url;
 use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
 
@@ -201,19 +200,20 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     async fn process_incoming_resource(&self, incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
-        let version_name = {
-            if get_version {
-                let latest_resource_version_request = GetLatestSpigotResourceVersionRequest { resource_id: incoming_resource.id };
-                let latest_resource_version_name = self.get_latest_resource_version_name(latest_resource_version_request).await?;
-                Some(latest_resource_version_name)
-            } else {
-                None
+        let mut version_name = None;
+
+        if get_version {
+            let version_result = self.get_latest_spigot_resource_version_name_from_api(incoming_resource.id).await;
+
+            match version_result {
+                Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
+                Err(err) => warn!("{}", err)
             }
-        };
+        }
 
-        let process_result = convert_incoming_resource(incoming_resource, version_name).await;
+        let convert_result = convert_incoming_resource(incoming_resource, version_name).await;
 
-        match process_result {
+        match convert_result {
             Ok(resource) => {
                 let db_result = upsert_spigot_resource(db_pool, &resource).await;
 
@@ -224,6 +224,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             }
             Err(err) => warn!("{}", err)
         }
+
         Ok(())
     }
 }

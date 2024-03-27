@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   downloads integer NOT NULL,
   visibility text NOT NULL,
   avatar_url text NOT NULL,
-  version text NOT NULL,
+  version_name text,
   source_url text,
   source_repository_host text,
   source_repository_owner text,
