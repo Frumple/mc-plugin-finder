@@ -56,10 +56,11 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   description text NOT NULL,
   created_at timestamptz NOT NULL,
   last_updated timestamptz NOT NULL,
+  downloads integer NOT NULL,
   visibility text NOT NULL,
   avatar_url text NOT NULL,
   version text NOT NULL,
-  source_code_link text,
+  source_url text,
   source_repository_host text,
   source_repository_owner text,
   source_repository_name text

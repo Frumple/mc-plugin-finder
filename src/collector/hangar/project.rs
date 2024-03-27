@@ -65,6 +65,7 @@ pub struct IncomingHangarProject {
     namespace: IncomingHangarProjectNamespace,
     created_at: String,
     last_updated: String,
+    stats: IncomingHangarProjectStats,
     visibility: String,
     avatar_url: String,
     settings: IncomingHangarProjectSettings
@@ -74,6 +75,11 @@ pub struct IncomingHangarProject {
 pub struct IncomingHangarProjectNamespace {
     owner: String,
     slug: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct IncomingHangarProjectStats {
+    downloads: i32
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -284,10 +290,11 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, versi
         description: incoming_project.description,
         created_at: OffsetDateTime::parse(&incoming_project.created_at, &Rfc3339)?,
         last_updated: OffsetDateTime::parse(&incoming_project.last_updated, &Rfc3339)?,
+        downloads: incoming_project.stats.downloads,
         visibility: incoming_project.visibility,
         avatar_url: incoming_project.avatar_url,
         version: version.to_string(),
-        source_code_link: source_code_link.clone(),
+        source_url: source_code_link.clone(),
         source_repository_host: None,
         source_repository_owner: None,
         source_repository_name: None
@@ -426,10 +433,11 @@ mod test {
         assert_that(&project.description).is_equal_to("project-1-description".to_string());
         assert_that(&project.created_at).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&project.last_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&project.downloads).is_equal_to(100);
         assert_that(&project.visibility).is_equal_to("public".to_string());
         assert_that(&project.avatar_url).is_equal_to("https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string());
         assert_that(&project.version).is_equal_to(version.to_string());
-        assert_that(&project.source_code_link).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
+        assert_that(&project.source_url).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
         assert_that(&project.source_repository_host).is_some().is_equal_to("github.com".to_string());
         assert_that(&project.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
         assert_that(&project.source_repository_name).is_some().is_equal_to("foo".to_string());
@@ -448,6 +456,9 @@ mod test {
                 },
                 created_at: "2020-01-01T00:00:00Z".to_string(),
                 last_updated: "2021-01-01T00:00:00Z".to_string(),
+                stats: IncomingHangarProjectStats {
+                    downloads: 100,
+                },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
@@ -465,6 +476,9 @@ mod test {
                 },
                 created_at: "2020-01-01T00:00:00Z".to_string(),
                 last_updated: "2022-01-01T00:00:00Z".to_string(),
+                stats: IncomingHangarProjectStats {
+                    downloads: 100,
+                },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
