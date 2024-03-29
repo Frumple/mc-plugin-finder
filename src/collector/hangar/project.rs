@@ -158,7 +158,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         let mut version_name = None;
 
         if get_version {
-            let version_result = self.get_project_latest_version_from_api(&incoming_project.namespace.slug).await;
+            let version_result = self.get_latest_hangar_project_version_from_api(&incoming_project.namespace.slug).await;
 
             match version_result {
                 Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
@@ -166,7 +166,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             }
         }
 
-        let convert_result = convert_incoming_project(incoming_project, version_name).await;
+        let convert_result = convert_incoming_project(incoming_project, &version_name).await;
 
         match convert_result {
             Ok(project) => {
@@ -217,7 +217,7 @@ impl<T> PageTurner<GetHangarProjectsRequest> for HangarClient<T> where T: HttpSe
     }
 }
 
-async fn convert_incoming_project(incoming_project: IncomingHangarProject, version_name: Option<String>) -> Result<HangarProject> {
+async fn convert_incoming_project(incoming_project: IncomingHangarProject, version_name: &Option<String>) -> Result<HangarProject> {
     let source_code_link = find_source_code_link(incoming_project.settings);
 
     let mut project = HangarProject {
@@ -230,7 +230,7 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, versi
         downloads: incoming_project.stats.downloads,
         visibility: incoming_project.visibility,
         avatar_url: incoming_project.avatar_url,
-        version_name,
+        version_name: version_name.clone(),
         source_url: source_code_link.clone(),
         source_repository_host: None,
         source_repository_owner: None,
@@ -317,7 +317,7 @@ mod test {
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&project.slug).is_equal_to("foo".to_string());

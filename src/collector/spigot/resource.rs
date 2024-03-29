@@ -203,7 +203,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let mut version_name = None;
 
         if get_version {
-            let version_result = self.get_latest_spigot_resource_version_name_from_api(incoming_resource.id).await;
+            let version_result = self.get_latest_spigot_resource_version_from_api(incoming_resource.id).await;
 
             match version_result {
                 Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
@@ -211,7 +211,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             }
         }
 
-        let convert_result = convert_incoming_resource(incoming_resource, version_name).await;
+        let convert_result = convert_incoming_resource(incoming_resource, &version_name).await;
 
         match convert_result {
             Ok(resource) => {
@@ -245,7 +245,7 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
     }
 }
 
-async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, version_name: Option<String>) -> Result<SpigotResource> {
+async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, version_name: &Option<String>) -> Result<SpigotResource> {
     let resource_id = incoming_resource.id;
 
     if let Some(file) = incoming_resource.file {
@@ -263,7 +263,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 downloads: incoming_resource.downloads,
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
-                version_name,
+                version_name: version_name.clone(),
                 premium: incoming_resource.premium,
                 source_url: incoming_resource.source_code_link.clone(),
                 source_repository_host: None,
@@ -513,7 +513,7 @@ mod test {
         let version_name = "v1.2.3";
 
         // Act
-        let resource = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await?;
+        let resource = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&resource.id).is_equal_to(1);
@@ -545,7 +545,7 @@ mod test {
         let version_name = "v1.2.3";
 
         // Act
-        let result = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await;
+        let result = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await;
         let error = result.unwrap_err();
 
         // Assert
@@ -562,7 +562,7 @@ mod test {
         let version_name = "v1.2.3";
 
         // Act
-        let result = convert_incoming_resource(incoming_resource, Some(version_name.to_string())).await;
+        let result = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await;
         let error = result.unwrap_err();
 
         // Assert

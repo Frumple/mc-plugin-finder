@@ -99,7 +99,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell))
+            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, false))
             .await;
 
         let count = count_cell.get();
@@ -120,7 +120,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             .pages(request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.date_modified.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell))
+            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();
@@ -129,12 +129,27 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         result
     }
 
-    async fn process_incoming_project(&self, incoming_project: IncomingModrinthProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-        let source_result = self.get_project_source_url_from_api(&incoming_project.project_id).await;
+    async fn process_incoming_project(&self, incoming_project: IncomingModrinthProject, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
+        let mut version_name = None;
+
+        let project_id = incoming_project.project_id.clone();
+
+        if get_version {
+            if let Some(version_id) = incoming_project.latest_version.clone() {
+                let version_result = self.get_latest_modrinth_project_version_from_api(&project_id, &version_id).await;
+
+                match version_result {
+                    Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
+                    Err(err) => warn!("{}", err)
+                }
+            }
+        }
+
+        let source_result = self.get_project_source_url_from_api(&project_id).await;
 
         match source_result {
             Ok(source_url) => {
-                let convert_result = convert_incoming_project(incoming_project, &source_url).await;
+                let convert_result = convert_incoming_project(incoming_project, &source_url, &version_name).await;
 
                 match convert_result {
                     Ok(project) => {
@@ -206,10 +221,8 @@ impl<T> PageTurner<GetModrinthSearchProjectsRequest> for ModrinthClient<T> where
     }
 }
 
-async fn convert_incoming_project(incoming_project: IncomingModrinthProject, source_url: &Option<String>) -> Result<ModrinthProject> {
+async fn convert_incoming_project(incoming_project: IncomingModrinthProject, source_url: &Option<String>, version_name: &Option<String>) -> Result<ModrinthProject> {
     let project_id = incoming_project.project_id;
-
-    // TODO: What happens if monetization status does not exist in the incoming modrinth project?
 
     if let Some(version_id) = incoming_project.latest_version {
         let mut project = ModrinthProject {
@@ -222,7 +235,7 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
             date_modified: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
             downloads: incoming_project.downloads,
             version_id,
-            version_name: None,
+            version_name: version_name.clone(),
             icon_url: incoming_project.icon_url,
             monetization_status: incoming_project.monetization_status,
             source_url: source_url.clone(),
@@ -333,9 +346,10 @@ mod test {
         // Arrange
         let incoming_project = create_test_modrinth_projects()[0].clone();
         let source_url = "https://github.com/Frumple/foo";
+        let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&project.id).is_equal_to("aaaaaaaa".to_string());

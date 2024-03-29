@@ -16,7 +16,7 @@ const HANGAR_IS_LIVE: bool = true;
 const HANGAR_DEV_BASE_URL: &str = "https://hangar.papermc.dev/api/v1/";
 const HANGAR_LIVE_BASE_URL: &str = "https://hangar.papermc.io/api/v1/";
 
-const HANGAR_USER_AGENT: &str = "mc-plugin-finder";
+const HANGAR_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
 const HANGAR_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
 #[derive(Debug)]

@@ -11,7 +11,7 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-struct IncomingSpigotResourceVersion {
+struct GetSpigotResourceVersionResponse {
     name: Option<String>
 }
 
@@ -45,7 +45,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     }
 
     async fn process_spigot_resource(&self, resource: SpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-        let version_result = self.get_latest_spigot_resource_version_name_from_api(resource.id).await;
+        let version_result = self.get_latest_spigot_resource_version_from_api(resource.id).await;
 
         match version_result {
             Ok(version_name) => {
@@ -67,7 +67,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self)
     )]
-    pub async fn get_latest_spigot_resource_version_name_from_api(&self, resource_id: i32) -> Result<String> {
+    pub async fn get_latest_spigot_resource_version_from_api(&self, resource_id: i32) -> Result<String> {
         self.rate_limiter.until_ready().await;
 
         let path = &["resources/", resource_id.to_string().as_str(), "/versions/latest"].concat();
@@ -77,9 +77,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let version: IncomingSpigotResourceVersion = raw_response.json().await?;
+        let response: GetSpigotResourceVersionResponse = raw_response.json().await?;
 
-        if let Some(version_name) = version.name {
+        if let Some(version_name) = response.name {
             Ok(version_name)
         } else {
             Err(
@@ -111,11 +111,11 @@ mod test {
         let spigot_server = SpigotTestServer::new().await;
 
         let expected_version_name = "v1.2.3";
-        let expected_version = IncomingSpigotResourceVersion {
+        let expected_response = GetSpigotResourceVersionResponse {
             name: Some(expected_version_name.to_string())
         };
         let response_template = ResponseTemplate::new(200)
-            .set_body_json(expected_version);
+            .set_body_json(expected_response);
 
         let resource_id = 1;
         let api_path = &["/resources/", resource_id.to_string().as_str(), "/versions/latest"].concat();
@@ -127,7 +127,7 @@ mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let result = spigot_client.get_latest_spigot_resource_version_name_from_api(resource_id).await;
+        let result = spigot_client.get_latest_spigot_resource_version_from_api(resource_id).await;
 
         // Assert
         assert_that(&result).is_ok().is_equal_to(expected_version_name.to_string());
@@ -156,11 +156,19 @@ mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let result = spigot_client.get_latest_spigot_resource_version_name_from_api(resource_id).await;
-        let error = result.unwrap_err();
+        let result = spigot_client.get_latest_spigot_resource_version_from_api(resource_id).await;
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceVersionError>(), Some(IncomingSpigotResourceVersionError::LatestVersionNotFound { .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<IncomingSpigotResourceVersionError>().unwrap();
+
+        if let IncomingSpigotResourceVersionError::LatestVersionNotFound{resource_id} = downcast_error {
+            assert_that(&resource_id).is_equal_to(resource_id);
+        } else {
+            panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);
+        }
 
         Ok(())
     }

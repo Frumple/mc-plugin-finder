@@ -40,7 +40,7 @@ pub struct IncomingHangarProjectVersion {
 }
 
 #[derive(Debug, Error)]
-enum IncomingHangarProjectError {
+enum IncomingHangarProjectVersionError {
     #[error("Project '{slug}': Latest version not found.")]
     LatestVersionNotFound {
         slug: String
@@ -69,7 +69,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     }
 
     async fn process_hangar_project(&self, project: HangarProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-        let version_result = self.get_project_latest_version_from_api(&project.slug).await;
+        let version_result = self.get_latest_hangar_project_version_from_api(&project.slug).await;
 
         match version_result {
             Ok(version_name) => {
@@ -91,7 +91,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self)
     )]
-    pub async fn get_project_latest_version_from_api(&self, slug: &str) -> Result<String> {
+    pub async fn get_latest_hangar_project_version_from_api(&self, slug: &str) -> Result<String> {
         self.rate_limiter.until_ready().await;
 
         // Hangar's "projects/{slug}/versions" seems to order versions for newest to oldest.
@@ -110,7 +110,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
         if response.result.is_empty() {
             return Err(
-                IncomingHangarProjectError::LatestVersionNotFound {
+                IncomingHangarProjectVersionError::LatestVersionNotFound {
                     slug: slug.to_string()
                 }.into()
             )
@@ -165,7 +165,7 @@ mod test {
 
         // Act
         let hangar_client = HangarClient::new(hangar_server)?;
-        let version = hangar_client.get_project_latest_version_from_api(slug).await?;
+        let version = hangar_client.get_latest_hangar_project_version_from_api(slug).await?;
 
         // Assert
         assert_that(&version).is_equal_to(expected_version.to_string());
@@ -203,11 +203,19 @@ mod test {
 
         // Act
         let hangar_client = HangarClient::new(hangar_server)?;
-        let result = hangar_client.get_project_latest_version_from_api(slug).await;
-        let error = result.unwrap_err();
+        let result = hangar_client.get_latest_hangar_project_version_from_api(slug).await;
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingHangarProjectError>(), Some(IncomingHangarProjectError::LatestVersionNotFound { .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<IncomingHangarProjectVersionError>().unwrap();
+
+        if let IncomingHangarProjectVersionError::LatestVersionNotFound{slug} = downcast_error {
+            assert_that(&slug).is_equal_to(slug);
+        } else {
+            panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);
+        }
 
         Ok(())
     }
