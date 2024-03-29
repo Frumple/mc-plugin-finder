@@ -20,6 +20,7 @@ const MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetModrinthSearchProjectsRequest {
+    facets: String,
     limit: u32,
     offset: u32,
     index: String
@@ -28,6 +29,7 @@ struct GetModrinthSearchProjectsRequest {
 impl GetModrinthSearchProjectsRequest {
     fn create_request() -> Self {
         Self {
+            facets: "[[\"project_type:plugin\"]]".to_string(),
             limit: 100,
             offset: 0,
             index: "updated".to_string()
@@ -38,6 +40,7 @@ impl GetModrinthSearchProjectsRequest {
 impl RequestAhead for GetModrinthSearchProjectsRequest {
     fn next_request(&self) -> Self {
         Self {
+            facets: "[[\"project_type:plugin\"]]".to_string(),
             limit: self.limit,
             offset: self.offset + self.limit,
             index: self.index.clone()

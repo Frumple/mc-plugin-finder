@@ -36,7 +36,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_pool)
     )]
-    pub async fn populate_modrinth_project_version(&self, db_pool: &Pool) -> Result<()> {
+    pub async fn populate_modrinth_project_versions(&self, db_pool: &Pool) -> Result<()> {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let projects = get_modrinth_projects(db_pool).await?;

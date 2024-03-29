@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
     // modrinth_client.populate_modrinth_projects(&db_pool).await?;
 
     /* Populate Modrinth Project Versions */
-    // modrinth_client.populate_modrinth_project_version(&db_pool).await?;
+    // modrinth_client.populate_modrinth_project_versions(&db_pool).await?;
 
     /* Update Modrinth Projects */
     // let latest_modrinth_project_update_date = get_latest_modrinth_project_update_date(&db_pool).await?;

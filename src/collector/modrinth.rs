@@ -12,9 +12,9 @@ use url::Url;
 mod project;
 mod version;
 
-const MODRINTH_IS_LIVE: bool = false;
+const MODRINTH_IS_LIVE: bool = true;
 const MODRINTH_STAGING_BASE_URL: &str = "https://staging-api.modrinth.com/v2/";
-const MODRINTH_LIVE_BASE_URL: &str = "https://staging.modrinth.com/v2/";
+const MODRINTH_LIVE_BASE_URL: &str = "https://api.modrinth.com/v2/";
 
 const MODRINTH_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
 const MODRINTH_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
