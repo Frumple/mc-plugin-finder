@@ -4,12 +4,12 @@
 #[allow(unused_imports)] #[allow(dead_code)] pub mod types { }#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,> { pub id: Option<i64>,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_author: Option<T2>,pub spigot_tag: Option<T3>,pub hangar_slug: Option<T4>,pub hangar_name: Option<T5>,pub hangar_owner: Option<T6>,pub hangar_description: Option<T7>,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
-{ pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<String>,pub spigot_author : Option<String>,pub spigot_tag : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_owner : Option<String>,pub hangar_description : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_tag : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_owner : Option<&'a str>,pub hangar_description : Option<&'a str>,}
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub id: Option<i64>,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_tag: Option<T2>,pub spigot_author: Option<T3>,pub modrinth_id: Option<T4>,pub modrinth_title: Option<T5>,pub modrinth_description: Option<T6>,pub modrinth_author: Option<T7>,pub hangar_slug: Option<T8>,pub hangar_name: Option<T9>,pub hangar_description: Option<T10>,pub hangar_owner: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
+{ pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<String>,pub spigot_tag : Option<String>,pub spigot_author : Option<String>,pub modrinth_id : Option<String>,pub modrinth_title : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_owner : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<&'a str>,pub spigot_tag : Option<&'a str>,pub spigot_author : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_title : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_owner : Option<&'a str>,}
 impl<'a> From<CommonProjectEntityBorrowed<'a>> for CommonProjectEntity
 {
-    fn from(CommonProjectEntityBorrowed { id,date_created,date_updated,spigot_id,spigot_name,spigot_author,spigot_tag,hangar_slug,hangar_name,hangar_owner,hangar_description,}: CommonProjectEntityBorrowed<'a>) ->
-    Self { Self { id,date_created,date_updated,spigot_id,spigot_name: spigot_name.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),spigot_tag: spigot_tag.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_owner: hangar_owner.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),} }
+    fn from(CommonProjectEntityBorrowed { id,date_created,date_updated,spigot_id,spigot_name,spigot_tag,spigot_author,modrinth_id,modrinth_title,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_owner,}: CommonProjectEntityBorrowed<'a>) ->
+    Self { Self { id,date_created,date_updated,spigot_id,spigot_name: spigot_name.map(|v| v.into()),spigot_tag: spigot_tag.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_title: modrinth_title.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_owner: hangar_owner.map(|v| v.into()),} }
 }pub struct CommonProjectEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -50,23 +50,65 @@ GenericClient
         Ok(it)
     }
 }pub fn get_merged_common_projects() -> GetMergedCommonProjectsStmt
-{ GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT COALESCE(cs.id, ch.id) AS id, GREATEST(s.release_date, h.created_at) AS date_created, GREATEST(s.update_date, h.last_updated) AS date_updated, s.id AS spigot_id, s.parsed_name AS spigot_name, a.name AS spigot_author, s.tag AS spigot_tag, h.slug AS hangar_slug, h.name AS hangar_name, h.owner AS hangar_owner, h.description AS hangar_description
-  FROM spigot_resource s
-  INNER JOIN spigot_author a
-  ON  s.author_id = a.id
+{ GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
+  COALESCE(cs.id, cm.id, ch.id) AS id,
+  GREATEST(sm.date_created, h.created_at) AS date_created,
+  GREATEST(sm.date_updated, h.last_updated) AS date_updated,
+  sm.spigot_id,
+  sm.spigot_name,
+  sm.spigot_tag,
+  sm.spigot_author,
+  sm.modrinth_id,
+  sm.modrinth_title,
+  sm.modrinth_description,
+  sm.modrinth_author,
+  h.slug AS hangar_slug,
+  h.name AS hangar_name,
+  h.description AS hangar_description,
+  h.owner AS hangar_owner
+
+FROM
+  (
+    SELECT
+      GREATEST(s.release_date, m.date_created) AS date_created,
+      GREATEST(s.update_date, m.date_modified) AS date_updated,
+      s.id AS spigot_id,
+      s.parsed_name AS spigot_name,
+      s.tag AS spigot_tag,
+      a.name AS spigot_author,
+      m.id AS modrinth_id,
+      m.title AS modrinth_title,
+      m.description AS modrinth_description,
+      m.author AS modrinth_author,
+      COALESCE(s.source_repository_host, m.source_repository_host) AS source_repository_host,
+    	COALESCE(s.source_repository_owner, m.source_repository_owner) AS source_repository_owner,
+      COALESCE(s.source_repository_name, m.source_repository_name) AS source_repository_name
+    FROM spigot_resource s
+      INNER JOIN spigot_author a
+      ON  s.author_id = a.id
+
+      FULL OUTER JOIN modrinth_project m
+      ON  s.source_repository_host = m.source_repository_host
+      AND s.source_repository_owner = m.source_repository_owner
+      AND s.source_repository_name = m.source_repository_name
+  ) sm
 
   FULL OUTER JOIN hangar_project h
-  ON  s.source_repository_host = h.source_repository_host
-  AND s.source_repository_owner = h.source_repository_owner
-  AND s.source_repository_name = h.source_repository_name
+  ON  sm.source_repository_host = h.source_repository_host
+  AND sm.source_repository_owner = h.source_repository_owner
+  AND sm.source_repository_name = h.source_repository_name
 
   LEFT JOIN common_project cs
-  ON  s.id = cs.spigot_id
+  ON  sm.spigot_id = cs.spigot_id
+
+  LEFT JOIN common_project cm
+  ON  sm.modrinth_id = cm.modrinth_id
 
   LEFT JOIN common_project ch
   ON  h.slug = ch.hangar_slug
 
-  WHERE GREATEST(s.update_date, h.last_updated) > $1")) } pub struct
+WHERE
+  GREATEST(sm.date_updated, h.last_updated) > $1")) } pub struct
 GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetMergedCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
@@ -76,23 +118,27 @@ CommonProjectEntity, 1>
     CommonProjectEntityQuery
     {
         client, params: [date_updated,], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_author: row.get(5),spigot_tag: row.get(6),hangar_slug: row.get(7),hangar_name: row.get(8),hangar_owner: row.get(9),hangar_description: row.get(10),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_tag: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_title: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_owner: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }pub fn upsert_common_project() -> UpsertCommonProjectStmt
-{ UpsertCommonProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_author, spigot_tag, hangar_slug, hangar_name, hangar_owner, hangar_description)
-  VALUES (COALESCE($1, nextval('common_project_id_seq')), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+{ UpsertCommonProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_tag, spigot_author, modrinth_id, modrinth_title, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_owner)
+  VALUES (COALESCE($1, nextval('common_project_id_seq')), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
   ON CONFLICT (id)
   DO UPDATE SET
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
     spigot_id = EXCLUDED.spigot_id,
     spigot_name = EXCLUDED.spigot_name,
-    spigot_author = EXCLUDED.spigot_author,
     spigot_tag = EXCLUDED.spigot_tag,
+    spigot_author = EXCLUDED.spigot_author,
+    modrinth_id = EXCLUDED.modrinth_id,
+    modrinth_title = EXCLUDED.modrinth_title,
+    modrinth_description = EXCLUDED.modrinth_description,
+    modrinth_author = EXCLUDED.modrinth_author,
     hangar_slug = EXCLUDED.hangar_slug,
     hangar_name = EXCLUDED.hangar_name,
-    hangar_owner = EXCLUDED.hangar_owner,
-    hangar_description = EXCLUDED.hangar_description")) } pub struct
+    hangar_description = EXCLUDED.hangar_description,
+    hangar_owner = EXCLUDED.hangar_owner")) } pub struct
 UpsertCommonProjectStmt(cornucopia_async::private::Stmt); impl UpsertCommonProjectStmt
 { pub async fn bind<'a, C:
 GenericClient,T1:
@@ -102,20 +148,24 @@ cornucopia_async::StringSql,T4:
 cornucopia_async::StringSql,T5:
 cornucopia_async::StringSql,T6:
 cornucopia_async::StringSql,T7:
+cornucopia_async::StringSql,T8:
+cornucopia_async::StringSql,T9:
+cornucopia_async::StringSql,T10:
+cornucopia_async::StringSql,T11:
 cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-id: &'a Option<i64>,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,spigot_id: &'a Option<i32>,spigot_name: &'a Option<T1>,spigot_author: &'a Option<T2>,spigot_tag: &'a Option<T3>,hangar_slug: &'a Option<T4>,hangar_name: &'a Option<T5>,hangar_owner: &'a Option<T6>,hangar_description: &'a Option<T7>,) -> Result<u64, tokio_postgres::Error>
+id: &'a Option<i64>,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,spigot_id: &'a Option<i32>,spigot_name: &'a Option<T1>,spigot_tag: &'a Option<T2>,spigot_author: &'a Option<T3>,modrinth_id: &'a Option<T4>,modrinth_title: &'a Option<T5>,modrinth_description: &'a Option<T6>,modrinth_author: &'a Option<T7>,hangar_slug: &'a Option<T8>,hangar_name: &'a Option<T9>,hangar_description: &'a Option<T10>,hangar_owner: &'a Option<T11>,) -> Result<u64, tokio_postgres::Error>
 {
     let stmt = self.0.prepare(client).await?;
-    client.execute(stmt, &[id,date_created,date_updated,spigot_id,spigot_name,spigot_author,spigot_tag,hangar_slug,hangar_name,hangar_owner,hangar_description,]).await
-} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,>
-cornucopia_async::Params<'a, UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    client.execute(stmt, &[id,date_created,date_updated,spigot_id,spigot_name,spigot_tag,spigot_author,modrinth_id,modrinth_title,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_owner,]).await
+} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,>
+cornucopia_async::Params<'a, UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
 tokio_postgres::Error>> + Send + 'a>>, C> for UpsertCommonProjectStmt
 {
     fn
     params(&'a mut self, client: &'a  C, params: &'a
-    UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
     tokio_postgres::Error>> + Send + 'a>>
-    { Box::pin(self.bind(client, &params.id,&params.date_created,&params.date_updated,&params.spigot_id,&params.spigot_name,&params.spigot_author,&params.spigot_tag,&params.hangar_slug,&params.hangar_name,&params.hangar_owner,&params.hangar_description,)) }
+    { Box::pin(self.bind(client, &params.id,&params.date_created,&params.date_updated,&params.spigot_id,&params.spigot_name,&params.spigot_tag,&params.spigot_author,&params.modrinth_id,&params.modrinth_title,&params.modrinth_description,&params.modrinth_author,&params.hangar_slug,&params.hangar_name,&params.hangar_description,&params.hangar_owner,)) }
 }pub fn get_common_projects() -> GetCommonProjectsStmt
 { GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT * FROM common_project")) } pub struct
 GetCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetCommonProjectsStmt
@@ -127,7 +177,7 @@ CommonProjectEntity, 0>
     CommonProjectEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_author: row.get(5),spigot_tag: row.get(6),hangar_slug: row.get(7),hangar_name: row.get(8),hangar_owner: row.get(9),hangar_description: row.get(10),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_tag: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_title: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_owner: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }}pub mod hangar_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub slug: T1,pub owner: T2,pub name: T3,pub description: T4,pub created_at: time::OffsetDateTime,pub last_updated: time::OffsetDateTime,pub downloads: i32,pub visibility: T5,pub avatar_url: T6,pub version_name: Option<T7>,pub source_url: Option<T8>,pub source_repository_host: Option<T9>,pub source_repository_owner: Option<T10>,pub source_repository_name: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity

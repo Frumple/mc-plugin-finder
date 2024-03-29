@@ -364,7 +364,7 @@ mod test {
         assert_that(&project.date_modified).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&project.downloads).is_equal_to(100);
         assert_that(&project.version_id).is_equal_to("aaaa1111".to_string());
-        assert_that(&project.version_name).is_none();
+        assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
         assert_that(&project.icon_url).is_some().is_equal_to("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string());
         assert_that(&project.monetization_status).is_none();
         assert_that(&project.source_url).is_some().is_equal_to(source_url.to_string());

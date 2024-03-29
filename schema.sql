@@ -73,12 +73,16 @@ CREATE TABLE IF NOT EXISTS common_project (
   date_updated timestamptz NOT NULL,
   spigot_id integer REFERENCES spigot_resource,
   spigot_name text,
-  spigot_author text,
   spigot_tag text,
+  spigot_author text,
+  modrinth_id text REFERENCES modrinth_project,
+  modrinth_title text,
+  modrinth_description text,
+  modrinth_author text,
   hangar_slug text REFERENCES hangar_project,
   hangar_name text,
-  hangar_owner text,
-  hangar_description text
+  hangar_description text,
+  hangar_owner text
 );
 
 -- Indexes
@@ -86,15 +90,15 @@ CREATE TABLE IF NOT EXISTS common_project (
 -- Trigram indexes for text search on name, description, and author
 CREATE INDEX IF NOT EXISTS common_project_name_index
 ON common_project
-USING gin (spigot_name gin_trgm_ops, hangar_name gin_trgm_ops);
+USING gin (spigot_name gin_trgm_ops, modrinth_title gin_trgm_ops, hangar_name gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS common_project_description_index
 ON common_project
-USING gin (spigot_tag gin_trgm_ops, hangar_description gin_trgm_ops);
+USING gin (spigot_tag gin_trgm_ops, modrinth_description gin_trgm_ops, hangar_description gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS common_project_author_index
 ON common_project
-USING gin (spigot_author gin_trgm_ops, hangar_owner gin_trgm_ops);
+USING gin (spigot_author gin_trgm_ops, modrinth_author gin_trgm_ops, hangar_owner gin_trgm_ops);
 
 -- B-tree indexes for ordering by date_created and date_updated
 CREATE INDEX IF NOT EXISTS common_project_date_created_index

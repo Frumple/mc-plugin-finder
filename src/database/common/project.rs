@@ -15,15 +15,19 @@ pub struct CommonProject {
     pub date_updated: OffsetDateTime,
     pub spigot_id: Option<i32>,
     pub spigot_name: Option<String>,
-    pub spigot_author: Option<String>,
     pub spigot_tag: Option<String>,
+    pub spigot_author: Option<String>,
+    pub modrinth_id: Option<String>,
+    pub modrinth_title: Option<String>,
+    pub modrinth_description: Option<String>,
+    pub modrinth_author: Option<String>,
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
-    pub hangar_owner: Option<String>,
-    pub hangar_description: Option<String>
+    pub hangar_description: Option<String>,
+    pub hangar_owner: Option<String>
 }
 
-impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String> {
+impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: CommonProject) -> Self {
         UpsertCommonProjectParams {
             id: project.id.map(i64::from),
@@ -31,12 +35,16 @@ impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, S
             date_updated: project.date_updated,
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
-            spigot_author: project.spigot_author,
             spigot_tag: project.spigot_tag,
+            spigot_author: project.spigot_author,
+            modrinth_id: project.modrinth_id,
+            modrinth_title: project.modrinth_title,
+            modrinth_description: project.modrinth_description,
+            modrinth_author: project.modrinth_author,
             hangar_slug: project.hangar_slug,
             hangar_name: project.hangar_name,
-            hangar_owner: project.hangar_owner,
-            hangar_description: project.hangar_description
+            hangar_description: project.hangar_description,
+            hangar_owner: project.hangar_owner
         }
     }
 }
@@ -49,12 +57,16 @@ impl From<CommonProjectEntity> for CommonProject {
             date_updated: entity.date_updated,
             spigot_id: entity.spigot_id,
             spigot_name: entity.spigot_name,
-            spigot_author: entity.spigot_author,
             spigot_tag: entity.spigot_tag,
+            spigot_author: entity.spigot_author,
+            modrinth_id: entity.modrinth_id,
+            modrinth_title: entity.modrinth_title,
+            modrinth_description: entity.modrinth_description,
+            modrinth_author: entity.modrinth_author,
             hangar_slug: entity.hangar_slug,
             hangar_name: entity.hangar_name,
-            hangar_owner: entity.hangar_owner,
-            hangar_description: entity.hangar_description
+            hangar_description: entity.hangar_description,
+            hangar_owner: entity.hangar_owner
         }
     }
 }
@@ -150,8 +162,10 @@ mod test {
     use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
     use crate::database::hangar::project::test::populate_test_hangar_project;
 
-    use crate::database::spigot::author::SpigotAuthor;
+    use crate::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
+    use crate::database::modrinth::project::test::populate_test_modrinth_project;
 
+    use crate::database::spigot::author::SpigotAuthor;
     use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
     use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, create_test_spigot_resources};
 
@@ -186,6 +200,7 @@ mod test {
         assert_dates_are_equal_to_spigot_resource(merged_project, spigot_resource2);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, spigot_resource2);
+        assert_modrinth_fields_are_none(merged_project);
         assert_hangar_fields_are_none(merged_project);
 
         // Teardown
@@ -214,6 +229,7 @@ mod test {
         assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(merged_project);
         assert_hangar_fields_are_none(merged_project);
 
         // Act 2 - Insert project
@@ -229,6 +245,7 @@ mod test {
         assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(inserted_project);
         assert_hangar_fields_are_none(inserted_project);
 
         // Act 3 - Update project
@@ -250,6 +267,74 @@ mod test {
         assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(updated_project);
+        assert_hangar_fields_are_none(updated_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_insert_update_modrinth_project() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+
+        // Act 1 - Get merged project
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+
+        // Assert 1 - Verify merged project
+        assert_that(&merged_projects).has_length(1);
+
+        let merged_project = &merged_projects[0];
+        assert_that(&merged_project.id).is_none();
+        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
+
+        assert_spigot_fields_are_none(merged_project);
+        assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
+        assert_hangar_fields_are_none(merged_project);
+
+        // Act 2 - Insert project
+        upsert_common_project(&context.pool, merged_project).await?;
+
+        // Assert 2 - Verify project was inserted
+        let inserted_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&inserted_projects).has_length(1);
+
+        let inserted_project = &inserted_projects[0];
+        assert_that(&inserted_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
+
+        assert_spigot_fields_are_none(inserted_project);
+        assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
+        assert_hangar_fields_are_none(inserted_project);
+
+        // Act 3 - Update project
+        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-description".to_string();
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
+
+        // Assert 3 - Verify project was updated
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+
+        assert_spigot_fields_are_none(updated_project);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
         assert_hangar_fields_are_none(updated_project);
 
         // Teardown
@@ -278,6 +363,7 @@ mod test {
         assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_none(merged_project);
+        assert_modrinth_fields_are_none(merged_project);
         assert_hangar_fields_are_equal(merged_project, &hangar_project);
 
         // Act 2 - Insert project
@@ -293,6 +379,7 @@ mod test {
         assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_none(inserted_project);
+        assert_modrinth_fields_are_none(inserted_project);
         assert_hangar_fields_are_equal(inserted_project, &hangar_project);
 
         // Act 3 - Update project
@@ -314,6 +401,7 @@ mod test {
         assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_none(updated_project);
+        assert_modrinth_fields_are_none(updated_project);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
 
         // Teardown
@@ -324,7 +412,83 @@ mod test {
 
     #[tokio::test]
     #[named]
-    async fn should_merge_insert_update_spigot_resource_and_hangar_project() -> Result<()> {
+    async fn should_merge_insert_update_spigot_and_modrinth() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+
+        // Act 1 - Get merged project
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+
+        // Assert 1 - Verify merged project
+        assert_that(&merged_projects).has_length(1);
+
+        let merged_project = &merged_projects[0];
+        assert_that(&merged_project.id).is_none();
+        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
+
+        assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
+        assert_hangar_fields_are_none(merged_project);
+
+        // Act 2 - Insert project
+        upsert_common_project(&context.pool, merged_project).await?;
+
+        // Assert 2 - Verify project was inserted
+        let inserted_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&inserted_projects).has_length(1);
+
+        let inserted_project = &inserted_projects[0];
+        assert_that(&inserted_project.id).is_some();
+        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
+
+        assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
+        assert_hangar_fields_are_none(inserted_project);
+
+        // Act 3 - Update project
+        spigot_resource.parsed_name = Some("foo-updated".to_string());
+        spigot_resource.tag = "foo-updated-tag".to_string();
+        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        upsert_spigot_resource(&context.pool, &spigot_resource).await?;
+
+        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-description".to_string();
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
+
+        // Assert 3 - Verify project was updated
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+
+        assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+        assert_hangar_fields_are_none(updated_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_insert_update_spigot_and_hangar() -> Result<()> {
         // Setup
         let context = DatabaseTestContext::new(function_name!()).await;
 
@@ -341,8 +505,10 @@ mod test {
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
         assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
+        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(merged_project);
         assert_hangar_fields_are_equal(merged_project, &hangar_project);
 
         // Act 2 - Insert project
@@ -355,9 +521,11 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
+        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
+        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(inserted_project);
         assert_hangar_fields_are_equal(inserted_project, &hangar_project);
 
         // Act 3 - Update project
@@ -382,8 +550,323 @@ mod test {
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
         assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
+        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_none(updated_project);
+        assert_hangar_fields_are_equal(updated_project, &hangar_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_insert_update_modrinth_and_hangar() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+        let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
+
+        // Act 1 - Get merged project
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+
+        // Assert 1 - Verify merged project
+        assert_that(&merged_projects).has_length(1);
+
+        let merged_project = &merged_projects[0];
+        assert_that(&merged_project.id).is_none();
+        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
+
+        assert_spigot_fields_are_none(merged_project);
+        assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
+        assert_hangar_fields_are_equal(merged_project, &hangar_project);
+
+        // Act 2 - Insert project
+        upsert_common_project(&context.pool, merged_project).await?;
+
+        // Assert 2 - Verify project was inserted
+        let inserted_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&inserted_projects).has_length(1);
+
+        let inserted_project = &inserted_projects[0];
+        assert_that(&inserted_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
+
+        assert_spigot_fields_are_none(inserted_project);
+        assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
+        assert_hangar_fields_are_equal(inserted_project, &hangar_project);
+
+        // Act 3 - Update project
+        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-tag".to_string();
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        hangar_project.name = "foo-updated".to_string();
+        hangar_project.description = "foo-updated-description".to_string();
+        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        upsert_hangar_project(&context.pool, &hangar_project).await?;
+
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
+
+        // Assert 3 - Verify project was updated
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
+
+        assert_spigot_fields_are_none(updated_project);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+        assert_hangar_fields_are_equal(updated_project, &hangar_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_insert_update_spigot_modrinth_and_hangar() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+        let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
+
+        // Act 1 - Get merged project
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+
+        // Assert 1 - Verify merged project
+        assert_that(&merged_projects).has_length(1);
+
+        let merged_project = &merged_projects[0];
+        assert_that(&merged_project.id).is_none();
+        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
+
+        assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
+        assert_hangar_fields_are_equal(merged_project, &hangar_project);
+
+        // Act 2 - Insert project
+        upsert_common_project(&context.pool, merged_project).await?;
+
+        // Assert 2 - Verify project was inserted
+        let inserted_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&inserted_projects).has_length(1);
+
+        let inserted_project = &inserted_projects[0];
+        assert_that(&inserted_project.id).is_some();
+        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
+
+        assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
+        assert_hangar_fields_are_equal(inserted_project, &hangar_project);
+
+        // Act 3 - Update project
+        spigot_resource.parsed_name = Some("foo-updated".to_string());
+        spigot_resource.tag = "foo-updated-tag".to_string();
+        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        upsert_spigot_resource(&context.pool, &spigot_resource).await?;
+
+        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-tag".to_string();
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        hangar_project.name = "foo-updated".to_string();
+        hangar_project.description = "foo-updated-description".to_string();
+        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        upsert_hangar_project(&context.pool, &hangar_project).await?;
+
+        let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_merged_projects[0]).await?;
+
+        // Assert 3 - Verify project was updated
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
+
+        assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+        assert_hangar_fields_are_equal(updated_project, &hangar_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_modrinth_project_into_existing_spigot_resource() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_author, spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
+
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &common_projects[0]).await?;
+
+        // Act
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_common_projects[0]).await?;
+
+        // Assert
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+
+        assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_spigot_resource_into_existing_modrinth_project() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &common_projects[0]).await?;
+
+        // Act
+        let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
+        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        upsert_spigot_resource(&context.pool, &spigot_resource).await?;
+
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_common_projects[0]).await?;
+
+        // Assert
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
+
+        assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_hangar_project_into_existing_modrinth_project() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &common_projects[0]).await?;
+
+        // Act
+        let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
+        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        upsert_hangar_project(&context.pool, &hangar_project).await?;
+
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_common_projects[0]).await?;
+
+        // Assert
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
+
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
+        assert_hangar_fields_are_equal(updated_project, &hangar_project);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_merge_modrinth_project_into_existing_hangar_project() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let hangar_project = populate_test_hangar_project(&context.pool).await?;
+
+        let common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &common_projects[0]).await?;
+
+        // Act
+        let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
+        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        upsert_modrinth_project(&context.pool, &modrinth_project).await?;
+
+        let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
+        upsert_common_project(&context.pool, &new_common_projects[0]).await?;
+
+        // Assert
+        let updated_projects = get_common_projects(&context.pool).await?;
+
+        assert_that(&updated_projects).has_length(1);
+
+        let updated_project = &updated_projects[0];
+        assert_that(&updated_project.id).is_some();
+        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
+
+        assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
 
         // Teardown
@@ -473,6 +956,11 @@ mod test {
         assert_that(&common_project.date_updated).is_equal_to(spigot_resource.update_date);
     }
 
+    fn assert_dates_are_equal_to_modrinth_project(common_project: &CommonProject, modrinth_project: &ModrinthProject) {
+        assert_that(&common_project.date_created).is_equal_to(modrinth_project.date_created);
+        assert_that(&common_project.date_updated).is_equal_to(modrinth_project.date_modified);
+    }
+
     fn assert_dates_are_equal_to_hangar_project(common_project: &CommonProject, hangar_project: &HangarProject) {
         assert_that(&common_project.date_created).is_equal_to(hangar_project.created_at);
         assert_that(&common_project.date_updated).is_equal_to(hangar_project.last_updated);
@@ -481,28 +969,42 @@ mod test {
     fn assert_spigot_fields_are_equal(common_project: &CommonProject, spigot_author: &SpigotAuthor, spigot_resource: &SpigotResource) {
         assert_that(&common_project.spigot_id).is_some().is_equal_to(spigot_resource.id);
         assert_that(&common_project.spigot_name).is_equal_to(&spigot_resource.parsed_name);
-        assert_that(&common_project.spigot_author).is_some().is_equal_to(&spigot_author.name);
         assert_that(&common_project.spigot_tag).is_some().is_equal_to(&spigot_resource.tag);
+        assert_that(&common_project.spigot_author).is_some().is_equal_to(&spigot_author.name);
+    }
+
+    fn assert_modrinth_fields_are_equal(common_project: &CommonProject, modrinth_project: &ModrinthProject) {
+        assert_that(&common_project.modrinth_id).is_some().is_equal_to(&modrinth_project.id);
+        assert_that(&common_project.modrinth_title).is_some().is_equal_to(&modrinth_project.title);
+        assert_that(&common_project.modrinth_description).is_some().is_equal_to(&modrinth_project.description);
+        assert_that(&common_project.modrinth_author).is_some().is_equal_to(&modrinth_project.author);
     }
 
     fn assert_hangar_fields_are_equal(common_project: &CommonProject, hangar_project: &HangarProject) {
         assert_that(&common_project.hangar_slug).is_some().is_equal_to(&hangar_project.slug);
         assert_that(&common_project.hangar_name).is_some().is_equal_to(&hangar_project.name);
-        assert_that(&common_project.hangar_owner).is_some().is_equal_to(&hangar_project.owner);
         assert_that(&common_project.hangar_description).is_some().is_equal_to(&hangar_project.description);
+        assert_that(&common_project.hangar_owner).is_some().is_equal_to(&hangar_project.owner);
     }
 
     fn assert_spigot_fields_are_none(common_project: &CommonProject) {
         assert_that(&common_project.spigot_id).is_none();
         assert_that(&common_project.spigot_name).is_none();
-        assert_that(&common_project.spigot_author).is_none();
         assert_that(&common_project.spigot_tag).is_none();
+        assert_that(&common_project.spigot_author).is_none();
+    }
+
+    fn assert_modrinth_fields_are_none(common_project: &CommonProject) {
+        assert_that(&common_project.modrinth_id).is_none();
+        assert_that(&common_project.modrinth_title).is_none();
+        assert_that(&common_project.modrinth_description).is_none();
+        assert_that(&common_project.modrinth_author).is_none();
     }
 
     fn assert_hangar_fields_are_none(common_project: &CommonProject) {
         assert_that(&common_project.hangar_slug).is_none();
         assert_that(&common_project.hangar_name).is_none();
-        assert_that(&common_project.hangar_owner).is_none();
         assert_that(&common_project.hangar_description).is_none();
+        assert_that(&common_project.hangar_owner).is_none();
     }
 }
