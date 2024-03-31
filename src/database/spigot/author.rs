@@ -131,10 +131,19 @@ pub mod test {
         insert_spigot_author(&context.pool, author).await?;
 
         let result = insert_spigot_author(&context.pool, author).await;
-        let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<SpigotAuthorError>(), Some(SpigotAuthorError::DatabaseQueryFailed{ .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<SpigotAuthorError>().unwrap();
+
+        #[allow(irrefutable_let_patterns)]
+        if let SpigotAuthorError::DatabaseQueryFailed { author_id, source: _ } = downcast_error {
+            assert_that(&author_id).is_equal_to(&author.id);
+        } else {
+            panic!("expected error to be DatabaseQueryFailed, but was {}", downcast_error);
+        }
 
         let retrieved_authors = get_spigot_authors(&context.pool).await?;
         let retrieved_author = &retrieved_authors[0];

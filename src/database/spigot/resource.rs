@@ -223,10 +223,19 @@ pub mod test {
 
         // Act
         let result = upsert_spigot_resource(&context.pool, resource).await;
-        let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<SpigotResourceError>(), Some(SpigotResourceError::DatabaseQueryFailed { .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<SpigotResourceError>().unwrap();
+
+        #[allow(irrefutable_let_patterns)]
+        if let SpigotResourceError::DatabaseQueryFailed { resource_id, source: _ } = downcast_error {
+            assert_that(&resource_id).is_equal_to(&resource.id);
+        } else {
+            panic!("expected error to be DatabaseQueryFailed, but was {}", downcast_error);
+        }
 
         // Teardown
         context.drop().await?;

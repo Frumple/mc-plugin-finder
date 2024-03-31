@@ -558,18 +558,31 @@ mod test {
     #[tokio::test]
     async fn should_not_convert_resource_with_invalid_slug() -> Result<()> {
         // Arrange
+        let file_url = "resources/1/download?version=1".to_string();
+
         let mut incoming_resource: IncomingSpigotResource = create_test_resources()[0].clone();
         incoming_resource.file = Some(IncomingSpigotResourceNestedFile {
-            url: "resources/1/download?version=1".to_string()
+            url: file_url.clone()
         });
+
+        let resource_id = incoming_resource.id;
         let version_name = "v1.2.3";
 
         // Act
         let result = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await;
-        let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<ConvertIncomingSpigotResourceError>(), Some(ConvertIncomingSpigotResourceError::InvalidSlugFromURL { .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<ConvertIncomingSpigotResourceError>().unwrap();
+
+        if let ConvertIncomingSpigotResourceError::InvalidSlugFromURL{ resource_id, url } = downcast_error {
+            assert_that(resource_id).is_equal_to(resource_id);
+            assert_that(url).is_equal_to(file_url);
+        } else {
+            panic!("expected error to be InvalidSlugFromURL, but was {}", downcast_error);
+        }
 
         Ok(())
     }
@@ -579,14 +592,24 @@ mod test {
         // Arrange
         let mut incoming_resource = create_test_resources()[0].clone();
         incoming_resource.file = None;
+
+        let resource_id = incoming_resource.id;
         let version_name = "v1.2.3";
 
         // Act
         let result = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await;
-        let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<ConvertIncomingSpigotResourceError>(), Some(ConvertIncomingSpigotResourceError::FileNotFound { .. })));
+        assert_that(&result).is_err();
+
+        let error = result.unwrap_err();
+        let downcast_error = error.downcast_ref::<ConvertIncomingSpigotResourceError>().unwrap();
+
+        if let ConvertIncomingSpigotResourceError::FileNotFound{ resource_id } = downcast_error {
+            assert_that(resource_id).is_equal_to(resource_id);
+        } else {
+            panic!("expected error to be FileNotFound, but was {}", downcast_error);
+        }
 
         Ok(())
     }
