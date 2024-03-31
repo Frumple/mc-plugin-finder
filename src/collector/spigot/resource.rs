@@ -9,6 +9,7 @@ use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use regex::Regex;
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
@@ -116,7 +117,16 @@ pub struct IncomingSpigotResourceNestedVersion {
 }
 
 #[derive(Debug, Error)]
-enum IncomingSpigotResourceError {
+enum GetSpigotResourcesError {
+    #[error("Could not get Spigot resources {request:?}: Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        request: GetSpigotResourcesRequest,
+        status_code: u16
+    }
+}
+
+#[derive(Debug, Error)]
+enum ConvertIncomingSpigotResourceError {
     #[error("Skipping resource ID {resource_id}: Invalid slug from URL: {url}")]
     InvalidSlugFromURL {
         resource_id: i32,
@@ -182,21 +192,31 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let raw_headers = raw_response.headers();
-        let headers = GetSpigotResourcesResponseHeaders {
-            // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
-            x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
-            x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
-        };
+        let status = raw_response.status();
+        if status == StatusCode::OK {
+            let raw_headers = raw_response.headers();
+            let headers = GetSpigotResourcesResponseHeaders {
+                // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
+                x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
+                x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
+            };
 
-        let resources: Vec<IncomingSpigotResource> = raw_response.json().await?;
+            let resources: Vec<IncomingSpigotResource> = raw_response.json().await?;
 
-        let response = GetSpigotResourcesResponse {
-            headers,
-            resources
-        };
+            let response = GetSpigotResourcesResponse {
+                headers,
+                resources
+            };
 
-        Ok(response)
+            Ok(response)
+        } else {
+            Err(
+                GetSpigotResourcesError::UnexpectedStatusCode {
+                    request,
+                    status_code: status.into()
+                }.into()
+            )
+        }
     }
 
     async fn process_incoming_resource(&self, incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
@@ -284,7 +304,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
             Ok(resource)
         } else {
             Err(
-                IncomingSpigotResourceError::InvalidSlugFromURL {
+                ConvertIncomingSpigotResourceError::InvalidSlugFromURL {
                     resource_id,
                     url: file.url
                 }.into()
@@ -292,7 +312,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
         }
     } else {
         Err(
-            IncomingSpigotResourceError::FileNotFound {
+            ConvertIncomingSpigotResourceError::FileNotFound {
                 resource_id
             }.into()
         )
@@ -498,10 +518,10 @@ mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let response = spigot_client.get_resources_from_api(request).await?;
+        let response = spigot_client.get_resources_from_api(request).await;
 
         // Assert
-        assert_that(&response).is_equal_to(expected_response);
+        assert_that(&response).is_ok().is_equal_to(expected_response);
 
         Ok(())
     }
@@ -549,7 +569,7 @@ mod test {
         let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceError>(), Some(IncomingSpigotResourceError::InvalidSlugFromURL { .. })));
+        assert!(matches!(error.downcast_ref::<ConvertIncomingSpigotResourceError>(), Some(ConvertIncomingSpigotResourceError::InvalidSlugFromURL { .. })));
 
         Ok(())
     }
@@ -566,7 +586,7 @@ mod test {
         let error = result.unwrap_err();
 
         // Assert
-        assert!(matches!(error.downcast_ref::<IncomingSpigotResourceError>(), Some(IncomingSpigotResourceError::FileNotFound { .. })));
+        assert!(matches!(error.downcast_ref::<ConvertIncomingSpigotResourceError>(), Some(ConvertIncomingSpigotResourceError::FileNotFound { .. })));
 
         Ok(())
     }

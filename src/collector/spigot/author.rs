@@ -7,8 +7,10 @@ use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use std::cell::Cell;
+use thiserror::Error;
 use tracing::{info, warn, instrument};
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
@@ -86,6 +88,15 @@ impl From<IncomingSpigotAuthor> for SpigotAuthor {
     }
 }
 
+#[derive(Debug, Error)]
+enum GetSpigotAuthorsError {
+    #[error("Could not get Spigot authors {request:?}: Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        request: GetSpigotAuthorsRequest,
+        status_code: u16
+    }
+}
+
 impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_pool)
@@ -141,21 +152,31 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let raw_headers = raw_response.headers();
-        let headers = GetSpigotAuthorsResponseHeaders {
-            // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
-            x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
-            x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
-        };
+        let status = raw_response.status();
+        if status == StatusCode::OK {
+            let raw_headers = raw_response.headers();
+            let headers = GetSpigotAuthorsResponseHeaders {
+                // TODO: Convert from string to int using serde_aux::field_attributes::deserialize_number_from_string
+                x_page_index: raw_headers["x-page-index"].to_str()?.parse::<u32>()?,
+                x_page_count: raw_headers["x-page-count"].to_str()?.parse::<u32>()?,
+            };
 
-        let authors: Vec<IncomingSpigotAuthor> = raw_response.json().await?;
+            let authors: Vec<IncomingSpigotAuthor> = raw_response.json().await?;
 
-        let response = GetSpigotAuthorsResponse {
-            headers,
-            authors,
-        };
+            let response = GetSpigotAuthorsResponse {
+                headers,
+                authors,
+            };
 
-        Ok(response)
+            Ok(response)
+        } else {
+            Err(
+                GetSpigotAuthorsError::UnexpectedStatusCode {
+                    request,
+                    status_code: status.into()
+                }.into()
+            )
+        }
     }
 }
 
@@ -227,10 +248,10 @@ pub mod test {
 
         // Act
         let spigot_client = SpigotClient::new(spigot_server)?;
-        let response = spigot_client.get_authors_from_api(request).await?;
+        let response = spigot_client.get_authors_from_api(request).await;
 
         // Assert
-        assert_that(&response).is_equal_to(expected_response);
+        assert_that(&response).is_ok().is_equal_to(expected_response);
 
         Ok(())
     }

@@ -6,6 +6,7 @@ use crate::database::hangar::project::{get_hangar_projects, upsert_hangar_projec
 use anyhow::Result;
 use deadpool_postgres::Pool;
 use futures::stream::{self, StreamExt, TryStreamExt};
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use std::fmt::Debug;
@@ -40,10 +41,15 @@ pub struct IncomingHangarVersion {
 }
 
 #[derive(Debug, Error)]
-enum IncomingHangarVersionError {
+enum GetHangarVersionError {
     #[error("Project '{slug}': Latest version not found.")]
     LatestVersionNotFound {
         slug: String
+    },
+    #[error("Project '{slug}': Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        slug: String,
+        status_code: u16
     }
 }
 
@@ -106,17 +112,30 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetHangarVersionsResponse = raw_response.json().await?;
+        let status = raw_response.status();
+        match status {
+            StatusCode::OK => {
+                let response: GetHangarVersionsResponse = raw_response.json().await?;
 
-        if response.result.is_empty() {
-            return Err(
-                IncomingHangarVersionError::LatestVersionNotFound {
-                    slug: slug.to_string()
-                }.into()
-            )
+                if response.result.is_empty() {
+                    return Err(
+                        GetHangarVersionError::LatestVersionNotFound {
+                            slug: slug.to_string()
+                        }.into()
+                    )
+                }
+
+                Ok(response.result[0].name.clone())
+            }
+            _ => {
+                Err (
+                    GetHangarVersionError::UnexpectedStatusCode {
+                        slug: slug.to_string(),
+                        status_code: status.into()
+                    }.into()
+                )
+            }
         }
-
-        Ok(response.result[0].name.clone())
     }
 }
 
@@ -165,10 +184,10 @@ mod test {
 
         // Act
         let hangar_client = HangarClient::new(hangar_server)?;
-        let version = hangar_client.get_latest_hangar_project_version_from_api(slug).await?;
+        let version = hangar_client.get_latest_hangar_project_version_from_api(slug).await;
 
         // Assert
-        assert_that(&version).is_equal_to(expected_version.to_string());
+        assert_that(&version).is_ok().is_equal_to(expected_version.to_string());
 
         Ok(())
     }
@@ -209,9 +228,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingHangarVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<GetHangarVersionError>().unwrap();
 
-        if let IncomingHangarVersionError::LatestVersionNotFound{slug} = downcast_error {
+        if let GetHangarVersionError::LatestVersionNotFound{slug} = downcast_error {
             assert_that(&slug).is_equal_to(slug);
         } else {
             panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);

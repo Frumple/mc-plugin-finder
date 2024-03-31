@@ -8,6 +8,7 @@ use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
@@ -112,6 +113,15 @@ pub struct HangarResponsePagination {
     pub count: u32
 }
 
+#[derive(Debug, Error)]
+enum GetHangarProjectsError {
+    #[error("Could not get Hangar projects {request:?}: Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        request: GetHangarProjectsRequest,
+        status_code: u16
+    }
+}
+
 impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_pool)
@@ -195,9 +205,19 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetHangarProjectsResponse = raw_response.json().await?;
+        let status = raw_response.status();
+        if status == StatusCode::OK {
+            let response: GetHangarProjectsResponse = raw_response.json().await?;
 
-        Ok(response)
+            Ok(response)
+        } else {
+            Err(
+                GetHangarProjectsError::UnexpectedStatusCode {
+                    request,
+                    status_code: status.into()
+                }.into()
+            )
+        }
     }
 }
 
@@ -302,10 +322,10 @@ mod test {
 
         // Act
         let hangar_client = HangarClient::new(hangar_server)?;
-        let response = hangar_client.get_projects_from_api(request).await?;
+        let response = hangar_client.get_projects_from_api(request).await;
 
         // Assert
-        assert_that(&response).is_equal_to(expected_response);
+        assert_that(&response).is_ok().is_equal_to(expected_response);
 
         Ok(())
     }

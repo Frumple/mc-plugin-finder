@@ -5,6 +5,7 @@ use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource, 
 use anyhow::Result;
 use deadpool_postgres::Pool;
 use futures::stream::{self, StreamExt, TryStreamExt};
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use std::cell::Cell;
 use thiserror::Error;
@@ -12,14 +13,19 @@ use tracing::{info, warn, instrument};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct GetSpigotVersionResponse {
-    name: Option<String>
+    name: String
 }
 
 #[derive(Debug, Error)]
-enum IncomingSpigotVersionError {
+enum GetSpigotVersionError {
     #[error("Resource ID {resource_id}: Latest version not found")]
     LatestVersionNotFound {
         resource_id: i32
+    },
+    #[error("Resource ID {resource_id}: Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        resource_id: i32,
+        status_code: u16
     }
 }
 
@@ -77,16 +83,27 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetSpigotVersionResponse = raw_response.json().await?;
-
-        if let Some(version_name) = response.name {
-            Ok(version_name)
-        } else {
-            Err(
-                IncomingSpigotVersionError::LatestVersionNotFound {
-                    resource_id
-                }.into()
-            )
+        let status = raw_response.status();
+        match status {
+            StatusCode::OK => {
+                let response: GetSpigotVersionResponse = raw_response.json().await?;
+                Ok(response.name)
+            }
+            StatusCode::NOT_FOUND => {
+                Err(
+                    GetSpigotVersionError::LatestVersionNotFound {
+                        resource_id
+                    }.into()
+                )
+            }
+            _ => {
+                Err (
+                    GetSpigotVersionError::UnexpectedStatusCode {
+                        resource_id,
+                        status_code: status.into()
+                    }.into()
+                )
+            }
         }
     }
 }
@@ -112,7 +129,7 @@ mod test {
 
         let expected_version_name = "v1.2.3";
         let expected_response = GetSpigotVersionResponse {
-            name: Some(expected_version_name.to_string())
+            name: expected_version_name.to_string()
         };
         let response_template = ResponseTemplate::new(200)
             .set_body_json(expected_response);
@@ -162,9 +179,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingSpigotVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<GetSpigotVersionError>().unwrap();
 
-        if let IncomingSpigotVersionError::LatestVersionNotFound{resource_id} = downcast_error {
+        if let GetSpigotVersionError::LatestVersionNotFound{resource_id} = downcast_error {
             assert_that(&resource_id).is_equal_to(resource_id);
         } else {
             panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);

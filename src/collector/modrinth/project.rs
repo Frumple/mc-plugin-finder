@@ -8,6 +8,7 @@ use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
+use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
@@ -19,14 +20,14 @@ use tracing::{info, warn, instrument};
 const MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD: usize = 2;
 
 #[derive(Clone, Debug, Serialize)]
-struct GetModrinthSearchProjectsRequest {
+struct SearchModrinthProjectsRequest {
     facets: String,
     limit: u32,
     offset: u32,
     index: String
 }
 
-impl GetModrinthSearchProjectsRequest {
+impl SearchModrinthProjectsRequest {
     fn create_request() -> Self {
         Self {
             facets: "[[\"project_type:plugin\"]]".to_string(),
@@ -37,7 +38,7 @@ impl GetModrinthSearchProjectsRequest {
     }
 }
 
-impl RequestAhead for GetModrinthSearchProjectsRequest {
+impl RequestAhead for SearchModrinthProjectsRequest {
     fn next_request(&self) -> Self {
         Self {
             facets: "[[\"project_type:plugin\"]]".to_string(),
@@ -49,14 +50,14 @@ impl RequestAhead for GetModrinthSearchProjectsRequest {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-struct GetModrinthSearchProjectsResponse {
+struct SearchModrinthProjectsResponse {
     hits: Vec<IncomingModrinthProject>,
     offset: u32,
     limit: u32,
     total_hits: u32
 }
 
-impl GetModrinthSearchProjectsResponse {
+impl SearchModrinthProjectsResponse {
     fn more_projects_available(&self) -> bool {
         self.offset + self.limit < self.total_hits
     }
@@ -83,10 +84,24 @@ pub struct GetModrinthProjectResponse {
 }
 
 #[derive(Debug, Error)]
-enum IncomingModrinthProjectError {
-    #[error("Skipping project {id}: Latest version not found.")]
+enum SearchModrinthProjectsError {
+    #[error("Could not search Modrinth projects {request:?}: Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        request: SearchModrinthProjectsRequest,
+        status_code: u16
+    }
+}
+
+#[derive(Debug, Error)]
+enum GetModrinthProjectError {
+    #[error("Project {id}: Latest version not found.")]
     LatestVersionNotFound {
         id: String
+    },
+    #[error("Could not get Modrinth project '{id}': Received unexpected status code {status_code}")]
+    UnexpectedStatusCode {
+        id: String,
+        status_code: u16
     }
 }
 
@@ -95,7 +110,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_modrinth_projects(&self, db_pool: &Pool) -> Result<()> {
-        let request = GetModrinthSearchProjectsRequest::create_request();
+        let request = SearchModrinthProjectsRequest::create_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
 
@@ -115,7 +130,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn update_modrinth_projects(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
-        let request = GetModrinthSearchProjectsRequest::create_request();
+        let request = SearchModrinthProjectsRequest::create_request();
 
         let count_cell: Cell<u32> = Cell::new(0);
 
@@ -175,7 +190,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self)
     )]
-    async fn get_projects_from_api(&self, request: GetModrinthSearchProjectsRequest) -> Result<GetModrinthSearchProjectsResponse> {
+    async fn get_projects_from_api(&self, request: SearchModrinthProjectsRequest) -> Result<SearchModrinthProjectsResponse> {
         self.rate_limiter.until_ready().await;
 
         let url = self.http_server.base_url().join("search")?;
@@ -184,9 +199,18 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetModrinthSearchProjectsResponse = raw_response.json().await?;
-
-        Ok(response)
+        let status = raw_response.status();
+        if status == StatusCode::OK {
+            let response: SearchModrinthProjectsResponse = raw_response.json().await?;
+            Ok(response)
+        } else {
+            Err(
+                SearchModrinthProjectsError::UnexpectedStatusCode {
+                    request,
+                    status_code: status.into()
+                }.into()
+            )
+        }
     }
 
     #[instrument(
@@ -202,17 +226,36 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetModrinthProjectResponse = raw_response.json().await?;
-
-        Ok(response.source_url)
+        let status = raw_response.status();
+        match status {
+            StatusCode::OK => {
+                let response: GetModrinthProjectResponse = raw_response.json().await?;
+                Ok(response.source_url)
+            }
+            StatusCode::NOT_FOUND => {
+                Err(
+                    GetModrinthProjectError::LatestVersionNotFound {
+                        id: id.to_string()
+                    }.into()
+                )
+            }
+            _ => {
+                Err(
+                    GetModrinthProjectError::UnexpectedStatusCode {
+                        id: id.to_string(),
+                        status_code: status.into()
+                    }.into()
+                )
+            }
+        }
     }
 }
 
-impl<T> PageTurner<GetModrinthSearchProjectsRequest> for ModrinthClient<T> where T: HttpServer + Send + Sync {
+impl<T> PageTurner<SearchModrinthProjectsRequest> for ModrinthClient<T> where T: HttpServer + Send + Sync {
     type PageItems = Vec<IncomingModrinthProject>;
     type PageError = anyhow::Error;
 
-    async fn turn_page(&self, mut request: GetModrinthSearchProjectsRequest) -> TurnedPageResult<Self, GetModrinthSearchProjectsRequest> {
+    async fn turn_page(&self, mut request: SearchModrinthProjectsRequest) -> TurnedPageResult<Self, SearchModrinthProjectsRequest> {
         let response = self.get_projects_from_api(request.clone()).await?;
 
         if response.more_projects_available() {
@@ -227,44 +270,36 @@ impl<T> PageTurner<GetModrinthSearchProjectsRequest> for ModrinthClient<T> where
 async fn convert_incoming_project(incoming_project: IncomingModrinthProject, source_url: &Option<String>, version_name: &Option<String>) -> Result<ModrinthProject> {
     let project_id = incoming_project.project_id;
 
-    if let Some(version_id) = incoming_project.latest_version {
-        let mut project = ModrinthProject {
-            id: project_id,
-            slug: incoming_project.slug,
-            title: incoming_project.title,
-            description: incoming_project.description,
-            author: incoming_project.author,
-            date_created: OffsetDateTime::parse(&incoming_project.date_created, &Rfc3339)?,
-            date_modified: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
-            downloads: incoming_project.downloads,
-            version_id,
-            version_name: version_name.clone(),
-            icon_url: incoming_project.icon_url,
-            monetization_status: incoming_project.monetization_status,
-            source_url: source_url.clone(),
-            source_repository_host: None,
-            source_repository_owner: None,
-            source_repository_name: None
-        };
+    let mut project = ModrinthProject {
+        id: project_id,
+        slug: incoming_project.slug,
+        title: incoming_project.title,
+        description: incoming_project.description,
+        author: incoming_project.author,
+        date_created: OffsetDateTime::parse(&incoming_project.date_created, &Rfc3339)?,
+        date_modified: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
+        downloads: incoming_project.downloads,
+        version_id: incoming_project.latest_version,
+        version_name: version_name.clone(),
+        icon_url: incoming_project.icon_url,
+        monetization_status: incoming_project.monetization_status,
+        source_url: source_url.clone(),
+        source_repository_host: None,
+        source_repository_owner: None,
+        source_repository_name: None
+    };
 
-        if let Some(url) = source_url {
-            let option_repo = extract_source_repository_from_url(url.as_str());
+    if let Some(url) = source_url {
+        let option_repo = extract_source_repository_from_url(url.as_str());
 
-            if let Some(repo) = option_repo {
-                project.source_repository_host = Some(repo.host);
-                project.source_repository_owner = Some(repo.owner);
-                project.source_repository_name = Some(repo.name);
-            }
+        if let Some(repo) = option_repo {
+            project.source_repository_host = Some(repo.host);
+            project.source_repository_owner = Some(repo.owner);
+            project.source_repository_name = Some(repo.name);
         }
-
-        Ok(project)
-    } else {
-        Err(
-            IncomingModrinthProjectError::LatestVersionNotFound {
-                id: project_id
-            }.into()
-        )
     }
+
+    Ok(project)
 }
 
 #[cfg(test)]
@@ -282,9 +317,9 @@ mod test {
         // Arrange
         let modrinth_server = ModrinthTestServer::new().await;
 
-        let request = GetModrinthSearchProjectsRequest::create_request();
+        let request = SearchModrinthProjectsRequest::create_request();
 
-        let expected_response = GetModrinthSearchProjectsResponse {
+        let expected_response = SearchModrinthProjectsResponse {
             hits: create_test_modrinth_projects(),
             limit: 100,
             offset: 200,
@@ -305,10 +340,10 @@ mod test {
 
         // Act
         let modrinth_client = ModrinthClient::new(modrinth_server)?;
-        let response = modrinth_client.get_projects_from_api(request).await?;
+        let response = modrinth_client.get_projects_from_api(request).await;
 
         // Assert
-        assert_that(&response).is_equal_to(expected_response);
+        assert_that(&response).is_ok().is_equal_to(expected_response);
 
         Ok(())
     }
@@ -336,10 +371,10 @@ mod test {
 
         // Act
         let modrinth_client = ModrinthClient::new(modrinth_server)?;
-        let source_url = modrinth_client.get_project_source_url_from_api(project_id).await?;
+        let source_url = modrinth_client.get_project_source_url_from_api(project_id).await;
 
         // Assert
-        assert_that(&source_url).is_some().is_equal_to(expected_source_url.to_string());
+        assert_that(&source_url).is_ok().is_some().is_equal_to(expected_source_url.to_string());
 
         Ok(())
     }
@@ -363,7 +398,7 @@ mod test {
         assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&project.date_modified).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&project.downloads).is_equal_to(100);
-        assert_that(&project.version_id).is_equal_to("aaaa1111".to_string());
+        assert_that(&project.version_id).is_some().is_equal_to("aaaa1111".to_string());
         assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
         assert_that(&project.icon_url).is_some().is_equal_to("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string());
         assert_that(&project.monetization_status).is_none();

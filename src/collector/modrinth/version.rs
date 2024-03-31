@@ -18,7 +18,7 @@ pub struct GetModrinthVersionResponse {
 }
 
 #[derive(Debug, Error)]
-enum IncomingModrinthVersionError {
+enum GetModrinthVersionError {
     #[error("Project '{project_id}' and version '{version_id}': Latest version not found.")]
     LatestVersionNotFound {
         project_id: String,
@@ -54,20 +54,24 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
     }
 
     async fn process_modrinth_project(&self, project: ModrinthProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
-        let version_result = self.get_latest_modrinth_project_version_from_api(&project.id, &project.version_id).await;
+        if let Some(ref version_id) = project.version_id {
+            let version_result = self.get_latest_modrinth_project_version_from_api(&project.id, version_id).await;
 
-        match version_result {
-            Ok(version_name) => {
-                let mut new_project = project.clone();
-                new_project.version_name = Some(version_name);
-                let db_result = upsert_modrinth_project(db_pool, &new_project).await;
+            match version_result {
+                Ok(version_name) => {
+                    let mut new_project = project.clone();
+                    new_project.version_name = Some(version_name);
+                    let db_result = upsert_modrinth_project(db_pool, &new_project).await;
 
-                match db_result {
-                    Ok(_) => count_cell.set(count_cell.get() + 1),
-                    Err(err) => warn!("{}", err)
+                    match db_result {
+                        Ok(_) => count_cell.set(count_cell.get() + 1),
+                        Err(err) => warn!("{}", err)
+                    }
                 }
+                Err(err) => warn!("{}", err)
             }
-            Err(err) => warn!("{}", err)
+        } else {
+            warn!("Skipping project '{}': Version ID not found.", project.id);
         }
 
         Ok(())
@@ -94,7 +98,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             }
             StatusCode::NOT_FOUND => {
                 Err(
-                    IncomingModrinthVersionError::LatestVersionNotFound {
+                    GetModrinthVersionError::LatestVersionNotFound {
                         project_id: project_id.to_string(),
                         version_id: version_id.to_string()
                     }.into()
@@ -102,10 +106,10 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             }
             _ => {
                 Err(
-                    IncomingModrinthVersionError::UnexpectedStatusCode {
+                    GetModrinthVersionError::UnexpectedStatusCode {
                         project_id: project_id.to_string(),
                         version_id: version_id.to_string(),
-                        status_code: status.as_u16()
+                        status_code: status.into()
                     }.into()
                 )
             }
@@ -182,9 +186,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingModrinthVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<GetModrinthVersionError>().unwrap();
 
-        if let IncomingModrinthVersionError::LatestVersionNotFound{project_id, version_id} = downcast_error {
+        if let GetModrinthVersionError::LatestVersionNotFound{project_id, version_id} = downcast_error {
             assert_that(&project_id).is_equal_to(project_id);
             assert_that(&version_id).is_equal_to(version_id);
         } else {

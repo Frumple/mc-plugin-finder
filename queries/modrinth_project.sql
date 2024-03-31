@@ -1,6 +1,6 @@
---: ModrinthProjectEntity(version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: ModrinthProjectEntity(version_id?, version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_modrinth_project (version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--! upsert_modrinth_project (version_id?, version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 INSERT INTO modrinth_project (id, slug, title, description, author, date_created, date_modified, downloads, version_id, version_name, icon_url, monetization_status, source_url, source_repository_host, source_repository_owner, source_repository_name)
   VALUES (:id, :slug, :title, :description, :author, :date_created, :date_modified, :downloads, :version_id, :version_name, :icon_url, :monetization_status, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT(id)
