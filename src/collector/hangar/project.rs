@@ -242,11 +242,11 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, versi
 
     let mut project = HangarProject {
         slug: incoming_project.namespace.slug,
-        owner: incoming_project.namespace.owner,
+        author: incoming_project.namespace.owner,
         name: incoming_project.name,
         description: incoming_project.description,
-        created_at: OffsetDateTime::parse(&incoming_project.created_at, &Rfc3339)?,
-        last_updated: OffsetDateTime::parse(&incoming_project.last_updated, &Rfc3339)?,
+        date_created: OffsetDateTime::parse(&incoming_project.created_at, &Rfc3339)?,
+        date_updated: OffsetDateTime::parse(&incoming_project.last_updated, &Rfc3339)?,
         downloads: incoming_project.stats.downloads,
         visibility: incoming_project.visibility,
         avatar_url: incoming_project.avatar_url,
@@ -341,11 +341,11 @@ mod test {
 
         // Assert
         assert_that(&project.slug).is_equal_to("foo".to_string());
-        assert_that(&project.owner).is_equal_to("Frumple".to_string());
+        assert_that(&project.author).is_equal_to("Frumple".to_string());
         assert_that(&project.name).is_equal_to("project-1".to_string());
         assert_that(&project.description).is_equal_to("project-1-description".to_string());
-        assert_that(&project.created_at).is_equal_to(datetime!(2020-01-01 0:00 UTC));
-        assert_that(&project.last_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
+        assert_that(&project.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&project.downloads).is_equal_to(100);
         assert_that(&project.visibility).is_equal_to("public".to_string());
         assert_that(&project.avatar_url).is_equal_to("https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string());

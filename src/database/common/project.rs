@@ -15,16 +15,16 @@ pub struct CommonProject {
     pub date_updated: OffsetDateTime,
     pub spigot_id: Option<i32>,
     pub spigot_name: Option<String>,
-    pub spigot_tag: Option<String>,
+    pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
     pub modrinth_id: Option<String>,
-    pub modrinth_title: Option<String>,
+    pub modrinth_name: Option<String>,
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
-    pub hangar_owner: Option<String>
+    pub hangar_author: Option<String>
 }
 
 impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
@@ -35,16 +35,16 @@ impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, S
             date_updated: project.date_updated,
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
-            spigot_tag: project.spigot_tag,
+            spigot_description: project.spigot_description,
             spigot_author: project.spigot_author,
             modrinth_id: project.modrinth_id,
-            modrinth_title: project.modrinth_title,
+            modrinth_name: project.modrinth_name,
             modrinth_description: project.modrinth_description,
             modrinth_author: project.modrinth_author,
             hangar_slug: project.hangar_slug,
             hangar_name: project.hangar_name,
             hangar_description: project.hangar_description,
-            hangar_owner: project.hangar_owner
+            hangar_author: project.hangar_author
         }
     }
 }
@@ -57,16 +57,16 @@ impl From<CommonProjectEntity> for CommonProject {
             date_updated: entity.date_updated,
             spigot_id: entity.spigot_id,
             spigot_name: entity.spigot_name,
-            spigot_tag: entity.spigot_tag,
+            spigot_description: entity.spigot_description,
             spigot_author: entity.spigot_author,
             modrinth_id: entity.modrinth_id,
-            modrinth_title: entity.modrinth_title,
+            modrinth_name: entity.modrinth_name,
             modrinth_description: entity.modrinth_description,
             modrinth_author: entity.modrinth_author,
             hangar_slug: entity.hangar_slug,
             hangar_name: entity.hangar_name,
             hangar_description: entity.hangar_description,
-            hangar_owner: entity.hangar_owner
+            hangar_author: entity.hangar_author
         }
     }
 }
@@ -88,13 +88,13 @@ pub async fn get_merged_common_projects(db_pool: &Pool, update_date_later_than: 
     let db_client = db_pool.get().await?;
 
     // If no update date is provided, default to January 1st 2000, which should merge all projects ever created
-    let update_date = match update_date_later_than {
+    let date_updated = match update_date_later_than {
         Some(date) => date,
         None => datetime!(2000-01-01 0:00 UTC)
     };
 
     let entities = common_project::get_merged_common_projects()
-        .bind(&db_client, &update_date)
+        .bind(&db_client, &date_updated)
         .all()
         .await?;
 
@@ -192,7 +192,7 @@ mod test {
         let merged_projects = get_merged_common_projects(&context.pool, Some(datetime!(2021-07-01 0:00 UTC))).await?;
 
         // Assert
-        // Only the resource with update_date 2022-01-01 should be merged.
+        // Only the resource with date_updated 2022-01-01 should be merged.
         assert_that(&merged_projects).has_length(1);
 
         let merged_project = &merged_projects[0];
@@ -250,8 +250,8 @@ mod test {
 
         // Act 3 - Update project
         spigot_resource.parsed_name = Some("foo-updated".to_string());
-        spigot_resource.tag = "foo-updated-tag".to_string();
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.description = "foo-updated-description".to_string();
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -316,9 +316,9 @@ mod test {
         assert_hangar_fields_are_none(inserted_project);
 
         // Act 3 - Update project
-        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.name = "foo-updated".to_string();
         modrinth_project.description = "foo-updated-description".to_string();
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -385,7 +385,7 @@ mod test {
         // Act 3 - Update project
         hangar_project.name = "foo-updated".to_string();
         hangar_project.description = "foo-updated-description".to_string();
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -454,13 +454,13 @@ mod test {
 
         // Act 3 - Update project
         spigot_resource.parsed_name = Some("foo-updated".to_string());
-        spigot_resource.tag = "foo-updated-tag".to_string();
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.description = "foo-updated-description".to_string();
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
-        modrinth_project.title = "foo-updated".to_string();
+        modrinth_project.name = "foo-updated".to_string();
         modrinth_project.description = "foo-updated-description".to_string();
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -530,13 +530,13 @@ mod test {
 
         // Act 3 - Update project
         spigot_resource.parsed_name = Some("foo-updated".to_string());
-        spigot_resource.tag = "foo-updated-tag".to_string();
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.description = "foo-updated-description".to_string();
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
         hangar_project.name = "foo-updated".to_string();
         hangar_project.description = "foo-updated-description".to_string();
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -605,14 +605,14 @@ mod test {
         assert_hangar_fields_are_equal(inserted_project, &hangar_project);
 
         // Act 3 - Update project
-        modrinth_project.title = "foo-updated".to_string();
-        modrinth_project.description = "foo-updated-tag".to_string();
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.name = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-description".to_string();
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         hangar_project.name = "foo-updated".to_string();
         hangar_project.description = "foo-updated-description".to_string();
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -685,18 +685,18 @@ mod test {
 
         // Act 3 - Update project
         spigot_resource.parsed_name = Some("foo-updated".to_string());
-        spigot_resource.tag = "foo-updated-tag".to_string();
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.description = "foo-updated-description".to_string();
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
-        modrinth_project.title = "foo-updated".to_string();
-        modrinth_project.description = "foo-updated-tag".to_string();
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.name = "foo-updated".to_string();
+        modrinth_project.description = "foo-updated-description".to_string();
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         hangar_project.name = "foo-updated".to_string();
         hangar_project.description = "foo-updated-description".to_string();
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_merged_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -737,7 +737,7 @@ mod test {
 
         // Act
         let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -775,7 +775,7 @@ mod test {
 
         // Act
         let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -813,7 +813,7 @@ mod test {
 
         // Act
         let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -851,7 +851,7 @@ mod test {
 
         // Act
         let mut modrinth_project = populate_test_modrinth_project(&context.pool).await?;
-        modrinth_project.date_modified = datetime!(2021-07-01 0:00 UTC);
+        modrinth_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_modrinth_project(&context.pool, &modrinth_project).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -889,7 +889,7 @@ mod test {
 
         // Act
         let mut hangar_project = populate_test_hangar_project(&context.pool).await?;
-        hangar_project.last_updated = datetime!(2021-07-01 0:00 UTC);
+        hangar_project.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_hangar_project(&context.pool, &hangar_project).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -927,7 +927,7 @@ mod test {
 
         // Act
         let (spigot_author, mut spigot_resource) = populate_test_spigot_author_and_resource(&context.pool).await?;
-        spigot_resource.update_date = datetime!(2021-07-01 0:00 UTC);
+        spigot_resource.date_updated = datetime!(2021-07-01 0:00 UTC);
         upsert_spigot_resource(&context.pool, &spigot_resource).await?;
 
         let new_common_projects = get_merged_common_projects(&context.pool, None).await?;
@@ -952,30 +952,30 @@ mod test {
     }
 
     fn assert_dates_are_equal_to_spigot_resource(common_project: &CommonProject, spigot_resource: &SpigotResource) {
-        assert_that(&common_project.date_created).is_equal_to(spigot_resource.release_date);
-        assert_that(&common_project.date_updated).is_equal_to(spigot_resource.update_date);
+        assert_that(&common_project.date_created).is_equal_to(spigot_resource.date_created);
+        assert_that(&common_project.date_updated).is_equal_to(spigot_resource.date_updated);
     }
 
     fn assert_dates_are_equal_to_modrinth_project(common_project: &CommonProject, modrinth_project: &ModrinthProject) {
         assert_that(&common_project.date_created).is_equal_to(modrinth_project.date_created);
-        assert_that(&common_project.date_updated).is_equal_to(modrinth_project.date_modified);
+        assert_that(&common_project.date_updated).is_equal_to(modrinth_project.date_updated);
     }
 
     fn assert_dates_are_equal_to_hangar_project(common_project: &CommonProject, hangar_project: &HangarProject) {
-        assert_that(&common_project.date_created).is_equal_to(hangar_project.created_at);
-        assert_that(&common_project.date_updated).is_equal_to(hangar_project.last_updated);
+        assert_that(&common_project.date_created).is_equal_to(hangar_project.date_created);
+        assert_that(&common_project.date_updated).is_equal_to(hangar_project.date_updated);
     }
 
     fn assert_spigot_fields_are_equal(common_project: &CommonProject, spigot_author: &SpigotAuthor, spigot_resource: &SpigotResource) {
         assert_that(&common_project.spigot_id).is_some().is_equal_to(spigot_resource.id);
         assert_that(&common_project.spigot_name).is_equal_to(&spigot_resource.parsed_name);
-        assert_that(&common_project.spigot_tag).is_some().is_equal_to(&spigot_resource.tag);
+        assert_that(&common_project.spigot_description).is_some().is_equal_to(&spigot_resource.description);
         assert_that(&common_project.spigot_author).is_some().is_equal_to(&spigot_author.name);
     }
 
     fn assert_modrinth_fields_are_equal(common_project: &CommonProject, modrinth_project: &ModrinthProject) {
         assert_that(&common_project.modrinth_id).is_some().is_equal_to(&modrinth_project.id);
-        assert_that(&common_project.modrinth_title).is_some().is_equal_to(&modrinth_project.title);
+        assert_that(&common_project.modrinth_name).is_some().is_equal_to(&modrinth_project.name);
         assert_that(&common_project.modrinth_description).is_some().is_equal_to(&modrinth_project.description);
         assert_that(&common_project.modrinth_author).is_some().is_equal_to(&modrinth_project.author);
     }
@@ -984,19 +984,19 @@ mod test {
         assert_that(&common_project.hangar_slug).is_some().is_equal_to(&hangar_project.slug);
         assert_that(&common_project.hangar_name).is_some().is_equal_to(&hangar_project.name);
         assert_that(&common_project.hangar_description).is_some().is_equal_to(&hangar_project.description);
-        assert_that(&common_project.hangar_owner).is_some().is_equal_to(&hangar_project.owner);
+        assert_that(&common_project.hangar_author).is_some().is_equal_to(&hangar_project.author);
     }
 
     fn assert_spigot_fields_are_none(common_project: &CommonProject) {
         assert_that(&common_project.spigot_id).is_none();
         assert_that(&common_project.spigot_name).is_none();
-        assert_that(&common_project.spigot_tag).is_none();
+        assert_that(&common_project.spigot_description).is_none();
         assert_that(&common_project.spigot_author).is_none();
     }
 
     fn assert_modrinth_fields_are_none(common_project: &CommonProject) {
         assert_that(&common_project.modrinth_id).is_none();
-        assert_that(&common_project.modrinth_title).is_none();
+        assert_that(&common_project.modrinth_name).is_none();
         assert_that(&common_project.modrinth_description).is_none();
         assert_that(&common_project.modrinth_author).is_none();
     }
@@ -1005,6 +1005,6 @@ mod test {
         assert_that(&common_project.hangar_slug).is_none();
         assert_that(&common_project.hangar_name).is_none();
         assert_that(&common_project.hangar_description).is_none();
-        assert_that(&common_project.hangar_owner).is_none();
+        assert_that(&common_project.hangar_author).is_none();
     }
 }

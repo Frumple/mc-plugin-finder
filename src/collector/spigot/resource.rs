@@ -276,10 +276,10 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 id: incoming_resource.id,
                 name: incoming_resource.name,
                 parsed_name,
-                tag: incoming_resource.tag,
+                description: incoming_resource.tag,
                 slug,
-                release_date: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
-                update_date: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
+                date_created: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
+                date_updated: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
                 downloads: incoming_resource.downloads,
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
@@ -538,10 +538,10 @@ mod test {
         // Assert
         assert_that(&resource.id).is_equal_to(1);
         assert_that(&resource.name).is_equal_to("resource-1".to_string());
-        assert_that(&resource.tag).is_equal_to("resource-1-tag".to_string());
+        assert_that(&resource.description).is_equal_to("resource-1-tag".to_string());
         assert_that(&resource.slug).is_equal_to("foo.1".to_string());
-        assert_that(&resource.release_date).is_equal_to(datetime!(2020-01-01 0:00 UTC));
-        assert_that(&resource.update_date).is_equal_to(datetime!(2021-01-01 0:00 UTC));
+        assert_that(&resource.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
+        assert_that(&resource.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&resource.downloads).is_equal_to(100);
         assert_that(&resource.author_id).is_equal_to(1);
         assert_that(&resource.version_id).is_equal_to(1);

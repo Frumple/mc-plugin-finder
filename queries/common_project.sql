@@ -1,34 +1,34 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_name?, spigot_tag?, spigot_author?, modrinth_id?, modrinth_title?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_owner?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
-  GREATEST(sm.date_created, h.created_at) AS date_created,
-  GREATEST(sm.date_updated, h.last_updated) AS date_updated,
+  GREATEST(sm.date_created, h.date_created) AS date_created,
+  GREATEST(sm.date_updated, h.date_updated) AS date_updated,
   sm.spigot_id,
   sm.spigot_name,
-  sm.spigot_tag,
+  sm.spigot_description,
   sm.spigot_author,
   sm.modrinth_id,
-  sm.modrinth_title,
+  sm.modrinth_name,
   sm.modrinth_description,
   sm.modrinth_author,
   h.slug AS hangar_slug,
   h.name AS hangar_name,
   h.description AS hangar_description,
-  h.owner AS hangar_owner
+  h.author AS hangar_author
 
 FROM
   (
     SELECT
-      GREATEST(s.release_date, m.date_created) AS date_created,
-      GREATEST(s.update_date, m.date_modified) AS date_updated,
+      GREATEST(s.date_created, m.date_created) AS date_created,
+      GREATEST(s.date_updated, m.date_updated) AS date_updated,
       s.id AS spigot_id,
       s.parsed_name AS spigot_name,
-      s.tag AS spigot_tag,
+      s.description AS spigot_description,
       a.name AS spigot_author,
       m.id AS modrinth_id,
-      m.title AS modrinth_title,
+      m.name AS modrinth_name,
       m.description AS modrinth_description,
       m.author AS modrinth_author,
       COALESCE(s.source_repository_host, m.source_repository_host) AS source_repository_host,
@@ -59,27 +59,27 @@ FROM
   ON  h.slug = ch.hangar_slug
 
 WHERE
-  GREATEST(sm.date_updated, h.last_updated) > :date_updated;
+  GREATEST(sm.date_updated, h.date_updated) > :date_updated;
 
---! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_tag?, spigot_author?, modrinth_id?, modrinth_title?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_owner?)
-INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_tag, spigot_author, modrinth_id, modrinth_title, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_owner)
-  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :date_created, :date_updated, :spigot_id, :spigot_name, :spigot_tag, :spigot_author, :modrinth_id, :modrinth_title, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_owner)
+--! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
+INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
+  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :date_created, :date_updated, :spigot_id, :spigot_name, :spigot_description, :spigot_author, :modrinth_id, :modrinth_name, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_author)
   ON CONFLICT (id)
   DO UPDATE SET
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
     spigot_id = EXCLUDED.spigot_id,
     spigot_name = EXCLUDED.spigot_name,
-    spigot_tag = EXCLUDED.spigot_tag,
+    spigot_description = EXCLUDED.spigot_description,
     spigot_author = EXCLUDED.spigot_author,
     modrinth_id = EXCLUDED.modrinth_id,
-    modrinth_title = EXCLUDED.modrinth_title,
+    modrinth_name = EXCLUDED.modrinth_name,
     modrinth_description = EXCLUDED.modrinth_description,
     modrinth_author = EXCLUDED.modrinth_author,
     hangar_slug = EXCLUDED.hangar_slug,
     hangar_name = EXCLUDED.hangar_name,
     hangar_description = EXCLUDED.hangar_description,
-    hangar_owner = EXCLUDED.hangar_owner;
+    hangar_author = EXCLUDED.hangar_author;
 
 --! get_common_projects : CommonProjectEntity
 SELECT * FROM common_project;

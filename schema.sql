@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   id SERIAL PRIMARY KEY,
   name text NOT NULL,
   parsed_name text,
-  tag text NOT NULL,
+  description text NOT NULL,
   slug text NOT NULL,
-  release_date timestamptz NOT NULL,
-  update_date timestamptz NOT NULL,
+  date_created timestamptz NOT NULL,
+  date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
   author_id integer NOT NULL REFERENCES spigot_author,
   version_id integer NOT NULL,
@@ -32,11 +32,11 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
 CREATE TABLE IF NOT EXISTS modrinth_project (
   id text PRIMARY KEY,
   slug text NOT NULL,
-  title text NOT NULL,
+  name text NOT NULL,
   description text NOT NULL,
   author text NOT NULL,
   date_created timestamptz NOT NULL,
-  date_modified timestamptz NOT NULL,
+  date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
   version_id text,
   version_name text,
@@ -51,11 +51,11 @@ CREATE TABLE IF NOT EXISTS modrinth_project (
 -- Hangar
 CREATE TABLE IF NOT EXISTS hangar_project (
   slug text PRIMARY KEY,
-  owner text NOT NULL,
+  author text NOT NULL,
   name text NOT NULL,
   description text NOT NULL,
-  created_at timestamptz NOT NULL,
-  last_updated timestamptz NOT NULL,
+  date_created timestamptz NOT NULL,
+  date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
   visibility text NOT NULL,
   avatar_url text NOT NULL,
@@ -73,16 +73,16 @@ CREATE TABLE IF NOT EXISTS common_project (
   date_updated timestamptz NOT NULL,
   spigot_id integer REFERENCES spigot_resource,
   spigot_name text,
-  spigot_tag text,
+  spigot_description text,
   spigot_author text,
   modrinth_id text REFERENCES modrinth_project,
-  modrinth_title text,
+  modrinth_name text,
   modrinth_description text,
   modrinth_author text,
   hangar_slug text REFERENCES hangar_project,
   hangar_name text,
   hangar_description text,
-  hangar_owner text
+  hangar_author text
 );
 
 -- Indexes
@@ -90,15 +90,15 @@ CREATE TABLE IF NOT EXISTS common_project (
 -- Trigram indexes for text search on name, description, and author
 CREATE INDEX IF NOT EXISTS common_project_name_index
 ON common_project
-USING gin (spigot_name gin_trgm_ops, modrinth_title gin_trgm_ops, hangar_name gin_trgm_ops);
+USING gin (spigot_name gin_trgm_ops, modrinth_name gin_trgm_ops, hangar_name gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS common_project_description_index
 ON common_project
-USING gin (spigot_tag gin_trgm_ops, modrinth_description gin_trgm_ops, hangar_description gin_trgm_ops);
+USING gin (spigot_description gin_trgm_ops, modrinth_description gin_trgm_ops, hangar_description gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS common_project_author_index
 ON common_project
-USING gin (spigot_author gin_trgm_ops, modrinth_author gin_trgm_ops, hangar_owner gin_trgm_ops);
+USING gin (spigot_author gin_trgm_ops, modrinth_author gin_trgm_ops, hangar_author gin_trgm_ops);
 
 -- B-tree indexes for ordering by date_created and date_updated
 CREATE INDEX IF NOT EXISTS common_project_date_created_index
