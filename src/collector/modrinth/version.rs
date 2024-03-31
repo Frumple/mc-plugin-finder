@@ -13,12 +13,12 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct GetModrinthProjectVersionResponse {
+pub struct GetModrinthVersionResponse {
     version_number: String
 }
 
 #[derive(Debug, Error)]
-enum IncomingModrinthProjectVersionError {
+enum IncomingModrinthVersionError {
     #[error("Project '{project_id}' and version '{version_id}': Latest version not found.")]
     LatestVersionNotFound {
         project_id: String,
@@ -89,12 +89,12 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         let status = raw_response.status();
         match status {
             StatusCode::OK => {
-                let response: GetModrinthProjectVersionResponse = raw_response.json().await?;
+                let response: GetModrinthVersionResponse = raw_response.json().await?;
                 Ok(response.version_number)
             }
             StatusCode::NOT_FOUND => {
                 Err(
-                    IncomingModrinthProjectVersionError::LatestVersionNotFound {
+                    IncomingModrinthVersionError::LatestVersionNotFound {
                         project_id: project_id.to_string(),
                         version_id: version_id.to_string()
                     }.into()
@@ -102,7 +102,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             }
             _ => {
                 Err(
-                    IncomingModrinthProjectVersionError::UnexpectedStatusCode {
+                    IncomingModrinthVersionError::UnexpectedStatusCode {
                         project_id: project_id.to_string(),
                         version_id: version_id.to_string(),
                         status_code: status.as_u16()
@@ -123,7 +123,7 @@ mod test {
     use wiremock::matchers::{method, path};
 
     #[derive(Clone, Serialize)]
-    struct ModrinthProjectVersionErrorResponse;
+    struct ModrinthVersionErrorResponse;
 
     #[tokio::test]
     async fn should_get_latest_project_version_name_from_api() -> Result<()> {
@@ -131,7 +131,7 @@ mod test {
         let modrinth_server = ModrinthTestServer::new().await;
 
         let expected_version_name = "v1.2.3";
-        let expected_response = GetModrinthProjectVersionResponse {
+        let expected_response = GetModrinthVersionResponse {
             version_number: expected_version_name.to_string()
         };
         let response_template = ResponseTemplate::new(200)
@@ -161,7 +161,7 @@ mod test {
         // Arrange
         let modrinth_server = ModrinthTestServer::new().await;
 
-        let response = ModrinthProjectVersionErrorResponse;
+        let response = ModrinthVersionErrorResponse;
         let response_template = ResponseTemplate::new(404)
             .set_body_json(response);
 
@@ -182,9 +182,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingModrinthProjectVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<IncomingModrinthVersionError>().unwrap();
 
-        if let IncomingModrinthProjectVersionError::LatestVersionNotFound{project_id, version_id} = downcast_error {
+        if let IncomingModrinthVersionError::LatestVersionNotFound{project_id, version_id} = downcast_error {
             assert_that(&project_id).is_equal_to(project_id);
             assert_that(&version_id).is_equal_to(version_id);
         } else {

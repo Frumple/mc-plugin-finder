@@ -13,12 +13,12 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 
 #[derive(Clone, Debug, Serialize)]
-pub struct GetHangarProjectVersionsRequest {
+pub struct GetHangarVersionsRequest {
     limit: u32,
     offset: u32
 }
 
-impl GetHangarProjectVersionsRequest {
+impl GetHangarVersionsRequest {
     fn create_request() -> Self {
         Self {
             limit: 1,
@@ -28,19 +28,19 @@ impl GetHangarProjectVersionsRequest {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct GetHangarProjectVersionsResponse {
+pub struct GetHangarVersionsResponse {
     pagination: HangarResponsePagination,
-    result: Vec<IncomingHangarProjectVersion>
+    result: Vec<IncomingHangarVersion>
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct IncomingHangarProjectVersion {
+pub struct IncomingHangarVersion {
     name: String
     // TODO: Get visibility and channel?
 }
 
 #[derive(Debug, Error)]
-enum IncomingHangarProjectVersionError {
+enum IncomingHangarVersionError {
     #[error("Project '{slug}': Latest version not found.")]
     LatestVersionNotFound {
         slug: String
@@ -97,7 +97,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         // Hangar's "projects/{slug}/versions" seems to order versions for newest to oldest.
         // This allows us to assume that the first version returned is the latest.
         // However, there is no guarantee this behaviour will remain in the future.
-        let request = GetHangarProjectVersionsRequest::create_request();
+        let request = GetHangarVersionsRequest::create_request();
 
         let path = &["projects/", slug, "/versions"].concat();
         let url = self.http_server.base_url().join(path)?;
@@ -106,11 +106,11 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetHangarProjectVersionsResponse = raw_response.json().await?;
+        let response: GetHangarVersionsResponse = raw_response.json().await?;
 
         if response.result.is_empty() {
             return Err(
-                IncomingHangarProjectVersionError::LatestVersionNotFound {
+                IncomingHangarVersionError::LatestVersionNotFound {
                     slug: slug.to_string()
                 }.into()
             )
@@ -134,17 +134,17 @@ mod test {
         // Arrange
         let hangar_server = HangarTestServer::new().await;
 
-        let request = GetHangarProjectVersionsRequest::create_request();
+        let request = GetHangarVersionsRequest::create_request();
 
         let expected_version = "v1.2.3";
-        let expected_response = GetHangarProjectVersionsResponse {
+        let expected_response = GetHangarVersionsResponse {
             pagination: HangarResponsePagination {
                 limit: 0,
                 offset: 1,
                 count: 10
             },
             result: vec![
-                IncomingHangarProjectVersion {
+                IncomingHangarVersion {
                     name: expected_version.to_string()
                 }
             ]
@@ -178,9 +178,9 @@ mod test {
         // Arrange
         let hangar_server = HangarTestServer::new().await;
 
-        let request = GetHangarProjectVersionsRequest::create_request();
+        let request = GetHangarVersionsRequest::create_request();
 
-        let response = GetHangarProjectVersionsResponse {
+        let response = GetHangarVersionsResponse {
             pagination: HangarResponsePagination {
                 limit: 0,
                 offset: 1,
@@ -209,9 +209,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingHangarProjectVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<IncomingHangarVersionError>().unwrap();
 
-        if let IncomingHangarProjectVersionError::LatestVersionNotFound{slug} = downcast_error {
+        if let IncomingHangarVersionError::LatestVersionNotFound{slug} = downcast_error {
             assert_that(&slug).is_equal_to(slug);
         } else {
             panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);

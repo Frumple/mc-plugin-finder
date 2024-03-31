@@ -11,12 +11,12 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-struct GetSpigotResourceVersionResponse {
+struct GetSpigotVersionResponse {
     name: Option<String>
 }
 
 #[derive(Debug, Error)]
-enum IncomingSpigotResourceVersionError {
+enum IncomingSpigotVersionError {
     #[error("Resource ID {resource_id}: Latest version not found")]
     LatestVersionNotFound {
         resource_id: i32
@@ -77,13 +77,13 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .send()
             .await?;
 
-        let response: GetSpigotResourceVersionResponse = raw_response.json().await?;
+        let response: GetSpigotVersionResponse = raw_response.json().await?;
 
         if let Some(version_name) = response.name {
             Ok(version_name)
         } else {
             Err(
-                IncomingSpigotResourceVersionError::LatestVersionNotFound {
+                IncomingSpigotVersionError::LatestVersionNotFound {
                     resource_id
                 }.into()
             )
@@ -101,7 +101,7 @@ mod test {
     use wiremock::matchers::{method, path};
 
     #[derive(Clone, Serialize)]
-    struct SpigotResourceVersionErrorResponse {
+    struct SpigotVersionErrorResponse {
         error: String
     }
 
@@ -111,7 +111,7 @@ mod test {
         let spigot_server = SpigotTestServer::new().await;
 
         let expected_version_name = "v1.2.3";
-        let expected_response = GetSpigotResourceVersionResponse {
+        let expected_response = GetSpigotVersionResponse {
             name: Some(expected_version_name.to_string())
         };
         let response_template = ResponseTemplate::new(200)
@@ -140,7 +140,7 @@ mod test {
         // Arrange
         let spigot_server = SpigotTestServer::new().await;
 
-        let response = SpigotResourceVersionErrorResponse {
+        let response = SpigotVersionErrorResponse {
             error: "version not found".to_string()
         };
         let response_template = ResponseTemplate::new(404)
@@ -162,9 +162,9 @@ mod test {
         assert_that(&result).is_err();
 
         let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<IncomingSpigotResourceVersionError>().unwrap();
+        let downcast_error = error.downcast_ref::<IncomingSpigotVersionError>().unwrap();
 
-        if let IncomingSpigotResourceVersionError::LatestVersionNotFound{resource_id} = downcast_error {
+        if let IncomingSpigotVersionError::LatestVersionNotFound{resource_id} = downcast_error {
             assert_that(&resource_id).is_equal_to(resource_id);
         } else {
             panic!("expected error to be LatestVersionNotFound, but was {}", downcast_error);
