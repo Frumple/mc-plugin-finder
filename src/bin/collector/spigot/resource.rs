@@ -1,7 +1,7 @@
-use crate::collector::HttpServer;
-use crate::collector::spigot::SpigotClient;
-use crate::collector::util::extract_source_repository_from_url;
-use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
+use crate::HttpServer;
+use crate::spigot::SpigotClient;
+use crate::util::extract_source_repository_from_url;
+use mc_plugin_finder::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -401,7 +401,7 @@ fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::spigot::test::SpigotTestServer;
+    use crate::spigot::test::SpigotTestServer;
 
     use rstest::*;
     use speculoos::prelude::*;

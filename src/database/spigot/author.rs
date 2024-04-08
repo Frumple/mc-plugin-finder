@@ -88,7 +88,7 @@ pub async fn get_highest_spigot_author_id(db_pool: &Pool) -> Result<i32> {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::test::DatabaseTestContext;
+    use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
     use speculoos::prelude::*;

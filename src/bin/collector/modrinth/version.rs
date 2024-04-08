@@ -1,6 +1,6 @@
-use crate::collector::HttpServer;
-use crate::collector::modrinth::ModrinthClient;
-use crate::database::modrinth::project::{get_modrinth_projects, upsert_modrinth_project, ModrinthProject};
+use crate::HttpServer;
+use crate::modrinth::ModrinthClient;
+use mc_plugin_finder::database::modrinth::project::{get_modrinth_projects, upsert_modrinth_project, ModrinthProject};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -120,7 +120,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::modrinth::test::ModrinthTestServer;
+    use crate::modrinth::test::ModrinthTestServer;
 
     use speculoos::prelude::*;
     use wiremock::{Mock, ResponseTemplate};

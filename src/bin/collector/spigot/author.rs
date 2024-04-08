@@ -1,6 +1,6 @@
-use crate::collector::HttpServer;
-use crate::collector::spigot::SpigotClient;
-use crate::database::spigot::author::{SpigotAuthor, insert_spigot_author};
+use crate::HttpServer;
+use crate::spigot::SpigotClient;
+use mc_plugin_finder::database::spigot::author::{SpigotAuthor, insert_spigot_author};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -210,7 +210,7 @@ async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_pool:
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::collector::spigot::test::SpigotTestServer;
+    use crate::spigot::test::SpigotTestServer;
 
     use speculoos::prelude::*;
     use wiremock::{Mock, ResponseTemplate};

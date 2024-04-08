@@ -7,15 +7,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'mc-plugin-finder'",
+      "name": "Debug executable 'collector'",
       "cargo": {
         "args": [
           "build",
-          "--bin=mc-plugin-finder",
+          "--bin=collector",
           "--package=mc-plugin-finder"
         ],
         "filter": {
-          "name": "mc-plugin-finder",
+          "name": "collector",
           "kind": "bin"
         }
       },

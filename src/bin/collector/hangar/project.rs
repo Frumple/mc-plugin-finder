@@ -1,7 +1,7 @@
-use crate::collector::HttpServer;
-use crate::collector::hangar::HangarClient;
-use crate::collector::util::extract_source_repository_from_url;
-use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
+use crate::HttpServer;
+use crate::hangar::HangarClient;
+use crate::util::extract_source_repository_from_url;
+use mc_plugin_finder::database::hangar::project::{HangarProject, upsert_hangar_project};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -285,7 +285,7 @@ fn find_source_code_link(settings: IncomingHangarProjectSettings) -> Option<Stri
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::hangar::test::HangarTestServer;
+    use crate::hangar::test::HangarTestServer;
 
     use speculoos::prelude::*;
     use time::macros::datetime;

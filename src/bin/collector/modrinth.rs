@@ -1,4 +1,4 @@
-use crate::collector::HttpServer;
+use crate::HttpServer;
 
 use anyhow::Result;
 use governor::{Quota, RateLimiter};
@@ -12,42 +12,42 @@ use url::Url;
 mod project;
 mod version;
 
-const HANGAR_IS_LIVE: bool = true;
-const HANGAR_DEV_BASE_URL: &str = "https://hangar.papermc.dev/api/v1/";
-const HANGAR_LIVE_BASE_URL: &str = "https://hangar.papermc.io/api/v1/";
+const MODRINTH_IS_LIVE: bool = true;
+const MODRINTH_STAGING_BASE_URL: &str = "https://staging-api.modrinth.com/v2/";
+const MODRINTH_LIVE_BASE_URL: &str = "https://api.modrinth.com/v2/";
 
-const HANGAR_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
-const HANGAR_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
+const MODRINTH_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
+const MODRINTH_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
 #[derive(Debug)]
-pub struct HangarServer;
+pub struct ModrinthServer;
 
-impl HttpServer for HangarServer {
+impl HttpServer for ModrinthServer {
     async fn new() -> Self {
         Self
     }
 
     fn base_url(&self) -> Url {
-        let url = if HANGAR_IS_LIVE { HANGAR_LIVE_BASE_URL } else { HANGAR_DEV_BASE_URL };
+        let url = if MODRINTH_IS_LIVE { MODRINTH_LIVE_BASE_URL } else { MODRINTH_STAGING_BASE_URL };
         Url::parse(url)
-          .expect("Hangar base URL could not be parsed")
+          .expect("Modrinth base URL could not be parsed")
     }
 }
 
 #[derive(Debug)]
-pub struct HangarClient<T> {
+pub struct ModrinthClient<T> {
     api_client: Client,
     rate_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     http_server: T
 }
 
-impl<T> HangarClient<T> {
-    pub fn new(http_server: T) -> Result<HangarClient<T>> {
+impl<T> ModrinthClient<T> {
+    pub fn new(http_server: T) -> Result<ModrinthClient<T>> {
         let api_client = reqwest::Client::builder()
-            .user_agent(HANGAR_USER_AGENT)
+            .user_agent(MODRINTH_USER_AGENT)
             .build()?;
 
-        let quota = Quota::per_second(HANGAR_RATE_LIMIT_PER_SECOND);
+        let quota = Quota::per_second(MODRINTH_RATE_LIMIT_PER_SECOND);
         let rate_limiter = RateLimiter::direct(quota);
 
         Ok(Self { api_client, rate_limiter, http_server })
@@ -60,17 +60,17 @@ mod test {
     use wiremock::MockServer;
 
     #[derive(Debug)]
-    pub struct HangarTestServer {
+    pub struct ModrinthTestServer {
         mock_server: MockServer
     }
 
-    impl HangarTestServer {
+    impl ModrinthTestServer {
         pub fn mock(&self) -> &MockServer {
             &self.mock_server
         }
     }
 
-    impl HttpServer for HangarTestServer {
+    impl HttpServer for ModrinthTestServer {
         async fn new() -> Self {
             Self {
                 mock_server: MockServer::start().await
@@ -79,7 +79,7 @@ mod test {
 
         fn base_url(&self) -> Url {
             Url::parse(&self.mock_server.uri())
-                .expect("Hangar mock server base URL could not be parsed")
+                .expect("Modrinth mock server base URL could not be parsed")
         }
     }
 }

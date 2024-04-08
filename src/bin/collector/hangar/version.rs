@@ -1,7 +1,7 @@
-use crate::collector::HttpServer;
-use crate::collector::hangar::HangarClient;
-use crate::collector::hangar::project::HangarResponsePagination;
-use crate::database::hangar::project::{get_hangar_projects, upsert_hangar_project, HangarProject};
+use crate::HttpServer;
+use crate::hangar::HangarClient;
+use crate::hangar::project::HangarResponsePagination;
+use mc_plugin_finder::database::hangar::project::{get_hangar_projects, upsert_hangar_project, HangarProject};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -142,7 +142,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::hangar::test::HangarTestServer;
+    use crate::hangar::test::HangarTestServer;
 
     use speculoos::prelude::*;
     use wiremock::{Mock, ResponseTemplate};

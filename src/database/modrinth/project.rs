@@ -131,7 +131,7 @@ pub async fn get_latest_modrinth_project_update_date(db_pool: &Pool) -> Result<O
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::test::DatabaseTestContext;
+    use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
     use speculoos::prelude::*;

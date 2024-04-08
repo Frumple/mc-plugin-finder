@@ -1,7 +1,7 @@
-use crate::collector::HttpServer;
-use crate::collector::modrinth::ModrinthClient;
-use crate::collector::util::extract_source_repository_from_url;
-use crate::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
+use crate::HttpServer;
+use crate::modrinth::ModrinthClient;
+use crate::util::extract_source_repository_from_url;
+use mc_plugin_finder::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -305,7 +305,7 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::modrinth::test::ModrinthTestServer;
+    use crate::modrinth::test::ModrinthTestServer;
 
     use speculoos::prelude::*;
     use time::macros::datetime;

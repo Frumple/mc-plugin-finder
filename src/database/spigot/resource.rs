@@ -133,7 +133,7 @@ pub mod test {
     use super::*;
     use crate::database::spigot::author::SpigotAuthor;
     use crate::database::spigot::author::test::populate_test_spigot_author;
-    use crate::test::DatabaseTestContext;
+    use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
     use speculoos::prelude::*;

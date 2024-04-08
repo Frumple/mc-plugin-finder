@@ -169,7 +169,7 @@ mod test {
     use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
     use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, create_test_spigot_resources};
 
-    use crate::test::DatabaseTestContext;
+    use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
     use speculoos::prelude::*;

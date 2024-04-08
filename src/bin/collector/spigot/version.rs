@@ -1,6 +1,6 @@
-use crate::collector::HttpServer;
-use crate::collector::spigot::SpigotClient;
-use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource, get_spigot_resources};
+use crate::HttpServer;
+use crate::spigot::SpigotClient;
+use mc_plugin_finder::database::spigot::resource::{SpigotResource, upsert_spigot_resource, get_spigot_resources};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -111,7 +111,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::collector::spigot::test::SpigotTestServer;
+    use crate::spigot::test::SpigotTestServer;
 
     use speculoos::prelude::*;
     use wiremock::{Mock, ResponseTemplate};

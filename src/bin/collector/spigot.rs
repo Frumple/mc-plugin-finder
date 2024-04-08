@@ -1,4 +1,4 @@
-use crate::collector::HttpServer;
+use crate::HttpServer;
 
 use anyhow::Result;
 use governor::{Quota, RateLimiter};
@@ -9,45 +9,42 @@ use reqwest::Client;
 use std::num::NonZeroU32;
 use url::Url;
 
-mod project;
+mod author;
+mod resource;
 mod version;
 
-const MODRINTH_IS_LIVE: bool = true;
-const MODRINTH_STAGING_BASE_URL: &str = "https://staging-api.modrinth.com/v2/";
-const MODRINTH_LIVE_BASE_URL: &str = "https://api.modrinth.com/v2/";
+const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2/";
 
-const MODRINTH_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
-const MODRINTH_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
+const SPIGOT_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
+const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
 #[derive(Debug)]
-pub struct ModrinthServer;
-
-impl HttpServer for ModrinthServer {
+pub struct SpigotServer;
+impl HttpServer for SpigotServer {
     async fn new() -> Self {
         Self
     }
 
     fn base_url(&self) -> Url {
-        let url = if MODRINTH_IS_LIVE { MODRINTH_LIVE_BASE_URL } else { MODRINTH_STAGING_BASE_URL };
-        Url::parse(url)
-          .expect("Modrinth base URL could not be parsed")
+        Url::parse(SPIGOT_BASE_URL)
+          .expect("Spigot base URL could not be parsed")
     }
 }
 
 #[derive(Debug)]
-pub struct ModrinthClient<T> {
+pub struct SpigotClient<T> {
     api_client: Client,
     rate_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     http_server: T
 }
 
-impl<T> ModrinthClient<T> {
-    pub fn new(http_server: T) -> Result<ModrinthClient<T>> {
+impl<T> SpigotClient<T> {
+    pub fn new(http_server: T) -> Result<SpigotClient<T>> {
         let api_client = reqwest::Client::builder()
-            .user_agent(MODRINTH_USER_AGENT)
+            .user_agent(SPIGOT_USER_AGENT)
             .build()?;
 
-        let quota = Quota::per_second(MODRINTH_RATE_LIMIT_PER_SECOND);
+        let quota = Quota::per_second(SPIGOT_RATE_LIMIT_PER_SECOND);
         let rate_limiter = RateLimiter::direct(quota);
 
         Ok(Self { api_client, rate_limiter, http_server })
@@ -60,17 +57,17 @@ mod test {
     use wiremock::MockServer;
 
     #[derive(Debug)]
-    pub struct ModrinthTestServer {
+    pub struct SpigotTestServer {
         mock_server: MockServer
     }
 
-    impl ModrinthTestServer {
+    impl SpigotTestServer {
         pub fn mock(&self) -> &MockServer {
             &self.mock_server
         }
     }
 
-    impl HttpServer for ModrinthTestServer {
+    impl HttpServer for SpigotTestServer {
         async fn new() -> Self {
             Self {
                 mock_server: MockServer::start().await
@@ -79,7 +76,7 @@ mod test {
 
         fn base_url(&self) -> Url {
             Url::parse(&self.mock_server.uri())
-                .expect("Modrinth mock server base URL could not be parsed")
+                .expect("Spigot mock server base URL could not be parsed")
         }
     }
 }
