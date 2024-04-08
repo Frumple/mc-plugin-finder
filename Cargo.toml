@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.79"
+clap = { version = "4.5.4", features = ["derive"] }
 constcat = "0.4.0"
 cornucopia_async = "0.6.0"
 deadpool-postgres = "0.12.1"

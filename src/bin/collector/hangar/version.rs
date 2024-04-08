@@ -57,7 +57,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_pool)
     )]
-    pub async fn populate_hangar_project_versions(&self, db_pool: &Pool) -> Result<()> {
+    pub async fn populate_hangar_versions(&self, db_pool: &Pool) -> Result<()> {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let projects = get_hangar_projects(db_pool).await?;

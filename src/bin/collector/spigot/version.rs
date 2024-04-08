@@ -33,7 +33,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self, db_pool)
     )]
-    pub async fn populate_spigot_resource_versions(&self, db_pool: &Pool) -> Result<()> {
+    pub async fn populate_spigot_versions(&self, db_pool: &Pool) -> Result<()> {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let resources = get_spigot_resources(db_pool).await?;
