@@ -1,0 +1,31 @@
+[package]
+name = "collector"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.79"
+clap = { version = "4.5.4", features = ["derive"] }
+constcat = "0.4.0"
+deadpool-postgres = "0.12.1"
+emojis = "0.6.1"
+futures = "0.3.30"
+governor = "0.6.0"
+mc-plugin-finder = { path = ".." }
+nonzero_ext = "0.3.0"
+page-turner = "1.0.0"
+regex = "1.10.3"
+reqwest = { version = "0.11.23", features = ["json"] }
+serde = { version = "1.0.195", features = ["derive"] }
+thiserror = "1.0.56"
+time = { version = "0.3.36", features = ["macros", "parsing"] }
+tokio = { version = "1.35.1", features = ["rt-multi-thread", "macros"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+unicode-segmentation = "1.11.0"
+url = "2.5.0"
+
+[dev-dependencies]
+rstest = "0.18.2"
+speculoos = "0.11.0"
+wiremock = "0.5.22"

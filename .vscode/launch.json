@@ -11,8 +11,7 @@
       "cargo": {
         "args": [
           "build",
-          "--bin=collector",
-          "--package=mc-plugin-finder"
+          "--package=collector"
         ],
         "filter": {
           "name": "collector",
