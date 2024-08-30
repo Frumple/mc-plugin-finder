@@ -163,7 +163,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let project = populate_test_hangar_project(&context.pool);
+        let _project = populate_test_hangar_project(&context.pool);
 
         let updated_project = HangarProject {
             slug: "foo".to_string(),

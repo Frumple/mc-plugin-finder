@@ -565,7 +565,6 @@ mod test {
             url: file_url.clone()
         });
 
-        let resource_id = incoming_resource.id;
         let version_name = "v1.2.3";
 
         // Act
@@ -593,7 +592,6 @@ mod test {
         let mut incoming_resource = create_test_resources()[0].clone();
         incoming_resource.file = None;
 
-        let resource_id = incoming_resource.id;
         let version_name = "v1.2.3";
 
         // Act

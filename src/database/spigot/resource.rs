@@ -250,7 +250,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = populate_test_spigot_author(&context.pool).await?;
+        let _author = populate_test_spigot_author(&context.pool).await?;
 
         let resources = create_test_spigot_resources();
         for resource in resources {
