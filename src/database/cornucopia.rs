@@ -37,8 +37,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -213,8 +213,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -252,8 +252,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -369,8 +369,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -408,8 +408,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -530,8 +530,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -569,8 +569,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -660,8 +660,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
@@ -699,8 +699,8 @@ GenericClient
     Result<Option<T>, tokio_postgres::Error>
     {
         let stmt = self.stmt.prepare(self.client).await?;
-        Ok(self.client.query_opt(stmt, &self.params)
-        .await?.map(|row| (self.mapper)((self.extractor)(&row))))
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
     } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
     tokio_postgres::Error>> + 'a, tokio_postgres::Error>
     {
