@@ -24,5 +24,6 @@ speculoos = "0.11.0"
 
 [workspace]
 members = [
-  "collector"
+  "collector",
+  "web"
 ]
