@@ -20,43 +20,6 @@
       },
       "args": ["populate", "spigot", "authors"],
       "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug executable 'web'",
-      "cargo": {
-        "args": [
-          "build",
-          "--bin=web",
-          "--package=mc-plugin-finder"
-        ],
-        "filter": {
-          "name": "web",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests in executable 'mc-plugin-finder'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=mc-plugin-finder",
-          "--package=mc-plugin-finder"
-        ],
-        "filter": {
-          "name": "mc-plugin-finder",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
     }
   ]
 }
