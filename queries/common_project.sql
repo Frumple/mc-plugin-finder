@@ -3,57 +3,40 @@
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
-  GREATEST(sm.date_created, h.date_created) AS date_created,
-  GREATEST(sm.date_updated, h.date_updated) AS date_updated,
-  sm.spigot_id,
-  sm.spigot_name,
-  sm.spigot_description,
-  sm.spigot_author,
-  sm.modrinth_id,
-  sm.modrinth_name,
-  sm.modrinth_description,
-  sm.modrinth_author,
+  GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
+  GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
+  s.id AS spigot_id,
+  s.parsed_name AS spigot_name,
+  s.description AS spigot_description,
+  a.name AS spigot_author,
+  m.id AS modrinth_id,
+  m.name AS modrinth_name,
+  m.description AS modrinth_description,
+  m.author AS modrinth_author,
   h.slug AS hangar_slug,
   h.name AS hangar_name,
   h.description AS hangar_description,
   h.author AS hangar_author
-
 FROM
-  (
-    SELECT
-      GREATEST(s.date_created, m.date_created) AS date_created,
-      GREATEST(s.date_updated, m.date_updated) AS date_updated,
-      s.id AS spigot_id,
-      s.parsed_name AS spigot_name,
-      s.description AS spigot_description,
-      a.name AS spigot_author,
-      m.id AS modrinth_id,
-      m.name AS modrinth_name,
-      m.description AS modrinth_description,
-      m.author AS modrinth_author,
-      COALESCE(s.source_repository_host, m.source_repository_host) AS source_repository_host,
-    	COALESCE(s.source_repository_owner, m.source_repository_owner) AS source_repository_owner,
-      COALESCE(s.source_repository_name, m.source_repository_name) AS source_repository_name
-    FROM spigot_resource s
-      INNER JOIN spigot_author a
-      ON  s.author_id = a.id
+  spigot_resource s
+  INNER JOIN spigot_author a
+  ON  s.author_id = a.id
 
-      FULL OUTER JOIN modrinth_project m
-      ON  s.source_repository_host = m.source_repository_host
-      AND s.source_repository_owner = m.source_repository_owner
-      AND s.source_repository_name = m.source_repository_name
-  ) sm
+  FULL JOIN modrinth_project m
+  ON  s.source_repository_host = m.source_repository_host
+  AND s.source_repository_owner = m.source_repository_owner
+  AND s.source_repository_name = m.source_repository_name
 
-  FULL OUTER JOIN hangar_project h
-  ON  sm.source_repository_host = h.source_repository_host
-  AND sm.source_repository_owner = h.source_repository_owner
-  AND sm.source_repository_name = h.source_repository_name
+  FULL JOIN hangar_project h
+  ON  COALESCE(s.source_repository_host, m.source_repository_host) = h.source_repository_host
+  AND COALESCE(s.source_repository_owner, m.source_repository_owner) = h.source_repository_owner
+  AND COALESCE(s.source_repository_name, m.source_repository_name) = h.source_repository_name
 
   LEFT JOIN common_project cs
-  ON  sm.spigot_id = cs.spigot_id
+  ON  s.id = cs.spigot_id
 
   LEFT JOIN common_project cm
-  ON  sm.modrinth_id = cm.modrinth_id
+  ON  m.id = cm.modrinth_id
 
   LEFT JOIN common_project ch
   ON  h.slug = ch.hangar_slug
