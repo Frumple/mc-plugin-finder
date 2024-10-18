@@ -365,16 +365,19 @@ fn remove_discount_text(input: &str) -> String {
     `\p{letter}\p{mark}`
         - Matches international characters such as `é` or `ü`. It is preferred over [A-Za-z].
 
-    `[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’-]*[\p{letter}\p{mark}]+`
-        - Includes starting words that contain dashes but no whitespace.
-        - This allows us to include resources that have dashes as part of their name, but not dashes that are intended to be used as separators from other text.
+    `[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+`
+        - Includes first words that begin and end with letters/marks, and may contain dashes/underscores.
+        - This allows us to include resources that have dashes/underscores within their name, but not dashes/underscores that are intended to be used as separators from other text.
         - Examples that are included:
             - "Anti-Xray-Webhook"
             - "T-ExplosiveSheep"
             - "QuickShop-Hikari"
+            - "Admin_Panel"
+            - "IP_Checker"
         - Examples that are excluded:
             - "ZMusic - 1.20 Ready - Powerful Music System"
             - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin"
+            - "BackupSystem by ShadowX__"
 
     `...[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*`
         - Includes resource names with multiple words.
@@ -387,7 +390,7 @@ fn remove_discount_text(input: &str) -> String {
             - "Economy++"
  */
 fn extract_resource_name(input: &str) -> Option<String> {
-    let re = RESOURCE_NAME_REGEX.get_or_init(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’-]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
+    let re = RESOURCE_NAME_REGEX.get_or_init(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
     let mat = re.find(input)?;
     Some(mat.as_str().to_string())
 }
@@ -418,16 +421,26 @@ mod test {
     #[case::word_plus("Foo+", "Foo+")]
     #[case::word_plus_plus("Foo++", "Foo++")]
 
+    #[case::word_space_word("Foo Bar", "Foo Bar")]
+    #[case::word_space_word_space_word("Foo Bar Baz", "Foo Bar Baz")]
+
     #[case::hyphen_word("-Foo", "Foo")]
     #[case::word_hyphen("Foo-", "Foo")]
     #[case::word_hyphen_word("Foo-Bar", "Foo-Bar")]
-    #[case::word_space_word("Foo Bar", "Foo Bar")]
-    #[case::word_space_word_space_word("Foo Bar Baz", "Foo Bar Baz")]
     #[case::word_hyphen_word_space_word("Foo-Bar Baz", "Foo-Bar Baz")]
     #[case::word_space_word_hyphen_word("Foo Bar-Baz", "Foo Bar")]
     #[case::word_hyphen_space_word("Foo- Bar", "Foo")]
     #[case::word_space_hyphen_word("Foo -Bar", "Foo")]
     #[case::word_space_hyphen_space_word("Foo - Bar", "Foo")]
+
+    #[case::underscore_word("_Foo", "Foo")]
+    #[case::word_underscore("Foo_", "Foo")]
+    #[case::word_underscore_word("Foo_Bar", "Foo_Bar")]
+    #[case::word_underscore_word_space_word("Foo_Bar Baz", "Foo_Bar Baz")]
+    #[case::word_space_word_underscore_word("Foo Bar_Baz", "Foo Bar")]
+    #[case::word_underscore_space_word("Foo_ Bar", "Foo")]
+    #[case::word_space_underscore_word("Foo _Bar", "Foo")]
+    #[case::word_space_underscore_space_word("Foo _ Bar", "Foo")]
 
     #[case::emoji_word("✨Foo", "Foo")]
     #[case::emoji_space_word("✨ Foo", "Foo")]
