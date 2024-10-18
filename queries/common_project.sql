@@ -42,7 +42,7 @@ FROM
   ON  h.slug = ch.hangar_slug
 
 WHERE
-  GREATEST(sm.date_updated, h.date_updated) > :date_updated;
+  GREATEST(s.date_updated, m.date_updated, h.date_updated) > :date_updated;
 
 --! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
 INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
@@ -65,4 +65,19 @@ INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_na
     hangar_author = EXCLUDED.hangar_author;
 
 --! get_common_projects : CommonProjectEntity
-SELECT * FROM common_project;
+SELECT
+  *
+FROM
+  common_project;
+
+--! search_common_projects (query) : CommonProjectEntity
+SELECT
+  *
+FROM
+  common_project
+WHERE
+  spigot_name ILIKE :query
+  OR modrinth_name ILIKE :query
+  OR hangar_name ILIKE :query
+ORDER BY
+  date_updated DESC;

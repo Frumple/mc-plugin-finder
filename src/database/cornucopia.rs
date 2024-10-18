@@ -52,63 +52,46 @@ GenericClient
 }pub fn get_merged_common_projects() -> GetMergedCommonProjectsStmt
 { GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
-  GREATEST(sm.date_created, h.date_created) AS date_created,
-  GREATEST(sm.date_updated, h.date_updated) AS date_updated,
-  sm.spigot_id,
-  sm.spigot_name,
-  sm.spigot_description,
-  sm.spigot_author,
-  sm.modrinth_id,
-  sm.modrinth_name,
-  sm.modrinth_description,
-  sm.modrinth_author,
+  GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
+  GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
+  s.id AS spigot_id,
+  s.parsed_name AS spigot_name,
+  s.description AS spigot_description,
+  a.name AS spigot_author,
+  m.id AS modrinth_id,
+  m.name AS modrinth_name,
+  m.description AS modrinth_description,
+  m.author AS modrinth_author,
   h.slug AS hangar_slug,
   h.name AS hangar_name,
   h.description AS hangar_description,
   h.author AS hangar_author
-
 FROM
-  (
-    SELECT
-      GREATEST(s.date_created, m.date_created) AS date_created,
-      GREATEST(s.date_updated, m.date_updated) AS date_updated,
-      s.id AS spigot_id,
-      s.parsed_name AS spigot_name,
-      s.description AS spigot_description,
-      a.name AS spigot_author,
-      m.id AS modrinth_id,
-      m.name AS modrinth_name,
-      m.description AS modrinth_description,
-      m.author AS modrinth_author,
-      COALESCE(s.source_repository_host, m.source_repository_host) AS source_repository_host,
-    	COALESCE(s.source_repository_owner, m.source_repository_owner) AS source_repository_owner,
-      COALESCE(s.source_repository_name, m.source_repository_name) AS source_repository_name
-    FROM spigot_resource s
-      INNER JOIN spigot_author a
-      ON  s.author_id = a.id
+  spigot_resource s
+  INNER JOIN spigot_author a
+  ON  s.author_id = a.id
 
-      FULL OUTER JOIN modrinth_project m
-      ON  s.source_repository_host = m.source_repository_host
-      AND s.source_repository_owner = m.source_repository_owner
-      AND s.source_repository_name = m.source_repository_name
-  ) sm
+  FULL JOIN modrinth_project m
+  ON  s.source_repository_host = m.source_repository_host
+  AND s.source_repository_owner = m.source_repository_owner
+  AND s.source_repository_name = m.source_repository_name
 
-  FULL OUTER JOIN hangar_project h
-  ON  sm.source_repository_host = h.source_repository_host
-  AND sm.source_repository_owner = h.source_repository_owner
-  AND sm.source_repository_name = h.source_repository_name
+  FULL JOIN hangar_project h
+  ON  COALESCE(s.source_repository_host, m.source_repository_host) = h.source_repository_host
+  AND COALESCE(s.source_repository_owner, m.source_repository_owner) = h.source_repository_owner
+  AND COALESCE(s.source_repository_name, m.source_repository_name) = h.source_repository_name
 
   LEFT JOIN common_project cs
-  ON  sm.spigot_id = cs.spigot_id
+  ON  s.id = cs.spigot_id
 
   LEFT JOIN common_project cm
-  ON  sm.modrinth_id = cm.modrinth_id
+  ON  m.id = cm.modrinth_id
 
   LEFT JOIN common_project ch
   ON  h.slug = ch.hangar_slug
 
 WHERE
-  GREATEST(sm.date_updated, h.date_updated) > $1")) } pub struct
+  GREATEST(s.date_updated, m.date_updated, h.date_updated) > $1")) } pub struct
 GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetMergedCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
@@ -167,7 +150,10 @@ tokio_postgres::Error>> + Send + 'a>>, C> for UpsertCommonProjectStmt
     tokio_postgres::Error>> + Send + 'a>>
     { Box::pin(self.bind(client, &params.id,&params.date_created,&params.date_updated,&params.spigot_id,&params.spigot_name,&params.spigot_description,&params.spigot_author,&params.modrinth_id,&params.modrinth_name,&params.modrinth_description,&params.modrinth_author,&params.hangar_slug,&params.hangar_name,&params.hangar_description,&params.hangar_author,)) }
 }pub fn get_common_projects() -> GetCommonProjectsStmt
-{ GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT * FROM common_project")) } pub struct
+{ GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
+  *
+FROM
+  common_project")) } pub struct
 GetCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
@@ -177,6 +163,29 @@ CommonProjectEntity, 0>
     CommonProjectEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_description: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_name: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_author: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+    }
+} }pub fn search_common_projects() -> SearchCommonProjectsStmt
+{ SearchCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
+  *
+FROM
+  common_project
+WHERE
+  spigot_name ILIKE $1
+  OR modrinth_name ILIKE $1
+  OR hangar_name ILIKE $1
+ORDER BY
+  date_updated DESC")) } pub struct
+SearchCommonProjectsStmt(cornucopia_async::private::Stmt); impl SearchCommonProjectsStmt
+{ pub fn bind<'a, C:
+GenericClient,T1:
+cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
+query: &'a T1,) -> CommonProjectEntityQuery<'a,C,
+CommonProjectEntity, 1>
+{
+    CommonProjectEntityQuery
+    {
+        client, params: [query,], stmt: &mut self.0, extractor:
         |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_description: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_name: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_author: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }}pub mod hangar_project

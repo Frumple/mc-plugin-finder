@@ -156,6 +156,21 @@ pub async fn get_common_projects(db_pool: &Pool) -> Result<Vec<CommonProject>> {
     Ok(projects)
 }
 
+pub async fn search_common_projects(db_pool: &Pool, query: &str) -> Result<Vec<CommonProject>> {
+    let db_client = db_pool.get().await?;
+
+    let wildcard_query = format!("%{query}%");
+
+    let entities = common_project::search_common_projects()
+        .bind(&db_client, &wildcard_query)
+        .all()
+        .await?;
+
+    let projects = entities.into_iter().map(|x| x.into()).collect();
+
+    Ok(projects)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
