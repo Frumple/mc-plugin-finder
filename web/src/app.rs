@@ -114,10 +114,22 @@ pub async fn search_action(query: String) -> Result<String, ServerFnError> {
 #[server(GetProjects)]
 pub async fn get_projects(query: String) -> Result<Vec<WebProject>, ServerFnError> {
     use self::ssr::*;
-    use mc_plugin_finder::database::common::project::search_common_projects;
+    use mc_plugin_finder::database::common::project::{SearchParams, SearchParamsSortField, search_common_projects};
+
+    let params = SearchParams {
+        query,
+        spigot: true,
+        modrinth: true,
+        hangar: true,
+        name: true,
+        description: true,
+        author: true,
+        sort_field: SearchParamsSortField::DateUpdated,
+        sort_ascending: false
+    };
 
     let db_pool = db().await?;
-    let common_projects = search_common_projects(&db_pool, &query).await;
+    let common_projects = search_common_projects(&db_pool, &params).await;
 
     match common_projects {
         Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),

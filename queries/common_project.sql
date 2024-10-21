@@ -64,20 +64,81 @@ INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_na
     hangar_description = EXCLUDED.hangar_description,
     hangar_author = EXCLUDED.hangar_author;
 
---! get_common_projects : CommonProjectEntity
-SELECT
-  *
-FROM
-  common_project;
-
---! search_common_projects (query) : CommonProjectEntity
+--! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field, sort_ascending) : CommonProjectEntity
 SELECT
   *
 FROM
   common_project
 WHERE
-  spigot_name ILIKE :query
-  OR modrinth_name ILIKE :query
-  OR hangar_name ILIKE :query
+  CASE :spigot IS TRUE AND :name IS TRUE
+    WHEN TRUE THEN spigot_name ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :spigot IS TRUE AND :description IS TRUE
+    WHEN TRUE THEN spigot_description ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :spigot IS TRUE AND :author IS TRUE
+    WHEN TRUE THEN spigot_author ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :modrinth IS TRUE AND :name IS TRUE
+    WHEN TRUE THEN modrinth_name ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :modrinth IS TRUE AND :description IS TRUE
+    WHEN TRUE THEN modrinth_description ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :modrinth IS TRUE AND :author IS TRUE
+    WHEN TRUE THEN modrinth_author ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :hangar IS TRUE AND :name IS TRUE
+    WHEN TRUE THEN hangar_name ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :hangar IS TRUE AND :description IS TRUE
+    WHEN TRUE THEN hangar_description ILIKE :query
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :hangar IS TRUE AND :author IS TRUE
+    WHEN TRUE THEN hangar_author ILIKE :query
+    ELSE FALSE
+  END
+
 ORDER BY
-  date_updated DESC;
+  (CASE WHEN :sort_field = 'date_created' AND :sort_ascending IS TRUE THEN date_created END) ASC,
+  (CASE WHEN :sort_field = 'date_created' AND :sort_ascending IS FALSE THEN date_created END) DESC,
+  (CASE WHEN :sort_field = 'date_updated' AND :sort_ascending IS TRUE THEN date_updated END) ASC,
+  (CASE WHEN :sort_field = 'date_updated' AND :sort_ascending IS FALSE THEN date_updated END) DESC;
+
+--! get_common_projects : CommonProjectEntity
+SELECT
+  *
+FROM
+  common_project;

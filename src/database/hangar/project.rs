@@ -228,54 +228,62 @@ pub mod test {
         Ok(project.clone())
     }
 
+    pub async fn populate_test_hangar_projects(db_pool: &Pool) -> Result<Vec<HangarProject>> {
+        let projects = create_test_hangar_projects();
+        for project in &projects {
+            upsert_hangar_project(db_pool, project).await?
+        }
+        Ok(projects)
+    }
+
     fn create_test_hangar_projects() -> Vec<HangarProject> {
         vec![
             HangarProject {
                 slug: "foo".to_string(),
-                author: "Frumple".to_string(),
-                name: "foo".to_string(),
-                description: "foo-description".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2021-01-01 0:00 UTC),
-                downloads: 100,
-                visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
-                version_name: Some("v1.2.3".to_string()),
-                source_url: Some("https://github.com/Frumple/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
-                source_repository_name: Some("foo".to_string())
-            },
-            HangarProject {
-                slug: "bar".to_string(),
-                author: "Frumple".to_string(),
-                name: "bar".to_string(),
-                description: "bar-description".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2022-01-01 0:00 UTC),
-                downloads: 100,
-                visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
-                version_name: Some("v1.2.3".to_string()),
-                source_url: Some("https://github.com/Frumple/bar".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
-                source_repository_name: Some("bar".to_string())
-            },
-            HangarProject {
-                slug: "baz".to_string(),
-                author: "Frumple".to_string(),
-                name: "baz".to_string(),
-                description: "baz-description".to_string(),
+                author: "alice".to_string(),
+                name: "foo-hangar".to_string(),
+                description: "foo-hangar-description".to_string(),
                 date_created: datetime!(2020-01-01 0:00 UTC),
                 date_updated: datetime!(2023-01-01 0:00 UTC),
                 downloads: 100,
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
-                source_url: Some("https://github.com/Frumple/baz".to_string()),
+                source_url: Some("https://github.com/alice/foo".to_string()),
                 source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
+                source_repository_owner: Some("alice".to_string()),
+                source_repository_name: Some("foo".to_string())
+            },
+            HangarProject {
+                slug: "bar".to_string(),
+                author: "bob".to_string(),
+                name: "bar-hangar".to_string(),
+                description: "bar-hangar-description".to_string(),
+                date_created: datetime!(2020-01-02 0:00 UTC),
+                date_updated: datetime!(2022-01-01 0:00 UTC),
+                downloads: 100,
+                visibility: "public".to_string(),
+                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                version_name: Some("v1.2.3".to_string()),
+                source_url: Some("https://gitlab.com/bob/bar".to_string()),
+                source_repository_host: Some("gitlab.com".to_string()),
+                source_repository_owner: Some("bob".to_string()),
+                source_repository_name: Some("bar".to_string())
+            },
+            HangarProject {
+                slug: "baz".to_string(),
+                author: "eve".to_string(),
+                name: "baz-hangar".to_string(),
+                description: "baz-hangar-description".to_string(),
+                date_created: datetime!(2020-01-03 0:00 UTC),
+                date_updated: datetime!(2021-01-01 0:00 UTC),
+                downloads: 100,
+                visibility: "public".to_string(),
+                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                version_name: Some("v1.2.3".to_string()),
+                source_url: Some("https://bitbucket.org/eve/baz".to_string()),
+                source_repository_host: Some("bitbucket.org".to_string()),
+                source_repository_owner: Some("eve".to_string()),
                 source_repository_name: Some("baz".to_string())
             }
         ]

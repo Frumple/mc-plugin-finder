@@ -132,7 +132,7 @@ pub async fn get_latest_spigot_resource_update_date(db_pool: &Pool) -> Result<Of
 pub mod test {
     use super::*;
     use crate::database::spigot::author::SpigotAuthor;
-    use crate::database::spigot::author::test::populate_test_spigot_author;
+    use crate::database::spigot::author::test::{populate_test_spigot_author, populate_test_spigot_authors};
     use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -146,7 +146,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let _author = populate_test_spigot_author(&context.pool).await?;
+        let _authors = populate_test_spigot_authors(&context.pool).await?;
         let resource = &create_test_spigot_resources()[0];
 
         // Act
@@ -172,7 +172,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let _author = populate_test_spigot_author(&context.pool).await?;
+        let _authors = populate_test_spigot_authors(&context.pool).await?;
 
         let resource = &create_test_spigot_resources()[0];
         upsert_spigot_resource(&context.pool, resource).await?;
@@ -250,7 +250,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let _author = populate_test_spigot_author(&context.pool).await?;
+        let _authors: Vec<SpigotAuthor> = populate_test_spigot_authors(&context.pool).await?;
 
         let resources = create_test_spigot_resources();
         for resource in resources {
@@ -277,50 +277,24 @@ pub mod test {
         Ok((author.clone(), resource.clone()))
     }
 
-    pub fn create_test_spigot_resources() -> Vec<SpigotResource> {
+    pub async fn populate_test_spigot_authors_and_resources(db_pool: &Pool) -> Result<(Vec<SpigotAuthor>, Vec<SpigotResource>)> {
+        let authors = populate_test_spigot_authors(db_pool).await?;
+
+        let resources = create_test_spigot_resources();
+        for resource in &resources {
+            upsert_spigot_resource(db_pool, resource).await?;
+        }
+        Ok((authors, resources))
+    }
+
+    fn create_test_spigot_resources() -> Vec<SpigotResource> {
         vec![
             SpigotResource {
                 id: 1,
-                name: "foo".to_string(),
-                parsed_name: Some("foo".to_string()),
-                description: "foo-description".to_string(),
+                name: "foo-spigot".to_string(),
+                parsed_name: Some("foo-spigot".to_string()),
+                description: "foo-spigot-description".to_string(),
                 slug: "foo.1".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2021-01-01 0:00 UTC),
-                downloads: 100,
-                author_id: 1,
-                version_id: 1,
-                version_name: None,
-                premium: Some(false),
-                source_url: Some("https://github.com/Frumple/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
-                source_repository_name: Some("foo".to_string())
-            },
-            SpigotResource {
-                id: 2,
-                name: "bar".to_string(),
-                parsed_name: Some("bar".to_string()),
-                description: "bar-description".to_string(),
-                slug: "bar.2".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2022-01-01 0:00 UTC),
-                downloads: 100,
-                author_id: 1,
-                version_id: 1,
-                version_name: None,
-                premium: Some(false),
-                source_url: Some("https://gitlab.com/Frumple/bar".to_string()),
-                source_repository_host: Some("gitlab.com".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
-                source_repository_name: Some("bar".to_string())
-            },
-            SpigotResource {
-                id: 3,
-                name: "baz".to_string(),
-                parsed_name: Some("baz".to_string()),
-                description: "baz-description".to_string(),
-                slug: "baz.3".to_string(),
                 date_created: datetime!(2020-01-01 0:00 UTC),
                 date_updated: datetime!(2023-01-01 0:00 UTC),
                 downloads: 100,
@@ -328,9 +302,45 @@ pub mod test {
                 version_id: 1,
                 version_name: None,
                 premium: Some(false),
-                source_url: Some("https://bitbucket.org/Frumple/baz".to_string()),
+                source_url: Some("https://github.com/alice/foo".to_string()),
+                source_repository_host: Some("github.com".to_string()),
+                source_repository_owner: Some("alice".to_string()),
+                source_repository_name: Some("foo".to_string())
+            },
+            SpigotResource {
+                id: 2,
+                name: "bar-spigot".to_string(),
+                parsed_name: Some("bar-spigot".to_string()),
+                description: "bar-spigot-description".to_string(),
+                slug: "bar.2".to_string(),
+                date_created: datetime!(2020-01-02 0:00 UTC),
+                date_updated: datetime!(2022-01-01 0:00 UTC),
+                downloads: 100,
+                author_id: 2,
+                version_id: 1,
+                version_name: None,
+                premium: Some(false),
+                source_url: Some("https://gitlab.com/bob/bar".to_string()),
+                source_repository_host: Some("gitlab.com".to_string()),
+                source_repository_owner: Some("bob".to_string()),
+                source_repository_name: Some("bar".to_string())
+            },
+            SpigotResource {
+                id: 3,
+                name: "baz-spigot".to_string(),
+                parsed_name: Some("baz-spigot".to_string()),
+                description: "baz-spigot-description".to_string(),
+                slug: "baz.3".to_string(),
+                date_created: datetime!(2020-01-03 0:00 UTC),
+                date_updated: datetime!(2021-01-01 0:00 UTC),
+                downloads: 100,
+                author_id: 3,
+                version_id: 1,
+                version_name: None,
+                premium: Some(false),
+                source_url: Some("https://bitbucket.org/eve/baz".to_string()),
                 source_repository_host: Some("bitbucket.org".to_string()),
-                source_repository_owner: Some("Frumple".to_string()),
+                source_repository_owner: Some("eve".to_string()),
                 source_repository_name: Some("baz".to_string())
             }
         ]

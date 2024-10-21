@@ -100,7 +100,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = &test_authors()[0];
+        let author = &create_test_authors()[0];
 
         // Act
         insert_spigot_author(&context.pool, author).await?;
@@ -125,7 +125,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = &test_authors()[0];
+        let author = &create_test_authors()[0];
 
         // Act
         insert_spigot_author(&context.pool, author).await?;
@@ -164,7 +164,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let authors = test_authors();
+        let authors = create_test_authors();
 
         for author in authors {
             insert_spigot_author(&context.pool, &author).await?;
@@ -183,24 +183,32 @@ pub mod test {
     }
 
     pub async fn populate_test_spigot_author(db_pool: &Pool) -> Result<SpigotAuthor> {
-        let author = &test_authors()[0];
+        let author = &create_test_authors()[0];
         insert_spigot_author(db_pool, author).await?;
         Ok(author.clone())
     }
 
-    fn test_authors() -> Vec<SpigotAuthor> {
+    pub async fn populate_test_spigot_authors(db_pool: &Pool) -> Result<Vec<SpigotAuthor>> {
+        let authors = create_test_authors();
+        for author in &authors {
+            insert_spigot_author(db_pool, author).await?;
+        }
+        Ok(authors)
+    }
+
+    fn create_test_authors() -> Vec<SpigotAuthor> {
         vec![
             SpigotAuthor {
                 id: 1,
-                name: "author-1".to_string()
+                name: "alice".to_string()
             },
             SpigotAuthor {
                 id: 2,
-                name: "author-2".to_string()
+                name: "bob".to_string()
             },
             SpigotAuthor {
                 id: 3,
-                name: "author-3".to_string()
+                name: "eve".to_string()
             }
         ]
     }
