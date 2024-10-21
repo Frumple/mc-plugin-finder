@@ -69,8 +69,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-
-
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/web.css"/>
@@ -99,10 +97,9 @@ pub fn App() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
-
     view! {
         <h1>"MC Plugin Finder"</h1>
-        <SearchBox />
+        <SearchComponent />
     }
 }
 
@@ -111,8 +108,8 @@ pub async fn search_action(query: String) -> Result<String, ServerFnError> {
     Ok(query)
 }
 
-#[server(GetProjects)]
-pub async fn get_projects(query: String) -> Result<Vec<WebProject>, ServerFnError> {
+#[server(SearchProjects)]
+pub async fn search_projects(query: String) -> Result<Vec<WebProject>, ServerFnError> {
     use self::ssr::*;
     use mc_plugin_finder::database::common::project::{SearchParams, SearchParamsSortField, search_common_projects};
 
@@ -138,15 +135,32 @@ pub async fn get_projects(query: String) -> Result<Vec<WebProject>, ServerFnErro
 }
 
 #[component]
-fn SearchBox() -> impl IntoView {
+fn SearchComponent() -> impl IntoView {
     let action = create_server_action::<SearchAction>();
 
-    let projects = create_resource(
+    let projects_resource = create_resource(
         move || action.value().get(),
-        move |value| {
-            // TODO: Handle Option and Result properly here
-            let query = value.unwrap_or_else(|| Ok(String::from(""))).expect("err");
-            get_projects(query)
+        |value| async move {
+            match value {
+                Some(result) => {
+                    match result {
+                        Ok(query) => {
+                            // Return no results if the query is an empty string
+                            if query.is_empty() {
+                                Ok(vec![])
+
+                            // Otherwise, perform the search
+                            } else {
+                                search_projects(query).await
+                            }
+                        },
+                        // Pass on any server errors to the view
+                        Err(err) => Err(err)
+                    }
+                },
+                // TODO: Don't show "No projects were found" on first load.
+                None => Ok(vec![])
+            }
         }
     );
 
@@ -161,7 +175,7 @@ fn SearchBox() -> impl IntoView {
                 {move || {
                     let results = {
                         move || {
-                            projects.get()
+                            projects_resource.get()
                                 .map(move |projects| match projects {
                                     Err(e) => {
                                         view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
