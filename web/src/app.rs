@@ -188,8 +188,16 @@ fn SearchComponent() -> impl IntoView {
                                                 .into_iter()
                                                 .map(move |project| {
                                                     view! {
-                                                        <li>
-                                                            {project.spigot_name}/{project.modrinth_name}/{project.hangar_name}
+                                                        <li class="main-page__search-result-list-item">
+                                                            <div class="main-page__search-result-div">
+                                                                {project.spigot_name}
+                                                            </div>
+                                                            <div class="main-page__search-result-div">
+                                                                {project.modrinth_name}
+                                                            </div>
+                                                            <div class="main-page__search-result-div">
+                                                                {project.hangar_name}
+                                                            </div>
                                                         </li>
                                                     }
                                                 })
@@ -202,9 +210,16 @@ fn SearchComponent() -> impl IntoView {
                     };
 
                     view! {
-                        <ul>
-                            {results}
-                        </ul>
+                        <div>
+                            <div class="main-page__search-result-header">
+                                <span class="main-page__search-result-header-column">Spigot</span>
+                                <span class="main-page__search-result-header-column">Modrinth</span>
+                                <span class="main-page__search-result-header-column">Hangar</span>
+                            </div>
+                            <ul class="main-page__search-result-list">
+                                {results}
+                            </ul>
+                        </div>
                     }
                 }
             }
