@@ -117,11 +117,22 @@ body {
 .main-page__search-result-list-item {
 	display: flex;
 	flex-wrap: nowrap;
+	gap: 5px;
 	list-style-type: none;
 	border: 1px lightgray solid;
 	padding: 5px;
 }
 
-.main-page__search-result-div {
+.main-page__search-result-cell {
 	flex: 1 1 33%;
+	display: flex;
+	flex-direction: column;
+}
+
+.main-page__search-result-cell-name {
+	font-weight: bold;
+}
+
+.main-page__search-result-cell-author {
+	font-style: italic;
 }

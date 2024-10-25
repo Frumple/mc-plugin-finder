@@ -270,16 +270,47 @@ fn SearchComponent() -> impl IntoView {
                                                 projects
                                                     .into_iter()
                                                     .map(move |project| {
+                                                        let has_spigot = project.spigot_name.is_some();
+                                                        let has_modrinth = project.modrinth_name.is_some();
+                                                        let has_hangar = project.hangar_name.is_some();
+
                                                         view! {
                                                             <li class="main-page__search-result-list-item">
-                                                                <div class="main-page__search-result-div">
-                                                                    {project.spigot_name}
+                                                                <div class="main-page__search-result-cell">
+                                                                    <div class="main-page__search-result-cell-title">
+                                                                        <span class="main-page__search-result-cell-name">{project.spigot_name}</span>
+                                                                        <Show when=move || { has_spigot }>
+                                                                          <span> by </span>
+                                                                        </Show>
+                                                                        <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
+                                                                    </div>
+                                                                    <div class="main-page__search-result-cell-description">
+                                                                        {project.spigot_description}
+                                                                    </div>
                                                                 </div>
-                                                                <div class="main-page__search-result-div">
-                                                                    {project.modrinth_name}
+                                                                <div class="main-page__search-result-cell">
+                                                                    <div class="main-page__search-result-cell-title">
+                                                                        <span class="main-page__search-result-cell-name">{project.modrinth_name}</span>
+                                                                        <Show when=move || { has_modrinth }>
+                                                                        <span> by </span>
+                                                                        </Show>
+                                                                        <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
+                                                                    </div>
+                                                                    <div class="main-page__search-result-cell-description">
+                                                                        {project.modrinth_description}
+                                                                    </div>
                                                                 </div>
-                                                                <div class="main-page__search-result-div">
-                                                                    {project.hangar_name}
+                                                                <div class="main-page__search-result-cell">
+                                                                    <div class="main-page__search-result-cell-title">
+                                                                        <span class="main-page__search-result-cell-name">{project.hangar_name}</span>
+                                                                        <Show when=move || { has_hangar }>
+                                                                        <span> by </span>
+                                                                        </Show>
+                                                                        <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
+                                                                    </div>
+                                                                    <div class="main-page__search-result-cell-description">
+                                                                        {project.hangar_description}
+                                                                    </div>
                                                                 </div>
                                                             </li>
                                                         }
