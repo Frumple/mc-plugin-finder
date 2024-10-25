@@ -71,23 +71,7 @@ impl From<CommonProjectEntity> for CommonProject {
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub enum SearchParamsSortField {
-    DateCreated,
-    #[default]
-    DateUpdated
-}
-
-impl SearchParamsSortField {
-    fn database_field(&self) -> String {
-        match self {
-            Self::DateCreated => "date_created".to_string(),
-            Self::DateUpdated => "date_updated".to_string()
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct SearchParams {
     pub query: String,
     pub spigot: bool,
@@ -97,7 +81,6 @@ pub struct SearchParams {
     pub description: bool,
     pub author: bool,
     pub sort_field: SearchParamsSortField,
-    pub sort_ascending: bool
 }
 
 impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
@@ -111,8 +94,23 @@ impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
             name: params.name,
             description: params.description,
             author: params.author,
-            sort_field: params.sort_field.database_field(),
-            sort_ascending: params.sort_ascending
+            sort_field: params.sort_field.into()
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum SearchParamsSortField {
+    DateCreated,
+    #[default]
+    DateUpdated
+}
+
+impl From<SearchParamsSortField> for String {
+    fn from(sort_field: SearchParamsSortField) -> Self {
+        match sort_field {
+            SearchParamsSortField::DateCreated => "date_created".to_string(),
+            SearchParamsSortField::DateUpdated => "date_updated".to_string()
         }
     }
 }
@@ -1230,76 +1228,42 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let (spigot_authors, spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let (_spigot_authors, _spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
 
         let merged_projects = get_merged_common_projects(&context.pool, None).await?;
         for merged_project in merged_projects {
             upsert_common_project(&context.pool, &merged_project).await?;
         }
 
-        // Act 1 - Sort by date_created ascending order
+        // Act 1 - Sort by date_created order
         let params = SearchParams {
             spigot: true,
             name: true,
             sort_field: SearchParamsSortField::DateCreated,
-            sort_ascending: true,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
 
-        // Assert 1 - Verify results are in date_created ascending order
+        // Assert 1 - Verify results are in date_created order
         assert_that(&search_results).has_length(3);
-        for (i, project) in search_results.iter().enumerate().take(3) {
-            assert_that(&project.spigot_id).is_some().is_equal_to((i as i32) + 1);
-        }
+        assert_that(&search_results[0].spigot_id).is_some().is_equal_to(3);
+        assert_that(&search_results[1].spigot_id).is_some().is_equal_to(2);
+        assert_that(&search_results[2].spigot_id).is_some().is_equal_to(1);
 
-        // Act 2 - Sort by date_created descending order
-        let params = SearchParams {
-            spigot: true,
-            name: true,
-            sort_field: SearchParamsSortField::DateCreated,
-            sort_ascending: false,
-            ..Default::default()
-        };
-        let search_results = search_common_projects(&context.pool, &params).await?;
-
-        // Assert 2 - Verify results are in date_created descending order
-        assert_that(&search_results).has_length(3);
-        for (i, project) in search_results.iter().enumerate().take(3) {
-            assert_that(&project.spigot_id).is_some().is_equal_to(3 - (i as i32));
-        }
-
-        // Act 3 - Sort by date_updated ascending order
+        // Act 2 - Sort by date_updated order
         let params = SearchParams {
             spigot: true,
             name: true,
             sort_field: SearchParamsSortField::DateUpdated,
-            sort_ascending: true,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
 
-        // Assert 3 - Verify results are in date_updated ascending order
+        // Assert 2 - Verify results are in date_updated order
         assert_that(&search_results).has_length(3);
-        for (i, project) in search_results.iter().enumerate().take(3) {
-            assert_that(&project.spigot_id).is_some().is_equal_to(3 - (i as i32));
-        }
-
-        // Act 4 - Sort by date_updated descending order
-        let params = SearchParams {
-            spigot: true,
-            name: true,
-            sort_field: SearchParamsSortField::DateUpdated,
-            sort_ascending: false,
-            ..Default::default()
-        };
-        let search_results = search_common_projects(&context.pool, &params).await?;
-
-        // Assert 4 - Verify results are in date_updated descending order
-        assert_that(&search_results).has_length(3);
-        for (i, project) in search_results.iter().enumerate().take(3) {
-            assert_that(&project.spigot_id).is_some().is_equal_to((i as i32) + 1);
-        }
+        assert_that(&search_results[0].spigot_id).is_some().is_equal_to(1);
+        assert_that(&search_results[1].spigot_id).is_some().is_equal_to(2);
+        assert_that(&search_results[2].spigot_id).is_some().is_equal_to(3);
 
         // Teardown
         context.drop().await?;

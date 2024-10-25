@@ -3,6 +3,101 @@ body {
 	text-align: center;
 }
 
+.main-page__main-container {
+	display: flex;
+	flex-direction: column;
+}
+
+.main-page__search-form {
+	display: grid;
+	grid-template:
+	  "query-field     query-field     query-field  query-field          query-field       search-button   search-button" auto
+		"repository-text spigot-checkbox spigot-label modrinth-checkbox    modrinth-label    hangar-checkbox hangar-label " auto
+		"fields-text     name-checkbox   name-label   description-checkbox description-label author-checkbox author-label " auto
+		"sort-text       sort-field      sort-field   sort-field           sort-field        sort-field      sort-field   " auto
+		/ auto auto auto auto auto auto auto;
+  gap: 5px;
+	align-self: center;
+	text-align: left;
+}
+
+.main-page__query_field {
+  grid-area: query-field;
+}
+
+.main-page__search_button {
+  grid-area: search-button;
+}
+
+.main-page__repository-text {
+	grid-area: repository-text;
+}
+
+.main-page__spigot-checkbox {
+  grid-area: spigot-checkbox;
+}
+
+.main-page__spigot-label {
+  grid-area: spigot-label;
+}
+
+.main-page__modrinth-checkbox {
+  grid-area: modrinth-checkbox;
+}
+
+.main-page__modrinth-label {
+  grid-area: modrinth-label;
+}
+
+.main-page__hangar-checkbox {
+  grid-area: hangar-checkbox;
+}
+
+.main-page__hangar-label {
+  grid-area: hangar-label;
+}
+
+.main-page__fields-text {
+	grid-area: fields-text
+}
+
+.main-page__name-checkbox {
+  grid-area: name-checkbox;
+}
+
+.main-page__name-label {
+  grid-area: name-label;
+}
+
+.main-page__description-checkbox {
+  grid-area: description-checkbox;
+}
+
+.main-page__description-label {
+  grid-area: description-label;
+}
+
+.main-page__author-checkbox {
+  grid-area: author-checkbox;
+}
+
+.main-page__author-label {
+  grid-area: author-label;
+}
+
+.main-page__sort-text {
+	grid-area: sort-text;
+}
+
+.main-page__sort-field {
+	grid-area: sort-field;
+	justify-self: left;
+}
+
+.main-page__search-result-container {
+	margin-top: 1em;
+}
+
 .main-page__search-result-header {
   display: flex;
 	flex-wrap: nowrap;

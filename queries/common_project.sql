@@ -64,7 +64,7 @@ INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_na
     hangar_description = EXCLUDED.hangar_description,
     hangar_author = EXCLUDED.hangar_author;
 
---! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field, sort_ascending) : CommonProjectEntity
+--! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field) : CommonProjectEntity
 SELECT
   *
 FROM
@@ -132,10 +132,8 @@ WHERE
   END
 
 ORDER BY
-  (CASE WHEN :sort_field = 'date_created' AND :sort_ascending IS TRUE THEN date_created END) ASC,
-  (CASE WHEN :sort_field = 'date_created' AND :sort_ascending IS FALSE THEN date_created END) DESC,
-  (CASE WHEN :sort_field = 'date_updated' AND :sort_ascending IS TRUE THEN date_updated END) ASC,
-  (CASE WHEN :sort_field = 'date_updated' AND :sort_ascending IS FALSE THEN date_updated END) DESC;
+  (CASE WHEN :sort_field = 'date_created' THEN date_created END) DESC,
+  (CASE WHEN :sort_field = 'date_updated' THEN date_updated END) DESC;
 
 --! get_common_projects : CommonProjectEntity
 SELECT

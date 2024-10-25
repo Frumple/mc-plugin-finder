@@ -5,6 +5,7 @@ use leptos_meta::*;
 use leptos_router::*;
 
 use serde::{Serialize, Deserialize};
+use std::str::FromStr;
 use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -45,6 +46,70 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             hangar_name: project.hangar_name,
             hangar_description: project.hangar_description,
             hangar_author: project.hangar_author
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchParams {
+    pub query: String,
+    #[serde(default)]
+    pub spigot: bool,
+    #[serde(default)]
+    pub modrinth: bool,
+    #[serde(default)]
+    pub hangar: bool,
+    #[serde(default)]
+    pub name: bool,
+    #[serde(default)]
+    pub description: bool,
+    #[serde(default)]
+    pub author: bool,
+    pub sort_field: WebSearchParamsSortField,
+}
+
+#[cfg(feature = "ssr")]
+impl From<WebSearchParams> for mc_plugin_finder::database::common::project::SearchParams {
+    fn from(params: WebSearchParams) -> Self {
+        mc_plugin_finder::database::common::project::SearchParams {
+            query: params.query,
+            spigot: params.spigot,
+            modrinth: params.modrinth,
+            hangar: params.hangar,
+            name: params.name,
+            description: params.description,
+            author: params.author,
+            sort_field: params.sort_field.into()
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WebSearchParamsSortField {
+    DateCreated,
+    #[default]
+    DateUpdated
+}
+
+impl FromStr for WebSearchParamsSortField {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "date_created" => Ok(Self::DateCreated),
+            "date_updated" => Ok(Self::DateUpdated),
+            _              => Err(())
+        }
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<WebSearchParamsSortField> for mc_plugin_finder::database::common::project::SearchParamsSortField {
+    fn from(sort_field: WebSearchParamsSortField) -> Self {
+        match sort_field {
+            WebSearchParamsSortField::DateCreated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateCreated,
+            WebSearchParamsSortField::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateUpdated
         }
     }
 }
@@ -104,29 +169,17 @@ fn HomePage() -> impl IntoView {
 }
 
 #[server(SearchAction)]
-pub async fn search_action(query: String) -> Result<String, ServerFnError> {
-    Ok(query)
+pub async fn search_action(params: WebSearchParams) -> Result<WebSearchParams, ServerFnError> {
+    Ok(params)
 }
 
 #[server(SearchProjects)]
-pub async fn search_projects(query: String) -> Result<Vec<WebProject>, ServerFnError> {
+pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebProject>, ServerFnError> {
     use self::ssr::*;
-    use mc_plugin_finder::database::common::project::{SearchParams, SearchParamsSortField, search_common_projects};
-
-    let params = SearchParams {
-        query,
-        spigot: true,
-        modrinth: true,
-        hangar: true,
-        name: true,
-        description: true,
-        author: true,
-        sort_field: SearchParamsSortField::DateUpdated,
-        sort_ascending: false
-    };
+    use mc_plugin_finder::database::common::project::search_common_projects;
 
     let db_pool = db().await?;
-    let common_projects = search_common_projects(&db_pool, &params).await;
+    let common_projects = search_common_projects(&db_pool, &params.into()).await;
 
     match common_projects {
         Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),
@@ -144,14 +197,14 @@ fn SearchComponent() -> impl IntoView {
             match value {
                 Some(result) => {
                     match result {
-                        Ok(query) => {
+                        Ok(params) => {
                             // Return no results if the query is an empty string
-                            if query.is_empty() {
+                            if params.query.is_empty() {
                                 Ok(vec![])
 
                             // Otherwise, perform the search
                             } else {
-                                search_projects(query).await
+                                search_projects(params).await
                             }
                         },
                         // Pass on any server errors to the view
@@ -165,70 +218,96 @@ fn SearchComponent() -> impl IntoView {
     );
 
     view! {
-        <ActionForm action>
-            <input type="text" name="query"/>
-            <input type="submit" value="Search"/>
-        </ActionForm>
+        <div class="main-page__main-container">
+            <ActionForm action class="main-page__search-form">
+                <input type="text" name="params[query]" class="main-page__query_field" />
+                <input type="submit" value="Search" class="main-page__search_button" />
 
-        <Transition fallback=move || view! { <p>"Loading..."</p> }>
-            <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
-                {move || {
-                    let results = {
-                        move || {
-                            projects_resource.get()
-                                .map(move |projects| match projects {
-                                    Err(e) => {
-                                        view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
-                                    }
-                                    Ok(projects) => {
-                                        if projects.is_empty() {
-                                            view! { <p>"No projects were found."</p> }.into_view()
-                                        } else {
-                                            projects
-                                                .into_iter()
-                                                .map(move |project| {
-                                                    view! {
-                                                        <li class="main-page__search-result-list-item">
-                                                            <div class="main-page__search-result-div">
-                                                                {project.spigot_name}
-                                                            </div>
-                                                            <div class="main-page__search-result-div">
-                                                                {project.modrinth_name}
-                                                            </div>
-                                                            <div class="main-page__search-result-div">
-                                                                {project.hangar_name}
-                                                            </div>
-                                                        </li>
-                                                    }
-                                                })
-                                                .collect_view()
+                <span class="main-page__repository-text">Repository:</span>
+
+                <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="main-page__spigot-checkbox" value="true" checked />
+                <label for="spigot-checkbox" class="main-page__spigot-label">Spigot</label>
+
+                <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="main-page__modrinth-checkbox" value="true" checked />
+                <label for="modrinth-checkbox" class="main-page__modrinth-label">Modrinth</label>
+
+                <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="main-page__hangar-checkbox" value="true" checked />
+                <label for="hangar-checkbox" class="main-page__hangar-label">Hangar</label>
+
+                <span class="main-page__fields-text">Fields:</span>
+
+                <input id="name-checkbox" type="checkbox" name="params[name]" class="main-page__name-checkbox" value="true" checked />
+                <label for="name-checkbox" class="main-page__name-label">Name</label>
+
+                <input id="description-checkbox" type="checkbox" name="params[description]" class="main-page__description-checkbox" value="true" checked />
+                <label for="description-checkbox" class="main-page__description-label">Description</label>
+
+                <input id="author-checkbox" type="checkbox" name="params[author]" class="main-page__author-checkbox" value="true" checked />
+                <label for="author-checkbox" class="main-page__author-label">Author</label>
+
+                <span class="main-page__sort-text">Sort by:</span>
+
+                <select name="params[sort_field]" class="main-page__sort-field">
+                    <option value="date_created">Newest</option>
+                    <option value="date_updated" selected>Recently Updated</option>
+                </select>
+            </ActionForm>
+
+            <Transition fallback=move || view! { <p>"Loading..."</p> }>
+                <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
+                    {move || {
+                        let results = {
+                            move || {
+                                projects_resource.get()
+                                    .map(move |projects| match projects {
+                                        Err(e) => {
+                                            view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
                                         }
-                                    }
-                                })
-                                .unwrap_or_default()
-                        }
-                    };
+                                        Ok(projects) => {
+                                            if projects.is_empty() {
+                                                view! { <p>"No projects were found."</p> }.into_view()
+                                            } else {
+                                                projects
+                                                    .into_iter()
+                                                    .map(move |project| {
+                                                        view! {
+                                                            <li class="main-page__search-result-list-item">
+                                                                <div class="main-page__search-result-div">
+                                                                    {project.spigot_name}
+                                                                </div>
+                                                                <div class="main-page__search-result-div">
+                                                                    {project.modrinth_name}
+                                                                </div>
+                                                                <div class="main-page__search-result-div">
+                                                                    {project.hangar_name}
+                                                                </div>
+                                                            </li>
+                                                        }
+                                                    })
+                                                    .collect_view()
+                                            }
+                                        }
+                                    })
+                                    .unwrap_or_default()
+                            }
+                        };
 
-                    view! {
-                        <div>
-                            <div class="main-page__search-result-header">
-                                <span class="main-page__search-result-header-column">Spigot</span>
-                                <span class="main-page__search-result-header-column">Modrinth</span>
-                                <span class="main-page__search-result-header-column">Hangar</span>
+                        view! {
+                            <div class="main-page__search-result-container">
+                                <div class="main-page__search-result-header">
+                                    <span class="main-page__search-result-header-column">Spigot</span>
+                                    <span class="main-page__search-result-header-column">Modrinth</span>
+                                    <span class="main-page__search-result-header-column">Hangar</span>
+                                </div>
+                                <ul class="main-page__search-result-list">
+                                    {results}
+                                </ul>
                             </div>
-                            <ul class="main-page__search-result-list">
-                                {results}
-                            </ul>
-                        </div>
+                        }
                     }
                 }
-            }
-            </ErrorBoundary>
-        </Transition>
-
-        // <p>You submitted: {move || format!("{:?}", action.input().get())}</p>
-
-        // "action.value(): "
-        // {move || action.value().get()}
+                </ErrorBoundary>
+            </Transition>
+        </div>
     }
 }
