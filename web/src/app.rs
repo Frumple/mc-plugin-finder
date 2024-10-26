@@ -14,10 +14,12 @@ pub struct WebProject {
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
     pub spigot_id: Option<i32>,
+    pub spigot_slug: Option<String>,
     pub spigot_name: Option<String>,
     pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
     pub modrinth_id: Option<String>,
+    pub modrinth_slug: Option<String>,
     pub modrinth_name: Option<String>,
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
@@ -25,6 +27,20 @@ pub struct WebProject {
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>
+}
+
+impl WebProject {
+    fn spigot_url(&self) -> Option<String> {
+        Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
+    }
+
+    fn modrinth_url(&self) -> Option<String> {
+        Some(format!("https://modrinth.com/plugin/{}", self.modrinth_slug.clone()?))
+    }
+
+    fn hangar_url(&self) -> Option<String> {
+        Some(format!("https://hangar.papermc.io/{}/{}", self.hangar_author.clone()?, self.hangar_slug.clone()?))
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -35,10 +51,12 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             date_created: project.date_created,
             date_updated: project.date_updated,
             spigot_id: project.spigot_id,
+            spigot_slug: project.spigot_slug,
             spigot_name: project.spigot_name,
             spigot_description: project.spigot_description,
             spigot_author: project.spigot_author,
             modrinth_id: project.modrinth_id,
+            modrinth_slug: project.modrinth_slug,
             modrinth_name: project.modrinth_name,
             modrinth_description: project.modrinth_description,
             modrinth_author: project.modrinth_author,
@@ -274,11 +292,15 @@ fn SearchComponent() -> impl IntoView {
                                                         let has_modrinth = project.modrinth_name.is_some();
                                                         let has_hangar = project.hangar_name.is_some();
 
+                                                        let spigot_url = project.spigot_url();
+                                                        let modrinth_url = project.modrinth_url();
+                                                        let hangar_url = project.hangar_url();
+
                                                         view! {
                                                             <li class="main-page__search-result-list-item">
                                                                 <div class="main-page__search-result-cell">
                                                                     <div class="main-page__search-result-cell-title">
-                                                                        <span class="main-page__search-result-cell-name">{project.spigot_name}</span>
+                                                                        <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
                                                                         <Show when=move || { has_spigot }>
                                                                           <span> by </span>
                                                                         </Show>
@@ -290,7 +312,7 @@ fn SearchComponent() -> impl IntoView {
                                                                 </div>
                                                                 <div class="main-page__search-result-cell">
                                                                     <div class="main-page__search-result-cell-title">
-                                                                        <span class="main-page__search-result-cell-name">{project.modrinth_name}</span>
+                                                                        <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
                                                                         <Show when=move || { has_modrinth }>
                                                                         <span> by </span>
                                                                         </Show>
@@ -302,7 +324,7 @@ fn SearchComponent() -> impl IntoView {
                                                                 </div>
                                                                 <div class="main-page__search-result-cell">
                                                                     <div class="main-page__search-result-cell-title">
-                                                                        <span class="main-page__search-result-cell-name">{project.hangar_name}</span>
+                                                                        <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
                                                                         <Show when=move || { has_hangar }>
                                                                         <span> by </span>
                                                                         </Show>

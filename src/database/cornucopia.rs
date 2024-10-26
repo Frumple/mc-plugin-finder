@@ -5,11 +5,11 @@
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub id: Option<i64>,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_description: Option<T2>,pub spigot_author: Option<T3>,pub modrinth_id: Option<T4>,pub modrinth_name: Option<T5>,pub modrinth_description: Option<T6>,pub modrinth_author: Option<T7>,pub hangar_slug: Option<T8>,pub hangar_name: Option<T9>,pub hangar_description: Option<T10>,pub hangar_author: Option<T11>,}#[derive( Debug)] pub struct SearchCommonProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub name: bool,pub query: T1,pub description: bool,pub author: bool,pub modrinth: bool,pub hangar: bool,pub sort_field: T2,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
-{ pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub modrinth_id : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,}
+{ pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,}
 impl<'a> From<CommonProjectEntityBorrowed<'a>> for CommonProjectEntity
 {
-    fn from(CommonProjectEntityBorrowed { id,date_created,date_updated,spigot_id,spigot_name,spigot_description,spigot_author,modrinth_id,modrinth_name,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_author,}: CommonProjectEntityBorrowed<'a>) ->
-    Self { Self { id,date_created,date_updated,spigot_id,spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),} }
+    fn from(CommonProjectEntityBorrowed { id,date_created,date_updated,spigot_id,spigot_slug,spigot_name,spigot_description,spigot_author,modrinth_id,modrinth_slug,modrinth_name,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_author,}: CommonProjectEntityBorrowed<'a>) ->
+    Self { Self { id,date_created,date_updated,spigot_id,spigot_slug: spigot_slug.map(|v| v.into()),spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_slug: modrinth_slug.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),} }
 }pub struct CommonProjectEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -55,10 +55,12 @@ GenericClient
   GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
   GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
   s.id AS spigot_id,
+  s.slug AS spigot_slug,
   s.parsed_name AS spigot_name,
   s.description AS spigot_description,
   a.name AS spigot_author,
   m.id AS modrinth_id,
+  m.slug AS modrinth_slug,
   m.name AS modrinth_name,
   m.description AS modrinth_description,
   m.author AS modrinth_author,
@@ -101,7 +103,7 @@ CommonProjectEntity, 1>
     CommonProjectEntityQuery
     {
         client, params: [date_updated,], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_description: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_name: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_author: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_slug: row.get(4),spigot_name: row.get(5),spigot_description: row.get(6),spigot_author: row.get(7),modrinth_id: row.get(8),modrinth_slug: row.get(9),modrinth_name: row.get(10),modrinth_description: row.get(11),modrinth_author: row.get(12),hangar_slug: row.get(13),hangar_name: row.get(14),hangar_description: row.get(15),hangar_author: row.get(16),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }pub fn upsert_common_project() -> UpsertCommonProjectStmt
 { UpsertCommonProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
@@ -149,11 +151,67 @@ tokio_postgres::Error>> + Send + 'a>>, C> for UpsertCommonProjectStmt
     UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
     tokio_postgres::Error>> + Send + 'a>>
     { Box::pin(self.bind(client, &params.id,&params.date_created,&params.date_updated,&params.spigot_id,&params.spigot_name,&params.spigot_description,&params.spigot_author,&params.modrinth_id,&params.modrinth_name,&params.modrinth_description,&params.modrinth_author,&params.hangar_slug,&params.hangar_name,&params.hangar_description,&params.hangar_author,)) }
-}pub fn search_common_projects() -> SearchCommonProjectsStmt
-{ SearchCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
-  *
+}pub fn get_common_projects() -> GetCommonProjectsStmt
+{ GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
+  id,
+  date_created,
+  date_updated,
+  spigot_id,
+  NULL as spigot_slug,
+  spigot_name,
+  spigot_description,
+  spigot_author,
+  modrinth_id,
+  NULL as modrinth_slug,
+  modrinth_name,
+  modrinth_description,
+  modrinth_author,
+  hangar_slug,
+  hangar_name,
+  hangar_description,
+  hangar_author
 FROM
-  common_project
+  common_project")) } pub struct
+GetCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetCommonProjectsStmt
+{ pub fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> CommonProjectEntityQuery<'a,C,
+CommonProjectEntity, 0>
+{
+    CommonProjectEntityQuery
+    {
+        client, params: [], stmt: &mut self.0, extractor:
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_slug: row.get(4),spigot_name: row.get(5),spigot_description: row.get(6),spigot_author: row.get(7),modrinth_id: row.get(8),modrinth_slug: row.get(9),modrinth_name: row.get(10),modrinth_description: row.get(11),modrinth_author: row.get(12),hangar_slug: row.get(13),hangar_name: row.get(14),hangar_description: row.get(15),hangar_author: row.get(16),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+    }
+} }pub fn search_common_projects() -> SearchCommonProjectsStmt
+{ SearchCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
+  c.id,
+  c.date_created,
+  c.date_updated,
+  c.spigot_id,
+  s.slug as spigot_slug,
+  c.spigot_name,
+  c.spigot_description,
+  c.spigot_author,
+  c.modrinth_id,
+  m.slug as modrinth_slug,
+  c.modrinth_name,
+  c.modrinth_description,
+  c.modrinth_author,
+  c.hangar_slug,
+  c.hangar_name,
+  c.hangar_description,
+  c.hangar_author
+FROM
+  common_project c
+  LEFT JOIN spigot_resource s
+  ON c.spigot_id = s.id
+
+  LEFT JOIN modrinth_project m
+  ON c.modrinth_id = m.id
+
+  LEFT JOIN hangar_project h
+  ON c.hangar_slug = h.slug
 WHERE
   CASE $1 IS TRUE AND $2 IS TRUE
     WHEN TRUE THEN spigot_name ILIKE $3
@@ -217,8 +275,8 @@ WHERE
   END
 
 ORDER BY
-  (CASE WHEN $8 = 'date_created' THEN date_created END) DESC,
-  (CASE WHEN $8 = 'date_updated' THEN date_updated END) DESC")) } pub struct
+  (CASE WHEN $8 = 'date_created' THEN c.date_created END) DESC,
+  (CASE WHEN $8 = 'date_updated' THEN c.date_updated END) DESC")) } pub struct
 SearchCommonProjectsStmt(cornucopia_async::private::Stmt); impl SearchCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,T1:
@@ -230,7 +288,7 @@ CommonProjectEntity, 8>
     CommonProjectEntityQuery
     {
         client, params: [spigot,name,query,description,author,modrinth,hangar,sort_field,], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_description: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_name: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_author: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_slug: row.get(4),spigot_name: row.get(5),spigot_description: row.get(6),spigot_author: row.get(7),modrinth_id: row.get(8),modrinth_slug: row.get(9),modrinth_name: row.get(10),modrinth_description: row.get(11),modrinth_author: row.get(12),hangar_slug: row.get(13),hangar_name: row.get(14),hangar_description: row.get(15),hangar_author: row.get(16),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }impl <'a, C: GenericClient,T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> cornucopia_async::Params<'a,
 SearchCommonProjectsParams<T1,T2,>, CommonProjectEntityQuery<'a, C,
@@ -241,23 +299,7 @@ CommonProjectEntity, 8>, C> for SearchCommonProjectsStmt
     SearchCommonProjectsParams<T1,T2,>) -> CommonProjectEntityQuery<'a, C,
     CommonProjectEntity, 8>
     { self.bind(client, &params.spigot,&params.name,&params.query,&params.description,&params.author,&params.modrinth,&params.hangar,&params.sort_field,) }
-}pub fn get_common_projects() -> GetCommonProjectsStmt
-{ GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
-  *
-FROM
-  common_project")) } pub struct
-GetCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetCommonProjectsStmt
-{ pub fn bind<'a, C:
-GenericClient,>(&'a mut self, client: &'a  C,
-) -> CommonProjectEntityQuery<'a,C,
-CommonProjectEntity, 0>
-{
-    CommonProjectEntityQuery
-    {
-        client, params: [], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),spigot_id: row.get(3),spigot_name: row.get(4),spigot_description: row.get(5),spigot_author: row.get(6),modrinth_id: row.get(7),modrinth_name: row.get(8),modrinth_description: row.get(9),modrinth_author: row.get(10),hangar_slug: row.get(11),hangar_name: row.get(12),hangar_description: row.get(13),hangar_author: row.get(14),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
-    }
-} }}pub mod hangar_project
+}}pub mod hangar_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub slug: T1,pub author: T2,pub name: T3,pub description: T4,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub downloads: i32,pub visibility: T5,pub avatar_url: T6,pub version_name: Option<T7>,pub source_url: Option<T8>,pub source_repository_host: Option<T9>,pub source_repository_owner: Option<T10>,pub source_repository_name: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity
 { pub slug : String,pub author : String,pub name : String,pub description : String,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub visibility : String,pub avatar_url : String,pub version_name : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct HangarProjectEntityBorrowed<'a> { pub slug : &'a str,pub author : &'a str,pub name : &'a str,pub description : &'a str,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub visibility : &'a str,pub avatar_url : &'a str,pub version_name : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
 impl<'a> From<HangarProjectEntityBorrowed<'a>> for HangarProjectEntity
