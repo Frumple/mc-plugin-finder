@@ -177,15 +177,6 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Renders the home page of your application.
-#[component]
-fn HomePage() -> impl IntoView {
-    view! {
-        <h1>"MC Plugin Finder"</h1>
-        <SearchComponent />
-    }
-}
-
 #[server(SearchAction)]
 pub async fn search_action(params: WebSearchParams) -> Result<WebSearchParams, ServerFnError> {
     Ok(params)
@@ -206,10 +197,10 @@ pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebProject>,
 }
 
 #[component]
-fn SearchComponent() -> impl IntoView {
+fn HomePage() -> impl IntoView {
     let action = create_server_action::<SearchAction>();
 
-    let projects_resource = create_resource(
+    let resource = create_resource(
         move || action.value().get(),
         |value| async move {
             match value {
@@ -236,131 +227,146 @@ fn SearchComponent() -> impl IntoView {
     );
 
     view! {
+        <h1>"MC Plugin Finder"</h1>
+
         <div class="main-page__main-container">
-            <ActionForm action class="main-page__search-form">
-                <input type="text" name="params[query]" class="main-page__query_field" />
-                <input type="submit" value="Search" class="main-page__search_button" />
+            <SearchForm action=action />
+            <SearchResults resource=resource />
+        </div>
+    }
+}
 
-                <span class="main-page__repository-text">Repository:</span>
+#[component]
+fn SearchForm(action: Action<SearchAction, Result<WebSearchParams, ServerFnError>>) -> impl IntoView {
+    view! {
+        <ActionForm action class="main-page__search-form">
+            <input type="text" name="params[query]" class="main-page__query_field" />
+            <input type="submit" value="Search" class="main-page__search_button" />
 
-                <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="main-page__spigot-checkbox" value="true" checked />
-                <label for="spigot-checkbox" class="main-page__spigot-label">Spigot</label>
+            <span class="main-page__repository-text">Repository:</span>
 
-                <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="main-page__modrinth-checkbox" value="true" checked />
-                <label for="modrinth-checkbox" class="main-page__modrinth-label">Modrinth</label>
+            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="main-page__spigot-checkbox" value="true" checked />
+            <label for="spigot-checkbox" class="main-page__spigot-label">Spigot</label>
 
-                <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="main-page__hangar-checkbox" value="true" checked />
-                <label for="hangar-checkbox" class="main-page__hangar-label">Hangar</label>
+            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="main-page__modrinth-checkbox" value="true" checked />
+            <label for="modrinth-checkbox" class="main-page__modrinth-label">Modrinth</label>
 
-                <span class="main-page__fields-text">Fields:</span>
+            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="main-page__hangar-checkbox" value="true" checked />
+            <label for="hangar-checkbox" class="main-page__hangar-label">Hangar</label>
 
-                <input id="name-checkbox" type="checkbox" name="params[name]" class="main-page__name-checkbox" value="true" checked />
-                <label for="name-checkbox" class="main-page__name-label">Name</label>
+            <span class="main-page__fields-text">Fields:</span>
 
-                <input id="description-checkbox" type="checkbox" name="params[description]" class="main-page__description-checkbox" value="true" checked />
-                <label for="description-checkbox" class="main-page__description-label">Description</label>
+            <input id="name-checkbox" type="checkbox" name="params[name]" class="main-page__name-checkbox" value="true" checked />
+            <label for="name-checkbox" class="main-page__name-label">Name</label>
 
-                <input id="author-checkbox" type="checkbox" name="params[author]" class="main-page__author-checkbox" value="true" checked />
-                <label for="author-checkbox" class="main-page__author-label">Author</label>
+            <input id="description-checkbox" type="checkbox" name="params[description]" class="main-page__description-checkbox" value="true" checked />
+            <label for="description-checkbox" class="main-page__description-label">Description</label>
 
-                <span class="main-page__sort-text">Sort by:</span>
+            <input id="author-checkbox" type="checkbox" name="params[author]" class="main-page__author-checkbox" value="true" checked />
+            <label for="author-checkbox" class="main-page__author-label">Author</label>
 
-                <select name="params[sort_field]" class="main-page__sort-field">
-                    <option value="date_created">Newest</option>
-                    <option value="date_updated" selected>Recently Updated</option>
-                </select>
-            </ActionForm>
+            <span class="main-page__sort-text">Sort by:</span>
 
-            <Transition fallback=move || view! { <p>"Loading..."</p> }>
-                <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
-                    {move || {
-                        let results = {
-                            move || {
-                                projects_resource.get()
-                                    .map(move |projects| match projects {
-                                        Err(e) => {
-                                            view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
-                                        }
-                                        Ok(projects) => {
-                                            if projects.is_empty() {
-                                                view! { <p>"No projects were found."</p> }.into_view()
-                                            } else {
-                                                projects
-                                                    .into_iter()
-                                                    .map(move |project| {
-                                                        let has_spigot = project.spigot_name.is_some();
-                                                        let has_modrinth = project.modrinth_name.is_some();
-                                                        let has_hangar = project.hangar_name.is_some();
+            <select name="params[sort_field]" class="main-page__sort-field">
+                <option value="date_created">Newest</option>
+                <option value="date_updated" selected>Recently Updated</option>
+            </select>
+        </ActionForm>
+    }
+}
 
-                                                        let spigot_url = project.spigot_url();
-                                                        let modrinth_url = project.modrinth_url();
-                                                        let hangar_url = project.hangar_url();
+#[component]
+fn SearchResults(resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebProject>, ServerFnError>>) -> impl IntoView {
+    view! {
+        <Transition fallback=move || view! { <p>"Loading..."</p> }>
+            <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
+                {move || {
+                    let results = {
+                        move || {
+                            resource.get()
+                                .map(move |projects| match projects {
+                                    Err(e) => {
+                                        view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                    }
+                                    Ok(projects) => {
+                                        if projects.is_empty() {
+                                            view! { <p>"No projects were found."</p> }.into_view()
+                                        } else {
+                                            projects
+                                                .into_iter()
+                                                .map(move |project| {
+                                                    let has_spigot = project.spigot_name.is_some();
+                                                    let has_modrinth = project.modrinth_name.is_some();
+                                                    let has_hangar = project.hangar_name.is_some();
 
-                                                        view! {
-                                                            <li class="main-page__search-result-list-item">
-                                                                <div class="main-page__search-result-cell">
-                                                                    <div class="main-page__search-result-cell-title">
-                                                                        <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
-                                                                        <Show when=move || { has_spigot }>
-                                                                          <span> by </span>
-                                                                        </Show>
-                                                                        <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
-                                                                    </div>
-                                                                    <div class="main-page__search-result-cell-description">
-                                                                        {project.spigot_description}
-                                                                    </div>
-                                                                </div>
-                                                                <div class="main-page__search-result-cell">
-                                                                    <div class="main-page__search-result-cell-title">
-                                                                        <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
-                                                                        <Show when=move || { has_modrinth }>
+                                                    let spigot_url = project.spigot_url();
+                                                    let modrinth_url = project.modrinth_url();
+                                                    let hangar_url = project.hangar_url();
+
+                                                    view! {
+                                                        <li class="main-page__search-result-list-item">
+                                                            <div class="main-page__search-result-cell">
+                                                                <div class="main-page__search-result-cell-title">
+                                                                    <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
+                                                                    <Show when=move || { has_spigot }>
                                                                         <span> by </span>
-                                                                        </Show>
-                                                                        <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
-                                                                    </div>
-                                                                    <div class="main-page__search-result-cell-description">
-                                                                        {project.modrinth_description}
-                                                                    </div>
+                                                                    </Show>
+                                                                    <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
                                                                 </div>
-                                                                <div class="main-page__search-result-cell">
-                                                                    <div class="main-page__search-result-cell-title">
-                                                                        <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
-                                                                        <Show when=move || { has_hangar }>
-                                                                        <span> by </span>
-                                                                        </Show>
-                                                                        <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
-                                                                    </div>
-                                                                    <div class="main-page__search-result-cell-description">
-                                                                        {project.hangar_description}
-                                                                    </div>
+                                                                <div class="main-page__search-result-cell-description">
+                                                                    {project.spigot_description}
                                                                 </div>
-                                                            </li>
-                                                        }
-                                                    })
-                                                    .collect_view()
-                                            }
+                                                            </div>
+                                                            <div class="main-page__search-result-cell">
+                                                                <div class="main-page__search-result-cell-title">
+                                                                    <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
+                                                                    <Show when=move || { has_modrinth }>
+                                                                    <span> by </span>
+                                                                    </Show>
+                                                                    <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
+                                                                </div>
+                                                                <div class="main-page__search-result-cell-description">
+                                                                    {project.modrinth_description}
+                                                                </div>
+                                                            </div>
+                                                            <div class="main-page__search-result-cell">
+                                                                <div class="main-page__search-result-cell-title">
+                                                                    <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
+                                                                    <Show when=move || { has_hangar }>
+                                                                    <span> by </span>
+                                                                    </Show>
+                                                                    <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
+                                                                </div>
+                                                                <div class="main-page__search-result-cell-description">
+                                                                    {project.hangar_description}
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                })
+                                                .collect_view()
                                         }
-                                    })
-                                    .unwrap_or_default()
-                            }
-                        };
-
-                        view! {
-                            <div class="main-page__search-result-container">
-                                <div class="main-page__search-result-header">
-                                    <span class="main-page__search-result-header-column">Spigot</span>
-                                    <span class="main-page__search-result-header-column">Modrinth</span>
-                                    <span class="main-page__search-result-header-column">Hangar</span>
-                                </div>
-                                <ul class="main-page__search-result-list">
-                                    {results}
-                                </ul>
-                            </div>
+                                    }
+                                })
+                                .unwrap_or_default()
                         }
+                    };
+
+                    view! {
+                        <div class="main-page__search-result-container">
+                            <div class="main-page__search-result-header">
+                                <span class="main-page__search-result-header-column">Spigot</span>
+                                <span class="main-page__search-result-header-column">Modrinth</span>
+                                <span class="main-page__search-result-header-column">Hangar</span>
+                            </div>
+                            <ul class="main-page__search-result-list">
+                                {results}
+                            </ul>
+                        </div>
                     }
                 }
-                </ErrorBoundary>
-            </Transition>
-        </div>
+            }
+            </ErrorBoundary>
+        </Transition>
     }
 }
