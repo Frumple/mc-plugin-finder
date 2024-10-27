@@ -236,8 +236,12 @@ fn HomePage() -> impl IntoView {
     }
 }
 
+/// Provides controls for performing a search.
 #[component]
-fn SearchForm(action: Action<SearchAction, Result<WebSearchParams, ServerFnError>>) -> impl IntoView {
+fn SearchForm(
+    /// The action that is run when submitting this form.
+    action: Action<SearchAction, Result<WebSearchParams, ServerFnError>>
+) -> impl IntoView {
     view! {
         <ActionForm action class="main-page__search-form">
             <input type="text" name="params[query]" class="main-page__query_field" />
@@ -275,8 +279,12 @@ fn SearchForm(action: Action<SearchAction, Result<WebSearchParams, ServerFnError
     }
 }
 
+/// Displays projects matching the given search.
 #[component]
-fn SearchResults(resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebProject>, ServerFnError>>) -> impl IntoView {
+fn SearchResults(
+    /// The resource that performs the search when the search form is submitted.
+    resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebProject>, ServerFnError>>
+) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <p>"Loading..."</p> }>
             <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
@@ -295,53 +303,8 @@ fn SearchResults(resource: Resource<Option<Result<WebSearchParams, ServerFnError
                                             projects
                                                 .into_iter()
                                                 .map(move |project| {
-                                                    let has_spigot = project.spigot_name.is_some();
-                                                    let has_modrinth = project.modrinth_name.is_some();
-                                                    let has_hangar = project.hangar_name.is_some();
-
-                                                    let spigot_url = project.spigot_url();
-                                                    let modrinth_url = project.modrinth_url();
-                                                    let hangar_url = project.hangar_url();
-
                                                     view! {
-                                                        <li class="main-page__search-result-list-item">
-                                                            <div class="main-page__search-result-cell">
-                                                                <div class="main-page__search-result-cell-title">
-                                                                    <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
-                                                                    <Show when=move || { has_spigot }>
-                                                                        <span> by </span>
-                                                                    </Show>
-                                                                    <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
-                                                                </div>
-                                                                <div class="main-page__search-result-cell-description">
-                                                                    {project.spigot_description}
-                                                                </div>
-                                                            </div>
-                                                            <div class="main-page__search-result-cell">
-                                                                <div class="main-page__search-result-cell-title">
-                                                                    <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
-                                                                    <Show when=move || { has_modrinth }>
-                                                                    <span> by </span>
-                                                                    </Show>
-                                                                    <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
-                                                                </div>
-                                                                <div class="main-page__search-result-cell-description">
-                                                                    {project.modrinth_description}
-                                                                </div>
-                                                            </div>
-                                                            <div class="main-page__search-result-cell">
-                                                                <div class="main-page__search-result-cell-title">
-                                                                    <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
-                                                                    <Show when=move || { has_hangar }>
-                                                                    <span> by </span>
-                                                                    </Show>
-                                                                    <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
-                                                                </div>
-                                                                <div class="main-page__search-result-cell-description">
-                                                                    {project.hangar_description}
-                                                                </div>
-                                                            </div>
-                                                        </li>
+                                                        <SearchRow project=project />
                                                     }
                                                 })
                                                 .collect_view()
@@ -368,5 +331,61 @@ fn SearchResults(resource: Resource<Option<Result<WebSearchParams, ServerFnError
             }
             </ErrorBoundary>
         </Transition>
+    }
+}
+
+/// A single row in the search results.
+#[component]
+fn SearchRow(
+    /// The project representing this row.
+    project: WebProject
+)  -> impl IntoView {
+    let has_spigot = project.spigot_name.is_some();
+    let has_modrinth = project.modrinth_name.is_some();
+    let has_hangar = project.hangar_name.is_some();
+
+    let spigot_url = project.spigot_url();
+    let modrinth_url = project.modrinth_url();
+    let hangar_url = project.hangar_url();
+
+    view! {
+        <li class="main-page__search-result-list-item">
+            <div class="main-page__search-result-cell">
+                <div class="main-page__search-result-cell-title">
+                    <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
+                    <Show when=move || { has_spigot }>
+                        <span> by </span>
+                    </Show>
+                    <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
+                </div>
+                <div class="main-page__search-result-cell-description">
+                    {project.spigot_description}
+                </div>
+            </div>
+            <div class="main-page__search-result-cell">
+                <div class="main-page__search-result-cell-title">
+                    <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
+                    <Show when=move || { has_modrinth }>
+                    <span> by </span>
+                    </Show>
+                    <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
+                </div>
+                <div class="main-page__search-result-cell-description">
+                    {project.modrinth_description}
+                </div>
+            </div>
+            <div class="main-page__search-result-cell">
+                <div class="main-page__search-result-cell-title">
+                    <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
+                    <Show when=move || { has_hangar }>
+                    <span> by </span>
+                    </Show>
+                    <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
+                </div>
+                <div class="main-page__search-result-cell-description">
+                    {project.hangar_description}
+                </div>
+            </div>
+        </li>
     }
 }
