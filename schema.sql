@@ -87,6 +87,16 @@ CREATE TABLE IF NOT EXISTS common_project (
 
 -- Indexes
 
+-- B-tree indexes for joining on spigot_id, modrinth_id, and hangar_slug
+CREATE INDEX IF NOT EXISTS common_project_spigot_id_index
+ON common_project (spigot_id);
+
+CREATE INDEX IF NOT EXISTS common_project_modrinth_id_index
+ON common_project (modrinth_id);
+
+CREATE INDEX IF NOT EXISTS common_project_hangar_slug_index
+ON common_project (hangar_slug);
+
 -- Trigram indexes for text search on name, description, and author
 CREATE INDEX IF NOT EXISTS common_project_name_index
 ON common_project
