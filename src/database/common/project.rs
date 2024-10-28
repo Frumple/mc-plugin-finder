@@ -20,6 +20,7 @@ pub struct CommonProject {
     pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
     pub spigot_version: Option<String>,
+    pub spigot_premium: Option<bool>,
 
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
@@ -73,6 +74,7 @@ impl From<CommonProjectEntity> for CommonProject {
             spigot_description: entity.spigot_description,
             spigot_author: entity.spigot_author,
             spigot_version: entity.spigot_version,
+            spigot_premium: entity.spigot_premium,
 
             modrinth_id: entity.modrinth_id,
             modrinth_slug: entity.modrinth_slug,

@@ -1,4 +1,4 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
@@ -12,6 +12,7 @@ SELECT
   s.description AS spigot_description,
   a.name AS spigot_author,
   s.version_name AS spigot_version,
+  s.premium AS spigot_premium,
 
   m.id AS modrinth_id,
   m.slug AS modrinth_slug,
@@ -84,6 +85,7 @@ SELECT
   spigot_description,
   spigot_author,
   NULL as spigot_version,
+  FALSE as spigot_premium,
 
   modrinth_id,
   NULL as modrinth_slug,
@@ -112,6 +114,7 @@ SELECT
   c.spigot_description,
   c.spigot_author,
   s.version_name AS spigot_version,
+  s.premium AS spigot_premium,
 
   c.modrinth_id,
   m.slug as modrinth_slug,

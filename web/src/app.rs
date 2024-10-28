@@ -20,6 +20,7 @@ pub struct WebProject {
     pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
     pub spigot_version: Option<String>,
+    pub spigot_premium: Option<bool>,
 
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
@@ -63,6 +64,7 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             spigot_description: project.spigot_description,
             spigot_author: project.spigot_author,
             spigot_version: project.spigot_version,
+            spigot_premium: project.spigot_premium,
 
             modrinth_id: project.modrinth_id,
             modrinth_slug: project.modrinth_slug,
@@ -360,10 +362,19 @@ fn SearchRow(
     let modrinth_url = project.modrinth_url();
     let hangar_url = project.hangar_url();
 
+    let is_spigot_premium = project.spigot_premium.unwrap_or_default();
+
     view! {
         <li class="main-page__search-result-list-item">
             <div class="main-page__search-result-cell">
                 <div class="main-page__search-result-cell-title">
+                    <Show when=move || { is_spigot_premium }>
+                        <span class="main-page__search-result-cell-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
+                                <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
+                            </svg>
+                        </span>
+                    </Show>
                     <span class="main-page__search-result-cell-name">
                         <a href=spigot_url target="_blank">{project.spigot_name}</a>
                     </span>
