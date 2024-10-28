@@ -1,24 +1,30 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
   GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
   GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
+
   s.id AS spigot_id,
   s.slug AS spigot_slug,
   s.parsed_name AS spigot_name,
   s.description AS spigot_description,
   a.name AS spigot_author,
+  s.version_name AS spigot_version,
+
   m.id AS modrinth_id,
   m.slug AS modrinth_slug,
   m.name AS modrinth_name,
   m.description AS modrinth_description,
   m.author AS modrinth_author,
+  m.version_name AS modrinth_version,
+
   h.slug AS hangar_slug,
   h.name AS hangar_name,
   h.description AS hangar_description,
-  h.author AS hangar_author
+  h.author AS hangar_author,
+  h.version_name AS hangar_version
 FROM
   spigot_resource s
   INNER JOIN spigot_author a
@@ -71,20 +77,26 @@ SELECT
   id,
   date_created,
   date_updated,
+
   spigot_id,
   NULL as spigot_slug,
   spigot_name,
   spigot_description,
   spigot_author,
+  NULL as spigot_version,
+
   modrinth_id,
   NULL as modrinth_slug,
   modrinth_name,
   modrinth_description,
   modrinth_author,
+  NULL as modrinth_version,
+
   hangar_slug,
   hangar_name,
   hangar_description,
-  hangar_author
+  hangar_author,
+  NULL as hangar_version
 FROM
   common_project;
 
@@ -93,20 +105,26 @@ SELECT
   c.id,
   c.date_created,
   c.date_updated,
+
   c.spigot_id,
   s.slug as spigot_slug,
   c.spigot_name,
   c.spigot_description,
   c.spigot_author,
+  s.version_name AS spigot_version,
+
   c.modrinth_id,
   m.slug as modrinth_slug,
   c.modrinth_name,
   c.modrinth_description,
   c.modrinth_author,
+  m.version_name AS modrinth_version,
+
   c.hangar_slug,
   c.hangar_name,
   c.hangar_description,
-  c.hangar_author
+  c.hangar_author,
+  h.version_name AS hangar_version
 FROM
   common_project c
   LEFT JOIN spigot_resource s

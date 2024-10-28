@@ -13,20 +13,26 @@ pub struct CommonProject {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+
     pub spigot_id: Option<i32>,
     pub spigot_slug: Option<String>,
     pub spigot_name: Option<String>,
     pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
+    pub spigot_version: Option<String>,
+
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
     pub modrinth_name: Option<String>,
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
+    pub modrinth_version: Option<String>,
+
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
-    pub hangar_author: Option<String>
+    pub hangar_author: Option<String>,
+    pub hangar_version: Option<String>,
 }
 
 impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
@@ -35,14 +41,17 @@ impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, S
             id: project.id.map(i64::from),
             date_created: project.date_created,
             date_updated: project.date_updated,
+
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
             spigot_description: project.spigot_description,
             spigot_author: project.spigot_author,
+
             modrinth_id: project.modrinth_id,
             modrinth_name: project.modrinth_name,
             modrinth_description: project.modrinth_description,
             modrinth_author: project.modrinth_author,
+
             hangar_slug: project.hangar_slug,
             hangar_name: project.hangar_name,
             hangar_description: project.hangar_description,
@@ -57,20 +66,26 @@ impl From<CommonProjectEntity> for CommonProject {
             id: entity.id,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+
             spigot_id: entity.spigot_id,
             spigot_slug: entity.spigot_slug,
             spigot_name: entity.spigot_name,
             spigot_description: entity.spigot_description,
             spigot_author: entity.spigot_author,
+            spigot_version: entity.spigot_version,
+
             modrinth_id: entity.modrinth_id,
             modrinth_slug: entity.modrinth_slug,
             modrinth_name: entity.modrinth_name,
             modrinth_description: entity.modrinth_description,
             modrinth_author: entity.modrinth_author,
+            modrinth_version: entity.modrinth_version,
+
             hangar_slug: entity.hangar_slug,
             hangar_name: entity.hangar_name,
             hangar_description: entity.hangar_description,
-            hangar_author: entity.hangar_author
+            hangar_author: entity.hangar_author,
+            hangar_version: entity.hangar_version,
         }
     }
 }

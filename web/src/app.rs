@@ -13,20 +13,26 @@ pub struct WebProject {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+
     pub spigot_id: Option<i32>,
     pub spigot_slug: Option<String>,
     pub spigot_name: Option<String>,
     pub spigot_description: Option<String>,
     pub spigot_author: Option<String>,
+    pub spigot_version: Option<String>,
+
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
     pub modrinth_name: Option<String>,
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
+    pub modrinth_version: Option<String>,
+
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
-    pub hangar_author: Option<String>
+    pub hangar_author: Option<String>,
+    pub hangar_version: Option<String>,
 }
 
 impl WebProject {
@@ -50,20 +56,26 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             id: project.id,
             date_created: project.date_created,
             date_updated: project.date_updated,
+
             spigot_id: project.spigot_id,
             spigot_slug: project.spigot_slug,
             spigot_name: project.spigot_name,
             spigot_description: project.spigot_description,
             spigot_author: project.spigot_author,
+            spigot_version: project.spigot_version,
+
             modrinth_id: project.modrinth_id,
             modrinth_slug: project.modrinth_slug,
             modrinth_name: project.modrinth_name,
             modrinth_description: project.modrinth_description,
             modrinth_author: project.modrinth_author,
+            modrinth_version: project.modrinth_version,
+
             hangar_slug: project.hangar_slug,
             hangar_name: project.hangar_name,
             hangar_description: project.hangar_description,
-            hangar_author: project.hangar_author
+            hangar_author: project.hangar_author,
+            hangar_version: project.hangar_version,
         }
     }
 }
@@ -352,9 +364,15 @@ fn SearchRow(
         <li class="main-page__search-result-list-item">
             <div class="main-page__search-result-cell">
                 <div class="main-page__search-result-cell-title">
-                    <a href=spigot_url target="_blank" class="main-page__search-result-cell-name">{project.spigot_name}</a>
+                    <span class="main-page__search-result-cell-name">
+                        <a href=spigot_url target="_blank">{project.spigot_name}</a>
+                    </span>
                     <Show when=move || { has_spigot }>
-                        <span> by </span>
+                        <span>"  "</span>
+                    </Show>
+                    <span class="main-page__search-result-cell-version">{project.spigot_version}</span>
+                    <Show when=move || { has_spigot }>
+                        <span>" by "</span>
                     </Show>
                     <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
                 </div>
@@ -364,9 +382,15 @@ fn SearchRow(
             </div>
             <div class="main-page__search-result-cell">
                 <div class="main-page__search-result-cell-title">
-                    <a href=modrinth_url target="_blank" class="main-page__search-result-cell-name">{project.modrinth_name}</a>
+                    <span class="main-page__search-result-cell-name">
+                        <a href=modrinth_url target="_blank">{project.modrinth_name}</a>
+                    </span>
                     <Show when=move || { has_modrinth }>
-                    <span> by </span>
+                        <span>" "</span>
+                    </Show>
+                    <span class="main-page__search-result-cell-version">{project.modrinth_version}</span>
+                    <Show when=move || { has_modrinth }>
+                        <span>" by "</span>
                     </Show>
                     <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
                 </div>
@@ -376,9 +400,15 @@ fn SearchRow(
             </div>
             <div class="main-page__search-result-cell">
                 <div class="main-page__search-result-cell-title">
-                    <a href=hangar_url target="_blank" class="main-page__search-result-cell-name">{project.hangar_name}</a>
+                    <span class="main-page__search-result-cell-name">
+                        <a href=hangar_url target="_blank">{project.hangar_name}</a>
+                    </span>
                     <Show when=move || { has_hangar }>
-                    <span> by </span>
+                        <span>" "</span>
+                    </Show>
+                    <span class="main-page__search-result-cell-version">{project.hangar_version}</span>
+                    <Show when=move || { has_hangar }>
+                        <span>" by "</span>
                     </Show>
                     <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
                 </div>
