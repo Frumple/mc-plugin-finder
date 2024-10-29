@@ -98,15 +98,53 @@ body {
 	margin-top: 1em;
 }
 
-.search-results__header {
+.search-results__header-row {
   display: flex;
 	flex-wrap: nowrap;
 }
 
-.search-results__header-column {
-	flex: 1 1 33%;
+.search_results__date-column {
+	flex: 1 1 5%;
+}
+
+.search_results__main-column {
+	flex: 1 1 22.5%;
+}
+
+.search-results__date-header {
+	@extend .search_results__date-column;
 	font-weight: bold;
 	padding: 5px;
+}
+
+.search-results__main-header {
+	@extend .search_results__main-column;
+	font-weight: bold;
+	padding: 5px;
+}
+
+.search-results__created-header {
+	@extend .search-results__date-header;
+}
+
+.search-results__updated-header {
+	@extend .search-results__date-header;
+}
+
+.search-results__spigot-header {
+	@extend .search-results__main-header;
+}
+
+.search-results__modrinth-header {
+	@extend .search-results__main-header;
+}
+
+.search-results__hangar-header {
+	@extend .search-results__main-header;
+}
+
+.search-results__source-header {
+	@extend .search-results__main-header;
 }
 
 .search-results__list {
@@ -123,10 +161,48 @@ body {
 	padding: 5px;
 }
 
-.search-results__cell {
-	flex: 1 1 25%;
+.search-results__date-cell {
+	@extend .search_results__date-column;
 	display: flex;
 	flex-direction: column;
+}
+
+.search-results__main-cell {
+	@extend .search_results__main-column;
+	display: flex;
+	flex-direction: column;
+}
+
+.search-results__created-cell {
+	@extend .search-results__date-cell;
+}
+
+.search-results__updated-cell {
+	@extend .search-results__date-cell;
+}
+
+.search-results__spigot-cell {
+	@extend .search-results__main-cell;
+}
+
+.search-results__modrinth-cell {
+	@extend .search-results__main-cell;
+}
+
+.search-results__hangar-cell {
+	@extend .search-results__main-cell;
+}
+
+.search-results__source-cell {
+	@extend .search-results__main-cell;
+}
+
+.search-results__date {
+
+}
+
+.search-results__time {
+
 }
 
 .search-results__plugin-premium {

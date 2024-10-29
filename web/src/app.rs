@@ -6,7 +6,7 @@ use leptos_router::*;
 
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-use time::OffsetDateTime;
+use time::{OffsetDateTime, format_description};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebProject {
@@ -343,11 +343,13 @@ fn SearchResults(
 
                     view! {
                         <div class="search-results__container">
-                            <div class="search-results__header">
-                                <span class="search-results__header-column">Spigot</span>
-                                <span class="search-results__header-column">Modrinth</span>
-                                <span class="search-results__header-column">Hangar</span>
-                                <span class="search-results__header-column">Source Code</span>
+                            <div class="search-results__header-row">
+                                <span class="search-results__created-header">Created</span>
+                                <span class="search-results__updated-header">Updated</span>
+                                <span class="search-results__spigot-header">Spigot</span>
+                                <span class="search-results__modrinth-header">Modrinth</span>
+                                <span class="search-results__hangar-header">Hangar</span>
+                                <span class="search-results__source-header">Source Code</span>
                             </div>
                             <ul class="search-results__list">
                                 {results}
@@ -367,6 +369,15 @@ fn SearchRow(
     /// The project representing this row.
     project: WebProject
 )  -> impl IntoView {
+    let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
+    let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();
+
+    let date_created = project.date_created.format(&date_format);
+    let time_created = project.date_created.format(&time_format);
+
+    let date_updated = project.date_updated.format(&date_format);
+    let time_updated = project.date_updated.format(&time_format);
+
     let has_spigot = project.spigot_name.is_some();
     let has_modrinth = project.modrinth_name.is_some();
     let has_hangar = project.hangar_name.is_some();
@@ -380,7 +391,16 @@ fn SearchRow(
 
     view! {
         <li class="search-results__list-item">
-            <div class="search-results__cell">
+            <div class="search-results__created-cell">
+                <div class="search-results__date">{date_created}</div>
+                <div class="search-results__time">{time_created}</div>
+            </div>
+
+            <div class="search-results__updated-cell">
+                <div class="search-results__date">{date_updated}</div>
+                <div class="search-results__time">{time_updated}</div>
+            </div>
+            <div class="search-results__spigot-cell">
                 <div class="search-results__cell-title">
                     <Show when=move || { is_spigot_premium }>
                         <span class="search-results__plugin-premium">
@@ -405,7 +425,8 @@ fn SearchRow(
                     {project.spigot_description}
                 </div>
             </div>
-            <div class="search-results__cell">
+
+            <div class="search-results__modrinth-cell">
                 <div class="search-results__cell-title">
                     <span class="search-results__plugin-name">
                         <a href=modrinth_url target="_blank">{project.modrinth_name}</a>
@@ -423,7 +444,8 @@ fn SearchRow(
                     {project.modrinth_description}
                 </div>
             </div>
-            <div class="search-results__cell">
+
+            <div class="search-results__hangar-cell">
                 <div class="search-results__cell-title">
                     <span class="search-results__plugin-name">
                         <a href=hangar_url target="_blank">{project.hangar_name}</a>
@@ -441,7 +463,8 @@ fn SearchRow(
                     {project.hangar_description}
                 </div>
             </div>
-            <div class="search-results__cell">
+
+            <div class="search-results__source-cell">
                 <div class="search-results__cell-title">
                     <a href=source_repository_url.clone() target="_blank">{source_repository_url}</a>
                 </div>
