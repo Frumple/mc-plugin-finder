@@ -34,6 +34,10 @@ pub struct CommonProject {
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>,
     pub hangar_version: Option<String>,
+
+    pub source_repository_host: Option<String>,
+    pub source_repository_owner: Option<String>,
+    pub source_repository_name: Option<String>
 }
 
 impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
@@ -88,6 +92,10 @@ impl From<CommonProjectEntity> for CommonProject {
             hangar_description: entity.hangar_description,
             hangar_author: entity.hangar_author,
             hangar_version: entity.hangar_version,
+
+            source_repository_host: entity.source_repository_host,
+            source_repository_owner: entity.source_repository_owner,
+            source_repository_name: entity.source_repository_name
         }
     }
 }

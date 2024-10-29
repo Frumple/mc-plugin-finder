@@ -34,6 +34,10 @@ pub struct WebProject {
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>,
     pub hangar_version: Option<String>,
+
+    pub source_repository_host: Option<String>,
+    pub source_repository_owner: Option<String>,
+    pub source_repository_name: Option<String>
 }
 
 impl WebProject {
@@ -47,6 +51,10 @@ impl WebProject {
 
     fn hangar_url(&self) -> Option<String> {
         Some(format!("https://hangar.papermc.io/{}/{}", self.hangar_author.clone()?, self.hangar_slug.clone()?))
+    }
+
+    fn source_repository_url(&self) -> Option<String> {
+        Some(format!("https://{}/{}/{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
     }
 }
 
@@ -78,6 +86,10 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             hangar_description: project.hangar_description,
             hangar_author: project.hangar_author,
             hangar_version: project.hangar_version,
+
+            source_repository_host: project.source_repository_host,
+            source_repository_owner: project.source_repository_owner,
+            source_repository_name: project.source_repository_name
         }
     }
 }
@@ -335,6 +347,7 @@ fn SearchResults(
                                 <span class="main-page__search-result-header-column">Spigot</span>
                                 <span class="main-page__search-result-header-column">Modrinth</span>
                                 <span class="main-page__search-result-header-column">Hangar</span>
+                                <span class="main-page__search-result-header-column">Source Code</span>
                             </div>
                             <ul class="main-page__search-result-list">
                                 {results}
@@ -361,6 +374,7 @@ fn SearchRow(
     let spigot_url = project.spigot_url();
     let modrinth_url = project.modrinth_url();
     let hangar_url = project.hangar_url();
+    let source_repository_url = project.source_repository_url();
 
     let is_spigot_premium = project.spigot_premium.unwrap_or_default();
 
@@ -425,6 +439,11 @@ fn SearchRow(
                 </div>
                 <div class="main-page__search-result-cell-description">
                     {project.hangar_description}
+                </div>
+            </div>
+            <div class="main-page__search-result-cell">
+                <div class="main-page__search-result-cell-title">
+                    <a href=source_repository_url.clone() target="_blank">{source_repository_url}</a>
                 </div>
             </div>
         </li>

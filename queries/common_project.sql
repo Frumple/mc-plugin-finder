@@ -1,4 +1,4 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
@@ -25,7 +25,11 @@ SELECT
   h.name AS hangar_name,
   h.description AS hangar_description,
   h.author AS hangar_author,
-  h.version_name AS hangar_version
+  h.version_name AS hangar_version,
+
+  COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
+  COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
+  COALESCE(s.source_repository_name, m.source_repository_name, h.source_repository_name) AS source_repository_name
 FROM
   spigot_resource s
   INNER JOIN spigot_author a
@@ -80,25 +84,29 @@ SELECT
   date_updated,
 
   spigot_id,
-  NULL as spigot_slug,
+  NULL AS spigot_slug,
   spigot_name,
   spigot_description,
   spigot_author,
-  NULL as spigot_version,
-  FALSE as spigot_premium,
+  NULL AS spigot_version,
+  FALSE AS spigot_premium,
 
   modrinth_id,
-  NULL as modrinth_slug,
+  NULL AS modrinth_slug,
   modrinth_name,
   modrinth_description,
   modrinth_author,
-  NULL as modrinth_version,
+  NULL AS modrinth_version,
 
   hangar_slug,
   hangar_name,
   hangar_description,
   hangar_author,
-  NULL as hangar_version
+  NULL AS hangar_version,
+
+  NULL AS source_repository_host,
+  NULL AS source_repository_owner,
+  NULL AS source_repository_name
 FROM
   common_project;
 
@@ -109,7 +117,7 @@ SELECT
   c.date_updated,
 
   c.spigot_id,
-  s.slug as spigot_slug,
+  s.slug AS spigot_slug,
   c.spigot_name,
   c.spigot_description,
   c.spigot_author,
@@ -117,7 +125,7 @@ SELECT
   s.premium AS spigot_premium,
 
   c.modrinth_id,
-  m.slug as modrinth_slug,
+  m.slug AS modrinth_slug,
   c.modrinth_name,
   c.modrinth_description,
   c.modrinth_author,
@@ -127,7 +135,11 @@ SELECT
   c.hangar_name,
   c.hangar_description,
   c.hangar_author,
-  h.version_name AS hangar_version
+  h.version_name AS hangar_version,
+
+  COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
+  COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
+  COALESCE(s.source_repository_name, m.source_repository_name, h.source_repository_name) AS source_repository_name
 FROM
   common_project c
   LEFT JOIN spigot_resource s
