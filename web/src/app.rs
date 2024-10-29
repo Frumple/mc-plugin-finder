@@ -255,7 +255,7 @@ fn HomePage() -> impl IntoView {
     view! {
         <h1>"MC Plugin Finder"</h1>
 
-        <div class="main-page__main-container">
+        <div class="home-page__container">
             <SearchForm action=action />
             <SearchResults resource=resource />
         </div>
@@ -269,35 +269,35 @@ fn SearchForm(
     action: Action<SearchAction, Result<WebSearchParams, ServerFnError>>
 ) -> impl IntoView {
     view! {
-        <ActionForm action class="main-page__search-form">
-            <input type="text" name="params[query]" class="main-page__query_field" />
-            <input type="submit" value="Search" class="main-page__search_button" />
+        <ActionForm action class="search-form">
+            <input type="text" name="params[query]" class="search-form__query-field" />
+            <input type="submit" value="Search" class="search-form__search-button" />
 
-            <span class="main-page__repository-text">Repository:</span>
+            <span class="search-form__repository-text">Repository:</span>
 
-            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="main-page__spigot-checkbox" value="true" checked />
-            <label for="spigot-checkbox" class="main-page__spigot-label">Spigot</label>
+            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="search-form__spigot-checkbox" value="true" checked />
+            <label for="spigot-checkbox" class="search-form__spigot-label">Spigot</label>
 
-            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="main-page__modrinth-checkbox" value="true" checked />
-            <label for="modrinth-checkbox" class="main-page__modrinth-label">Modrinth</label>
+            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="search-form__modrinth-checkbox" value="true" checked />
+            <label for="modrinth-checkbox" class="search-form__modrinth-label">Modrinth</label>
 
-            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="main-page__hangar-checkbox" value="true" checked />
-            <label for="hangar-checkbox" class="main-page__hangar-label">Hangar</label>
+            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="search-form__hangar-checkbox" value="true" checked />
+            <label for="hangar-checkbox" class="search-form__hangar-label">Hangar</label>
 
-            <span class="main-page__fields-text">Fields:</span>
+            <span class="search-form__fields-text">Fields:</span>
 
-            <input id="name-checkbox" type="checkbox" name="params[name]" class="main-page__name-checkbox" value="true" checked />
-            <label for="name-checkbox" class="main-page__name-label">Name</label>
+            <input id="name-checkbox" type="checkbox" name="params[name]" class="search-form__name-checkbox" value="true" checked />
+            <label for="name-checkbox" class="search-form__name-label">Name</label>
 
-            <input id="description-checkbox" type="checkbox" name="params[description]" class="main-page__description-checkbox" value="true" checked />
-            <label for="description-checkbox" class="main-page__description-label">Description</label>
+            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" checked />
+            <label for="description-checkbox" class="search-form__description-label">Description</label>
 
-            <input id="author-checkbox" type="checkbox" name="params[author]" class="main-page__author-checkbox" value="true" checked />
-            <label for="author-checkbox" class="main-page__author-label">Author</label>
+            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" checked />
+            <label for="author-checkbox" class="search-form__author-label">Author</label>
 
-            <span class="main-page__sort-text">Sort by:</span>
+            <span class="search-form__sort-text">Sort by:</span>
 
-            <select name="params[sort_field]" class="main-page__sort-field">
+            <select name="params[sort_field]" class="search-form__sort-field">
                 <option value="date_created">Newest</option>
                 <option value="date_updated" selected>Recently Updated</option>
             </select>
@@ -342,14 +342,14 @@ fn SearchResults(
                     };
 
                     view! {
-                        <div class="main-page__search-result-container">
-                            <div class="main-page__search-result-header">
-                                <span class="main-page__search-result-header-column">Spigot</span>
-                                <span class="main-page__search-result-header-column">Modrinth</span>
-                                <span class="main-page__search-result-header-column">Hangar</span>
-                                <span class="main-page__search-result-header-column">Source Code</span>
+                        <div class="search-results__container">
+                            <div class="search-results__header">
+                                <span class="search-results__header-column">Spigot</span>
+                                <span class="search-results__header-column">Modrinth</span>
+                                <span class="search-results__header-column">Hangar</span>
+                                <span class="search-results__header-column">Source Code</span>
                             </div>
-                            <ul class="main-page__search-result-list">
+                            <ul class="search-results__list">
                                 {results}
                             </ul>
                         </div>
@@ -379,70 +379,70 @@ fn SearchRow(
     let is_spigot_premium = project.spigot_premium.unwrap_or_default();
 
     view! {
-        <li class="main-page__search-result-list-item">
-            <div class="main-page__search-result-cell">
-                <div class="main-page__search-result-cell-title">
+        <li class="search-results__list-item">
+            <div class="search-results__cell">
+                <div class="search-results__cell-title">
                     <Show when=move || { is_spigot_premium }>
-                        <span class="main-page__search-result-cell-premium">
+                        <span class="search-results__plugin-premium">
                             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
                                 <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
                             </svg>
                         </span>
                     </Show>
-                    <span class="main-page__search-result-cell-name">
+                    <span class="search-results__plugin-name">
                         <a href=spigot_url target="_blank">{project.spigot_name}</a>
                     </span>
                     <Show when=move || { has_spigot }>
                         <span>"  "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-version">{project.spigot_version}</span>
+                    <span class="search-results__plugin-version">{project.spigot_version}</span>
                     <Show when=move || { has_spigot }>
                         <span>" by "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-author">{project.spigot_author}</span>
+                    <span class="search-results__plugin-author">{project.spigot_author}</span>
                 </div>
-                <div class="main-page__search-result-cell-description">
+                <div class="search-results__cell-description">
                     {project.spigot_description}
                 </div>
             </div>
-            <div class="main-page__search-result-cell">
-                <div class="main-page__search-result-cell-title">
-                    <span class="main-page__search-result-cell-name">
+            <div class="search-results__cell">
+                <div class="search-results__cell-title">
+                    <span class="search-results__plugin-name">
                         <a href=modrinth_url target="_blank">{project.modrinth_name}</a>
                     </span>
                     <Show when=move || { has_modrinth }>
                         <span>" "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-version">{project.modrinth_version}</span>
+                    <span class="search-results__plugin-version">{project.modrinth_version}</span>
                     <Show when=move || { has_modrinth }>
                         <span>" by "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-author">{project.modrinth_author}</span>
+                    <span class="search-results__plugin-author">{project.modrinth_author}</span>
                 </div>
-                <div class="main-page__search-result-cell-description">
+                <div class="search-results__cell-description">
                     {project.modrinth_description}
                 </div>
             </div>
-            <div class="main-page__search-result-cell">
-                <div class="main-page__search-result-cell-title">
-                    <span class="main-page__search-result-cell-name">
+            <div class="search-results__cell">
+                <div class="search-results__cell-title">
+                    <span class="search-results__plugin-name">
                         <a href=hangar_url target="_blank">{project.hangar_name}</a>
                     </span>
                     <Show when=move || { has_hangar }>
                         <span>" "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-version">{project.hangar_version}</span>
+                    <span class="search-results__plugin-version">{project.hangar_version}</span>
                     <Show when=move || { has_hangar }>
                         <span>" by "</span>
                     </Show>
-                    <span class="main-page__search-result-cell-author">{project.hangar_author}</span>
+                    <span class="search-results__plugin-author">{project.hangar_author}</span>
                 </div>
-                <div class="main-page__search-result-cell-description">
+                <div class="search-results__cell-description">
                     {project.hangar_description}
                 </div>
             </div>
-            <div class="main-page__search-result-cell">
-                <div class="main-page__search-result-cell-title">
+            <div class="search-results__cell">
+                <div class="search-results__cell-title">
                     <a href=source_repository_url.clone() target="_blank">{source_repository_url}</a>
                 </div>
             </div>

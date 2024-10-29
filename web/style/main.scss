@@ -3,12 +3,12 @@ body {
 	text-align: center;
 }
 
-.main-page__main-container {
+.home-page__container {
 	display: flex;
 	flex-direction: column;
 }
 
-.main-page__search-form {
+.search-form {
 	display: grid;
 	grid-template:
 	  "query-field     query-field     query-field  query-field          query-field       search-button   search-button" auto
@@ -21,100 +21,100 @@ body {
 	text-align: left;
 }
 
-.main-page__query_field {
+.search-form__query-field {
   grid-area: query-field;
 }
 
-.main-page__search_button {
+.search-form__search-button {
   grid-area: search-button;
 }
 
-.main-page__repository-text {
+.search-form__repository-text {
 	grid-area: repository-text;
 }
 
-.main-page__spigot-checkbox {
+.search-form__spigot-checkbox {
   grid-area: spigot-checkbox;
 }
 
-.main-page__spigot-label {
+.search-form__spigot-label {
   grid-area: spigot-label;
 }
 
-.main-page__modrinth-checkbox {
+.search-form__modrinth-checkbox {
   grid-area: modrinth-checkbox;
 }
 
-.main-page__modrinth-label {
+.search-form__modrinth-label {
   grid-area: modrinth-label;
 }
 
-.main-page__hangar-checkbox {
+.search-form__hangar-checkbox {
   grid-area: hangar-checkbox;
 }
 
-.main-page__hangar-label {
+.search-form__hangar-label {
   grid-area: hangar-label;
 }
 
-.main-page__fields-text {
+.search-form__fields-text {
 	grid-area: fields-text
 }
 
-.main-page__name-checkbox {
+.search-form__name-checkbox {
   grid-area: name-checkbox;
 }
 
-.main-page__name-label {
+.search-form__name-label {
   grid-area: name-label;
 }
 
-.main-page__description-checkbox {
+.search-form__description-checkbox {
   grid-area: description-checkbox;
 }
 
-.main-page__description-label {
+.search-form__description-label {
   grid-area: description-label;
 }
 
-.main-page__author-checkbox {
+.search-form__author-checkbox {
   grid-area: author-checkbox;
 }
 
-.main-page__author-label {
+.search-form__author-label {
   grid-area: author-label;
 }
 
-.main-page__sort-text {
+.search-form__sort-text {
 	grid-area: sort-text;
 }
 
-.main-page__sort-field {
+.search-form__sort-field {
 	grid-area: sort-field;
 	justify-self: left;
 }
 
-.main-page__search-result-container {
+.search-results__container {
 	margin-top: 1em;
 }
 
-.main-page__search-result-header {
+.search-results__header {
   display: flex;
 	flex-wrap: nowrap;
 }
 
-.main-page__search-result-header-column {
+.search-results__header-column {
 	flex: 1 1 33%;
 	font-weight: bold;
 	padding: 5px;
 }
 
-.main-page__search-result-list {
+.search-results__list {
 	margin: 0;
 	padding: 0;
 }
 
-.main-page__search-result-list-item {
+.search-results__list-item {
 	display: flex;
 	flex-wrap: nowrap;
 	gap: 5px;
@@ -123,24 +123,24 @@ body {
 	padding: 5px;
 }
 
-.main-page__search-result-cell {
+.search-results__cell {
 	flex: 1 1 25%;
 	display: flex;
 	flex-direction: column;
 }
 
-.main-page__search-result-cell-premium {
+.search-results__plugin-premium {
 
 }
 
-.main-page__search-result-cell-name {
+.search-results__plugin-name {
 	font-weight: bold;
 }
 
-.main-page__search-result-cell-version {
+.search-results__plugin-version {
 
 }
 
-.main-page__search-result-cell-author {
+.search-results__plugin-author {
 	font-style: italic;
 }
