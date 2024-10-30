@@ -283,6 +283,7 @@ mod test {
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2024-01-01 0:00 UTC),
             downloads: 100,
+            likes: 200,
             author_id: 1,
             version_id: 1,
             version_name: None,

@@ -19,7 +19,7 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
 
-const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,downloads,file,author,version,premium,sourceCodeLink";
+const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 // TODO: Replace OnceLock with LazyCell when it stabilizes in std: https://github.com/rust-lang/rust/issues/109736
@@ -94,6 +94,7 @@ pub struct IncomingSpigotResource {
     release_date: i64,
     update_date: i64,
     downloads: i32,
+    likes: i32,
     file: Option<IncomingSpigotResourceNestedFile>,
     author: IncomingSpigotResourceNestedAuthor,
     version: IncomingSpigotResourceNestedVersion,
@@ -281,6 +282,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 date_created: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
                 date_updated: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
                 downloads: incoming_resource.downloads,
+                likes: incoming_resource.likes,
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
                 version_name: version_name.clone(),
@@ -634,6 +636,7 @@ mod test {
                 release_date: 1577836800,
                 update_date: 1609459200,
                 downloads: 100,
+                likes: 200,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/foo.1/download?version=1".to_string()
                 }),
@@ -653,6 +656,7 @@ mod test {
                 release_date: 1577836800,
                 update_date: 1640995200,
                 downloads: 100,
+                likes: 200,
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/bar.2/download?version=2".to_string()
                 }),

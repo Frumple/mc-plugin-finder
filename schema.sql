@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
+  likes integer NOT NULL,
   author_id integer NOT NULL REFERENCES spigot_author,
   version_id integer NOT NULL,
   version_name text,
