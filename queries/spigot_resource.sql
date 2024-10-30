@@ -1,6 +1,6 @@
---: SpigotResourceEntity(parsed_name?, version_name?, premium?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SpigotResourceEntity(parsed_name?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_spigot_resource (parsed_name?, version_name?, premium?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--! upsert_spigot_resource (parsed_name?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, downloads, likes, author_id, version_id, version_name, premium, source_url, source_repository_host, source_repository_owner, source_repository_name)
   VALUES (:id, :name, :parsed_name, :description, :slug, :date_created, :date_updated, :downloads, :likes, :author_id, :version_id, :version_name, :premium, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (id)

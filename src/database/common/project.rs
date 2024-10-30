@@ -287,7 +287,7 @@ mod test {
             author_id: 1,
             version_id: 1,
             version_name: None,
-            premium: Some(false),
+            premium: false,
             source_url: Some("https://gitlab.com/Frumple/bar".to_string()),
             source_repository_host: Some("gitlab.com".to_string()),
             source_repository_owner: Some("Frumple".to_string()),

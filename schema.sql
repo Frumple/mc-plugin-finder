@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   author_id integer NOT NULL REFERENCES spigot_author,
   version_id integer NOT NULL,
   version_name text,
-  premium boolean,
+  premium boolean NOT NULL,
   source_url text,
   source_repository_host text,
   source_repository_owner text,
