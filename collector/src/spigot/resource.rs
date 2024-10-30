@@ -559,6 +559,7 @@ mod test {
         assert_that(&resource.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&resource.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&resource.downloads).is_equal_to(100);
+        assert_that(&resource.likes).is_equal_to(200);
         assert_that(&resource.author_id).is_equal_to(1);
         assert_that(&resource.version_id).is_equal_to(1);
         assert_that(&resource.version_name).is_some().is_equal_to(version_name.to_string());
