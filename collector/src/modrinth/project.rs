@@ -73,6 +73,7 @@ pub struct IncomingModrinthProject {
     date_created: String,
     date_modified: String,
     downloads: i32,
+    follows: i32,
     latest_version: Option<String>,
     icon_url: Option<String>,
     monetization_status: Option<String>
@@ -279,6 +280,7 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
         date_created: OffsetDateTime::parse(&incoming_project.date_created, &Rfc3339)?,
         date_updated: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
         downloads: incoming_project.downloads,
+        follows: incoming_project.follows,
         version_id: incoming_project.latest_version,
         version_name: version_name.clone(),
         icon_url: incoming_project.icon_url,
@@ -398,6 +400,7 @@ mod test {
         assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&project.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&project.downloads).is_equal_to(100);
+        assert_that(&project.follows).is_equal_to(200);
         assert_that(&project.version_id).is_some().is_equal_to("aaaa1111".to_string());
         assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
         assert_that(&project.icon_url).is_some().is_equal_to("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string());
@@ -421,6 +424,7 @@ mod test {
                 date_created: "2020-01-01T00:00:00Z".to_string(),
                 date_modified: "2021-01-01T00:00:00Z".to_string(),
                 downloads: 100,
+                follows: 200,
                 latest_version: Some("aaaa1111".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
                 monetization_status: None
@@ -434,6 +438,7 @@ mod test {
                 date_created: "2020-01-01T00:00:00Z".to_string(),
                 date_modified: "2022-01-01T00:00:00Z".to_string(),
                 downloads: 100,
+                follows: 200,
                 latest_version: Some("bbbb1111".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
                 monetization_status: None

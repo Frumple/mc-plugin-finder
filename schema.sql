@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS modrinth_project (
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
+  follows integer NOT NULL,
   version_id text,
   version_name text,
   icon_url text,
