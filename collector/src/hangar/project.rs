@@ -80,7 +80,9 @@ pub struct IncomingHangarProjectNamespace {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct IncomingHangarProjectStats {
-    downloads: i32
+    downloads: i32,
+    stars: i32,
+    watchers: i32
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -248,6 +250,8 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, versi
         date_created: OffsetDateTime::parse(&incoming_project.created_at, &Rfc3339)?,
         date_updated: OffsetDateTime::parse(&incoming_project.last_updated, &Rfc3339)?,
         downloads: incoming_project.stats.downloads,
+        stars: incoming_project.stats.stars,
+        watchers: incoming_project.stats.watchers,
         visibility: incoming_project.visibility,
         avatar_url: incoming_project.avatar_url,
         version_name: version_name.clone(),
@@ -347,6 +351,8 @@ mod test {
         assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
         assert_that(&project.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
         assert_that(&project.downloads).is_equal_to(100);
+        assert_that(&project.stars).is_equal_to(200);
+        assert_that(&project.watchers).is_equal_to(300);
         assert_that(&project.visibility).is_equal_to("public".to_string());
         assert_that(&project.avatar_url).is_equal_to("https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string());
         assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
@@ -371,6 +377,8 @@ mod test {
                 last_updated: "2021-01-01T00:00:00Z".to_string(),
                 stats: IncomingHangarProjectStats {
                     downloads: 100,
+                    stars: 200,
+                    watchers: 300
                 },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
@@ -391,6 +399,8 @@ mod test {
                 last_updated: "2022-01-01T00:00:00Z".to_string(),
                 stats: IncomingHangarProjectStats {
                     downloads: 100,
+                    stars: 200,
+                    watchers: 300
                 },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),

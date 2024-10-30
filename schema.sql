@@ -59,6 +59,8 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,
+  stars integer NOT NULL,
+  watchers integer NOT NULL,
   visibility text NOT NULL,
   avatar_url text NOT NULL,
   version_name text,
