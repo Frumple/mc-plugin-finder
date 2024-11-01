@@ -101,34 +101,46 @@ body {
 .search-results__header-row {
   display: flex;
 	flex-wrap: nowrap;
+	gap: 5px;
+	padding: 5px;
 }
 
-.search_results__date-column {
-	flex: 1 1 5%;
+.search_results__stat-column {
+	flex: 0 0 6em;
 }
 
 .search_results__main-column {
-	flex: 1 1 22.5%;
+	flex: 0 1 25%;
 }
 
-.search-results__date-header {
-	@extend .search_results__date-column;
+.search-results__stat-header {
+	@extend .search_results__stat-column;
 	font-weight: bold;
-	padding: 5px;
 }
 
 .search-results__main-header {
 	@extend .search_results__main-column;
 	font-weight: bold;
-	padding: 5px;
 }
 
 .search-results__created-header {
-	@extend .search-results__date-header;
+	@extend .search-results__stat-header;
 }
 
 .search-results__updated-header {
-	@extend .search-results__date-header;
+	@extend .search-results__stat-header;
+}
+
+.search-results__downloads-header {
+	@extend .search-results__stat-header;
+}
+
+.search-results__likes-and-stars-header {
+	@extend .search-results__stat-header;
+}
+
+.search-results__follows-and-watchers-header {
+	@extend .search-results__stat-header;
 }
 
 .search-results__spigot-header {
@@ -161,8 +173,8 @@ body {
 	padding: 5px;
 }
 
-.search-results__date-cell {
-	@extend .search_results__date-column;
+.search-results__stat-cell {
+	@extend .search_results__stat-column;
 	display: flex;
 	flex-direction: column;
 }
@@ -174,11 +186,23 @@ body {
 }
 
 .search-results__created-cell {
-	@extend .search-results__date-cell;
+	@extend .search-results__stat-cell;
 }
 
 .search-results__updated-cell {
-	@extend .search-results__date-cell;
+	@extend .search-results__stat-cell;
+}
+
+.search-results__downloads-cell {
+	@extend .search-results__stat-cell;
+}
+
+.search-results__likes-and-stars-cell {
+	@extend .search-results__stat-cell;
+}
+
+.search-results__follows-and-watchers-cell {
+	@extend .search-results__stat-cell;
 }
 
 .search-results__spigot-cell {
@@ -202,6 +226,18 @@ body {
 }
 
 .search-results__time {
+
+}
+
+.search-results__downloads {
+
+}
+
+.search-results__likes-and-stars {
+
+}
+
+.search-results__follows-and-watchers {
 
 }
 

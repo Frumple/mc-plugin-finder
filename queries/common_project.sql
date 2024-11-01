@@ -5,6 +5,9 @@ SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
   GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
   GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
+  COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0) AS downloads,
+  COALESCE(s.likes, 0) + COALESCE(h.stars, 0) AS likes_and_stars,
+  COALESCE(m.follows, 0) + COALESCE(h.watchers, 0) AS follows_and_watchers,
 
   s.id AS spigot_id,
   s.slug AS spigot_slug,
@@ -58,20 +61,26 @@ WHERE
   GREATEST(s.date_updated, m.date_updated, h.date_updated) > :date_updated;
 
 --! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
-INSERT INTO common_project (id, date_created, date_updated, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
-  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :date_created, :date_updated, :spigot_id, :spigot_name, :spigot_description, :spigot_author, :modrinth_id, :modrinth_name, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_author)
+INSERT INTO common_project (id, date_created, date_updated, downloads, likes_and_stars, follows_and_watchers, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
+  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :date_created, :date_updated, :downloads, :likes_and_stars, :follows_and_watchers, :spigot_id, :spigot_name, :spigot_description, :spigot_author, :modrinth_id, :modrinth_name, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_author)
   ON CONFLICT (id)
   DO UPDATE SET
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
+    downloads = EXCLUDED.downloads,
+    likes_and_stars = EXCLUDED.likes_and_stars,
+    follows_and_watchers = EXCLUDED.follows_and_watchers,
+
     spigot_id = EXCLUDED.spigot_id,
     spigot_name = EXCLUDED.spigot_name,
     spigot_description = EXCLUDED.spigot_description,
     spigot_author = EXCLUDED.spigot_author,
+
     modrinth_id = EXCLUDED.modrinth_id,
     modrinth_name = EXCLUDED.modrinth_name,
     modrinth_description = EXCLUDED.modrinth_description,
     modrinth_author = EXCLUDED.modrinth_author,
+
     hangar_slug = EXCLUDED.hangar_slug,
     hangar_name = EXCLUDED.hangar_name,
     hangar_description = EXCLUDED.hangar_description,
@@ -82,6 +91,9 @@ SELECT
   id,
   date_created,
   date_updated,
+  downloads,
+  likes_and_stars,
+  follows_and_watchers,
 
   spigot_id,
   NULL AS spigot_slug,
@@ -115,6 +127,9 @@ SELECT
   c.id,
   c.date_created,
   c.date_updated,
+  c.downloads,
+  c.likes_and_stars,
+  c.follows_and_watchers,
 
   c.spigot_id,
   s.slug AS spigot_slug,
@@ -214,4 +229,7 @@ WHERE
 
 ORDER BY
   (CASE WHEN :sort_field = 'date_created' THEN c.date_created END) DESC,
-  (CASE WHEN :sort_field = 'date_updated' THEN c.date_updated END) DESC;
+  (CASE WHEN :sort_field = 'date_updated' THEN c.date_updated END) DESC,
+  (CASE WHEN :sort_field = 'downloads' THEN c.downloads END) DESC,
+  (CASE WHEN :sort_field = 'likes_and_stars' THEN c.likes_and_stars END) DESC,
+  (CASE WHEN :sort_field = 'follows_and_watchers' THEN c.follows_and_watchers END) DESC;

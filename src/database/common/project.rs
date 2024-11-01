@@ -13,6 +13,9 @@ pub struct CommonProject {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub downloads: i32,
+    pub likes_and_stars: i32,
+    pub follows_and_watchers: i32,
 
     pub spigot_id: Option<i32>,
     pub spigot_slug: Option<String>,
@@ -46,6 +49,9 @@ impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, S
             id: project.id.map(i64::from),
             date_created: project.date_created,
             date_updated: project.date_updated,
+            downloads: project.downloads,
+            likes_and_stars: project.likes_and_stars,
+            follows_and_watchers: project.follows_and_watchers,
 
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
@@ -71,6 +77,9 @@ impl From<CommonProjectEntity> for CommonProject {
             id: entity.id,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+            downloads: entity.downloads,
+            likes_and_stars: entity.likes_and_stars,
+            follows_and_watchers: entity.follows_and_watchers,
 
             spigot_id: entity.spigot_id,
             spigot_slug: entity.spigot_slug,
@@ -132,14 +141,20 @@ impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
 pub enum SearchParamsSortField {
     DateCreated,
     #[default]
-    DateUpdated
+    DateUpdated,
+    Downloads,
+    LikesAndStars,
+    FollowsAndWatchers,
 }
 
 impl From<SearchParamsSortField> for String {
     fn from(sort_field: SearchParamsSortField) -> Self {
         match sort_field {
             SearchParamsSortField::DateCreated => "date_created".to_string(),
-            SearchParamsSortField::DateUpdated => "date_updated".to_string()
+            SearchParamsSortField::DateUpdated => "date_updated".to_string(),
+            SearchParamsSortField::Downloads => "downloads".to_string(),
+            SearchParamsSortField::LikesAndStars => "likes_and_stars".to_string(),
+            SearchParamsSortField::FollowsAndWatchers => "follows_and_watchers".to_string()
         }
     }
 }
@@ -1258,7 +1273,7 @@ mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let (_spigot_authors, _spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
         let merged_projects = get_merged_common_projects(&context.pool, None).await?;
         for merged_project in merged_projects {
@@ -1267,7 +1282,7 @@ mod test {
 
         // Act 1 - Sort by date_created order
         let params = SearchParams {
-            spigot: true,
+            hangar: true,
             name: true,
             sort_field: SearchParamsSortField::DateCreated,
             ..Default::default()
@@ -1276,13 +1291,13 @@ mod test {
 
         // Assert 1 - Verify results are in date_created order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].spigot_id).is_some().is_equal_to(3);
-        assert_that(&search_results[1].spigot_id).is_some().is_equal_to(2);
-        assert_that(&search_results[2].spigot_id).is_some().is_equal_to(1);
+        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("baz".to_string());
+        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("bar".to_string());
+        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("foo".to_string());
 
         // Act 2 - Sort by date_updated order
         let params = SearchParams {
-            spigot: true,
+            hangar: true,
             name: true,
             sort_field: SearchParamsSortField::DateUpdated,
             ..Default::default()
@@ -1291,9 +1306,54 @@ mod test {
 
         // Assert 2 - Verify results are in date_updated order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].spigot_id).is_some().is_equal_to(1);
-        assert_that(&search_results[1].spigot_id).is_some().is_equal_to(2);
-        assert_that(&search_results[2].spigot_id).is_some().is_equal_to(3);
+        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("foo".to_string());
+        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("bar".to_string());
+        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("baz".to_string());
+
+        // Act 3 - Sort by downloads order
+        let params = SearchParams {
+            hangar: true,
+            name: true,
+            sort_field: SearchParamsSortField::Downloads,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify results are in downloads order
+        assert_that(&search_results).has_length(3);
+        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("bar".to_string());
+        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("baz".to_string());
+        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("foo".to_string());
+
+        // Act 4 - Sort by likes and stars order
+        let params = SearchParams {
+            hangar: true,
+            name: true,
+            sort_field: SearchParamsSortField::LikesAndStars,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 4 - Verify results are in likes and stars order
+        assert_that(&search_results).has_length(3);
+        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("baz".to_string());
+        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("foo".to_string());
+        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("bar".to_string());
+
+        // Act 5 - Sort by follows and watchers order
+        let params = SearchParams {
+            hangar: true,
+            name: true,
+            sort_field: SearchParamsSortField::FollowsAndWatchers,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 5 - Verify results are in follows and watchers order
+        assert_that(&search_results).has_length(3);
+        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("bar".to_string());
+        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("foo".to_string());
+        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("baz".to_string());
 
         // Teardown
         context.drop().await?;

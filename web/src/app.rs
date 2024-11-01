@@ -13,6 +13,9 @@ pub struct WebProject {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub downloads: i32,
+    pub likes_and_stars: i32,
+    pub follows_and_watchers: i32,
 
     pub spigot_id: Option<i32>,
     pub spigot_slug: Option<String>,
@@ -56,6 +59,10 @@ impl WebProject {
     fn source_repository_url(&self) -> Option<String> {
         Some(format!("https://{}/{}/{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
     }
+
+    fn source_repository_url_wbr(&self) -> Option<String> {
+        Some(format!("https://{}/<wbr>{}/<wbr>{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -65,6 +72,9 @@ impl From<mc_plugin_finder::database::common::project::CommonProject> for WebPro
             id: project.id,
             date_created: project.date_created,
             date_updated: project.date_updated,
+            downloads: project.downloads,
+            likes_and_stars: project.likes_and_stars,
+            follows_and_watchers: project.follows_and_watchers,
 
             spigot_id: project.spigot_id,
             spigot_slug: project.spigot_slug,
@@ -133,7 +143,10 @@ impl From<WebSearchParams> for mc_plugin_finder::database::common::project::Sear
 pub enum WebSearchParamsSortField {
     DateCreated,
     #[default]
-    DateUpdated
+    DateUpdated,
+    Downloads,
+    LikesAndStars,
+    FollowsAndWatchers,
 }
 
 impl FromStr for WebSearchParamsSortField {
@@ -141,9 +154,12 @@ impl FromStr for WebSearchParamsSortField {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "date_created" => Ok(Self::DateCreated),
-            "date_updated" => Ok(Self::DateUpdated),
-            _              => Err(())
+            "date_created"         => Ok(Self::DateCreated),
+            "date_updated"         => Ok(Self::DateUpdated),
+            "downloads"            => Ok(Self::Downloads),
+            "likes_and_stars"      => Ok(Self::LikesAndStars),
+            "follows_and_watchers" => Ok(Self::FollowsAndWatchers),
+            _                      => Err(())
         }
     }
 }
@@ -153,7 +169,10 @@ impl From<WebSearchParamsSortField> for mc_plugin_finder::database::common::proj
     fn from(sort_field: WebSearchParamsSortField) -> Self {
         match sort_field {
             WebSearchParamsSortField::DateCreated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateCreated,
-            WebSearchParamsSortField::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateUpdated
+            WebSearchParamsSortField::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateUpdated,
+            WebSearchParamsSortField::Downloads => mc_plugin_finder::database::common::project::SearchParamsSortField::Downloads,
+            WebSearchParamsSortField::LikesAndStars => mc_plugin_finder::database::common::project::SearchParamsSortField::LikesAndStars,
+            WebSearchParamsSortField::FollowsAndWatchers => mc_plugin_finder::database::common::project::SearchParamsSortField::FollowsAndWatchers
         }
     }
 }
@@ -300,6 +319,9 @@ fn SearchForm(
             <select name="params[sort_field]" class="search-form__sort-field">
                 <option value="date_created">Newest</option>
                 <option value="date_updated" selected>Recently Updated</option>
+                <option value="downloads">Downloads</option>
+                <option value="likes_and_stars">Likes + Stars</option>
+                <option value="follows_and_watchers">Follows + Watchers</option>
             </select>
         </ActionForm>
     }
@@ -346,6 +368,9 @@ fn SearchResults(
                             <div class="search-results__header-row">
                                 <span class="search-results__created-header">Created</span>
                                 <span class="search-results__updated-header">Updated</span>
+                                <span class="search-results__downloads-header">Downloads</span>
+                                <span class="search-results__likes-and-stars-header">Likes + Stars</span>
+                                <span class="search-results__follows-and-watchers-header">Follows + Watchers</span>
                                 <span class="search-results__spigot-header">Spigot</span>
                                 <span class="search-results__modrinth-header">Modrinth</span>
                                 <span class="search-results__hangar-header">Hangar</span>
@@ -368,7 +393,7 @@ fn SearchResults(
 fn SearchRow(
     /// The project representing this row.
     project: WebProject
-)  -> impl IntoView {
+) -> impl IntoView {
     let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
     let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();
 
@@ -386,6 +411,7 @@ fn SearchRow(
     let modrinth_url = project.modrinth_url();
     let hangar_url = project.hangar_url();
     let source_repository_url = project.source_repository_url();
+    let source_repository_url_wbr = project.source_repository_url_wbr();
 
     let is_spigot_premium = project.spigot_premium.unwrap_or_default();
 
@@ -400,6 +426,19 @@ fn SearchRow(
                 <div class="search-results__date">{date_updated}</div>
                 <div class="search-results__time">{time_updated}</div>
             </div>
+
+            <div class="search-results__downloads-cell">
+                <span class="search-results__downloads">{project.downloads}</span>
+            </div>
+
+            <div class="search-results__likes-and-stars-cell">
+                <span class="search-results__likes-and-stars">{project.likes_and_stars}</span>
+            </div>
+
+            <div class="search-results__follows-and-watchers-cell">
+                <span class="search-results__follows-and-watchers">{project.follows_and_watchers}</span>
+            </div>
+
             <div class="search-results__spigot-cell">
                 <div class="search-results__cell-title">
                     <Show when=move || { is_spigot_premium }>
@@ -466,7 +505,7 @@ fn SearchRow(
 
             <div class="search-results__source-cell">
                 <div class="search-results__cell-title">
-                    <a href=source_repository_url.clone() target="_blank">{source_repository_url}</a>
+                    <a href=source_repository_url target="_blank" inner_html=source_repository_url_wbr></a>
                 </div>
             </div>
         </li>
