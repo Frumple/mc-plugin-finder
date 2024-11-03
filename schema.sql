@@ -73,11 +73,6 @@ CREATE TABLE IF NOT EXISTS hangar_project (
 -- Common
 CREATE TABLE IF NOT EXISTS common_project (
   id SERIAL PRIMARY KEY,
-  date_created timestamptz NOT NULL,
-  date_updated timestamptz NOT NULL,
-  downloads integer NOT NULL,
-  likes_and_stars integer NOT NULL,
-  follows_and_watchers integer NOT NULL,
   spigot_id integer REFERENCES spigot_resource,
   spigot_name text,
   spigot_description text,
@@ -93,22 +88,6 @@ CREATE TABLE IF NOT EXISTS common_project (
 );
 
 -- Indexes
-
--- B-tree indexes for ordering by date_created, date_updaated, downloads, likes_and_stars, follows_and_watchers
-CREATE INDEX IF NOT EXISTS common_project_date_created_index
-ON common_project (date_created);
-
-CREATE INDEX IF NOT EXISTS common_project_date_updated_index
-ON common_project (date_updated);
-
-CREATE INDEX IF NOT EXISTS common_project_downloads_index
-ON common_project (downloads);
-
-CREATE INDEX IF NOT EXISTS common_project_likes_and_stars_index
-ON common_project (likes_and_stars);
-
-CREATE INDEX IF NOT EXISTS common_project_follows_and_watchers_index
-ON common_project (follows_and_watchers);
 
 -- B-tree indexes for joining on spigot_id, modrinth_id, and hangar_slug
 CREATE INDEX IF NOT EXISTS common_project_spigot_id_index

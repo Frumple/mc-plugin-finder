@@ -222,7 +222,7 @@ pub mod test {
         let latest_update_date = get_latest_hangar_project_update_date(&context.pool).await?;
 
         // Assert
-        assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));
+        assert_that(&latest_update_date).is_equal_to(datetime!(2022-02-03 0:00 UTC));
 
         // Teardown
         context.drop().await?;
@@ -251,8 +251,8 @@ pub mod test {
                 author: "alice".to_string(),
                 name: "foo-hangar".to_string(),
                 description: "foo-hangar-description".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2023-01-01 0:00 UTC),
+                date_created: datetime!(2022-01-01 0:00 UTC),
+                date_updated: datetime!(2022-02-03 0:00 UTC),
                 downloads: 100,
                 stars: 200,
                 watchers: 200,
@@ -269,8 +269,8 @@ pub mod test {
                 author: "bob".to_string(),
                 name: "bar-hangar".to_string(),
                 description: "bar-hangar-description".to_string(),
-                date_created: datetime!(2020-01-02 0:00 UTC),
-                date_updated: datetime!(2022-01-01 0:00 UTC),
+                date_created: datetime!(2022-01-02 0:00 UTC),
+                date_updated: datetime!(2022-02-02 0:00 UTC),
                 downloads: 300,
                 stars: 100,
                 watchers: 300,
@@ -287,8 +287,8 @@ pub mod test {
                 author: "eve".to_string(),
                 name: "baz-hangar".to_string(),
                 description: "baz-hangar-description".to_string(),
-                date_created: datetime!(2020-01-03 0:00 UTC),
-                date_updated: datetime!(2021-01-01 0:00 UTC),
+                date_created: datetime!(2022-01-03 0:00 UTC),
+                date_updated: datetime!(2022-02-01 0:00 UTC),
                 downloads: 200,
                 stars: 300,
                 watchers: 100,

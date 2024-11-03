@@ -1,4 +1,4 @@
-use crate::database::cornucopia::queries::common_project::{self, CommonProjectEntity, SearchCommonProjectsParams, UpsertCommonProjectParams};
+use crate::database::cornucopia::queries::common_project::{self, CommonProjectEntity, CommonProjectSearchResultEntity, SearchCommonProjectsParams, UpsertCommonProjectParams};
 
 use anyhow::Result;
 use cornucopia_async::Params;
@@ -11,11 +11,6 @@ use tracing::{info, instrument};
 #[derive(Clone, Debug, PartialEq)]
 pub struct CommonProject {
     pub id: Option<i32>,
-    pub date_created: OffsetDateTime,
-    pub date_updated: OffsetDateTime,
-    pub downloads: i32,
-    pub likes_and_stars: i32,
-    pub follows_and_watchers: i32,
 
     pub spigot_id: Option<i32>,
     pub spigot_slug: Option<String>,
@@ -36,22 +31,13 @@ pub struct CommonProject {
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>,
-    pub hangar_version: Option<String>,
-
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub hangar_version: Option<String>
 }
 
 impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: CommonProject) -> Self {
         UpsertCommonProjectParams {
             id: project.id.map(i64::from),
-            date_created: project.date_created,
-            date_updated: project.date_updated,
-            downloads: project.downloads,
-            likes_and_stars: project.likes_and_stars,
-            follows_and_watchers: project.follows_and_watchers,
 
             spigot_id: project.spigot_id,
             spigot_name: project.spigot_name,
@@ -75,11 +61,6 @@ impl From<CommonProjectEntity> for CommonProject {
     fn from(entity: CommonProjectEntity) -> Self {
         CommonProject {
             id: entity.id,
-            date_created: entity.date_created,
-            date_updated: entity.date_updated,
-            downloads: entity.downloads,
-            likes_and_stars: entity.likes_and_stars,
-            follows_and_watchers: entity.follows_and_watchers,
 
             spigot_id: entity.spigot_id,
             spigot_slug: entity.spigot_slug,
@@ -100,11 +81,7 @@ impl From<CommonProjectEntity> for CommonProject {
             hangar_name: entity.hangar_name,
             hangar_description: entity.hangar_description,
             hangar_author: entity.hangar_author,
-            hangar_version: entity.hangar_version,
-
-            source_repository_host: entity.source_repository_host,
-            source_repository_owner: entity.source_repository_owner,
-            source_repository_name: entity.source_repository_name
+            hangar_version: entity.hangar_version
         }
     }
 }
@@ -155,6 +132,62 @@ impl From<SearchParamsSortField> for String {
             SearchParamsSortField::Downloads => "downloads".to_string(),
             SearchParamsSortField::LikesAndStars => "likes_and_stars".to_string(),
             SearchParamsSortField::FollowsAndWatchers => "follows_and_watchers".to_string()
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CommonProjectSearchResult {
+    pub date_created: OffsetDateTime,
+    pub date_updated: OffsetDateTime,
+    pub downloads: i32,
+    pub likes_and_stars: i32,
+    pub follows_and_watchers: i32,
+
+    pub project: CommonProject,
+
+    pub source_repository_host: Option<String>,
+    pub source_repository_owner: Option<String>,
+    pub source_repository_name: Option<String>
+}
+
+impl From<CommonProjectSearchResultEntity> for CommonProjectSearchResult {
+    fn from(entity: CommonProjectSearchResultEntity) -> Self {
+        CommonProjectSearchResult {
+            date_created: entity.date_created,
+            date_updated: entity.date_updated,
+            downloads: entity.downloads,
+            likes_and_stars: entity.likes_and_stars,
+            follows_and_watchers: entity.follows_and_watchers,
+
+            project: CommonProject {
+                id: entity.id,
+
+                spigot_id: entity.spigot_id,
+                spigot_slug: entity.spigot_slug,
+                spigot_name: entity.spigot_name,
+                spigot_description: entity.spigot_description,
+                spigot_author: entity.spigot_author,
+                spigot_version: entity.spigot_version,
+                spigot_premium: entity.spigot_premium,
+
+                modrinth_id: entity.modrinth_id,
+                modrinth_slug: entity.modrinth_slug,
+                modrinth_name: entity.modrinth_name,
+                modrinth_description: entity.modrinth_description,
+                modrinth_author: entity.modrinth_author,
+                modrinth_version: entity.modrinth_version,
+
+                hangar_slug: entity.hangar_slug,
+                hangar_name: entity.hangar_name,
+                hangar_description: entity.hangar_description,
+                hangar_author: entity.hangar_author,
+                hangar_version: entity.hangar_version,
+            },
+
+            source_repository_host: entity.source_repository_host,
+            source_repository_owner: entity.source_repository_owner,
+            source_repository_name: entity.source_repository_name
         }
     }
 }
@@ -235,7 +268,7 @@ pub async fn upsert_common_project(db_pool: &Pool, project: &CommonProject) -> R
     level = "info",
     skip(db_pool)
 )]
-pub async fn search_common_projects(db_pool: &Pool, params: &SearchParams) -> Result<Vec<CommonProject>> {
+pub async fn search_common_projects(db_pool: &Pool, params: &SearchParams) -> Result<Vec<CommonProjectSearchResult>> {
     let db_client = db_pool.get().await?;
 
     let entities = common_project::search_common_projects()
@@ -267,6 +300,7 @@ mod test {
     use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
     use crate::database::hangar::project::test::{populate_test_hangar_project, populate_test_hangar_projects};
 
+    use crate::database::modrinth;
     use crate::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
     use crate::database::modrinth::project::test::{populate_test_modrinth_project, populate_test_modrinth_projects};
 
@@ -320,7 +354,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource2);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource2);
         assert_modrinth_fields_are_none(merged_project);
@@ -349,7 +382,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(merged_project);
@@ -365,7 +397,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(inserted_project);
@@ -387,7 +418,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(updated_project);
@@ -416,7 +446,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
 
         assert_spigot_fields_are_none(merged_project);
         assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
@@ -432,7 +461,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
 
         assert_spigot_fields_are_none(inserted_project);
         assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
@@ -454,7 +482,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
 
         assert_spigot_fields_are_none(updated_project);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -483,7 +510,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_none(merged_project);
         assert_modrinth_fields_are_none(merged_project);
@@ -499,7 +525,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_none(inserted_project);
         assert_modrinth_fields_are_none(inserted_project);
@@ -521,7 +546,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_none(updated_project);
         assert_modrinth_fields_are_none(updated_project);
@@ -551,8 +575,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
@@ -568,8 +590,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
@@ -596,8 +616,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -627,8 +645,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
-        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(merged_project);
@@ -644,8 +660,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
-        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(inserted_project);
@@ -672,8 +686,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_none(updated_project);
@@ -703,8 +715,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_none(merged_project);
         assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
@@ -720,8 +730,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_none(inserted_project);
         assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
@@ -748,8 +756,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_none(updated_project);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -780,9 +786,6 @@ mod test {
 
         let merged_project = &merged_projects[0];
         assert_that(&merged_project.id).is_none();
-        assert_dates_are_equal_to_spigot_resource(merged_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(merged_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(merged_project, &hangar_project);
 
         assert_spigot_fields_are_equal(merged_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(merged_project, &modrinth_project);
@@ -798,9 +801,6 @@ mod test {
 
         let inserted_project = &inserted_projects[0];
         assert_that(&inserted_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(inserted_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(inserted_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(inserted_project, &hangar_project);
 
         assert_spigot_fields_are_equal(inserted_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(inserted_project, &modrinth_project);
@@ -832,9 +832,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -873,7 +870,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -911,7 +907,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
@@ -949,7 +944,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
@@ -987,7 +981,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_modrinth_project(updated_project, &modrinth_project);
 
         assert_modrinth_fields_are_equal(updated_project, &modrinth_project);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
@@ -1025,7 +1018,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_hangar_project(updated_project, &hangar_project);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
@@ -1063,7 +1055,6 @@ mod test {
 
         let updated_project = &updated_projects[0];
         assert_that(&updated_project.id).is_some();
-        assert_dates_are_equal_to_spigot_resource(updated_project, &spigot_resource);
 
         assert_spigot_fields_are_equal(updated_project, &spigot_author, &spigot_resource);
         assert_hangar_fields_are_equal(updated_project, &hangar_project);
@@ -1092,7 +1083,7 @@ mod test {
 
         // Act 1 - Search by name
         let params = SearchParams {
-            query: "foo-spigot".to_string(),
+            query: "foo".to_string(),
             spigot: true,
             name: true,
             ..Default::default()
@@ -1102,11 +1093,12 @@ mod test {
         // Assert 1 - Verify search by name
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_spigot_resource(&search_results[0], &spigot_resources[0]);
-        assert_spigot_fields_are_equal(&search_results[0], &spigot_authors[0], &spigot_resources[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
 
         // Act 2 - Search by description
         let params = SearchParams {
-            query: "foo-spigot-description".to_string(),
+            query: "foo".to_string(),
             spigot: true,
             description: true,
             ..Default::default()
@@ -1116,7 +1108,8 @@ mod test {
         // Assert 2 - Verify search by description
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_spigot_resource(&search_results[0], &spigot_resources[0]);
-        assert_spigot_fields_are_equal(&search_results[0], &spigot_authors[0], &spigot_resources[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
 
         // Act 3 - Search by author
         let params = SearchParams {
@@ -1130,7 +1123,8 @@ mod test {
         // Assert 3 - Verify search by author
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_spigot_resource(&search_results[0], &spigot_resources[0]);
-        assert_spigot_fields_are_equal(&search_results[0], &spigot_authors[0], &spigot_resources[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
 
         // Teardown
         context.drop().await?;
@@ -1156,7 +1150,7 @@ mod test {
 
         // Act 1 - Search by name
         let params = SearchParams {
-            query: "foo-modrinth".to_string(),
+            query: "foo".to_string(),
             modrinth: true,
             name: true,
             ..Default::default()
@@ -1166,11 +1160,12 @@ mod test {
         // Assert 1 - Verify search by name
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
-        assert_modrinth_fields_are_equal(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), None);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
 
         // Act 2 - Search by description
         let params = SearchParams {
-            query: "foo-modrinth-description".to_string(),
+            query: "foo".to_string(),
             modrinth: true,
             description: true,
             ..Default::default()
@@ -1180,7 +1175,8 @@ mod test {
         // Assert 2 - Verify search by description
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
-        assert_modrinth_fields_are_equal(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), None);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
 
         // Act 3 - Search by author
         let params = SearchParams {
@@ -1194,7 +1190,8 @@ mod test {
         // Assert 3 - Verify search by author
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
-        assert_modrinth_fields_are_equal(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), None);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
 
         // Teardown
         context.drop().await?;
@@ -1220,7 +1217,7 @@ mod test {
 
         // Act 1 - Search by name
         let params = SearchParams {
-            query: "foo-hangar".to_string(),
+            query: "foo".to_string(),
             hangar: true,
             name: true,
             ..Default::default()
@@ -1230,11 +1227,12 @@ mod test {
         // Assert 1 - Verify search by name
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
-        assert_hangar_fields_are_equal(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, None, Some(&hangar_projects[0]));
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
 
         // Act 2 - Search by description
         let params = SearchParams {
-            query: "foo-hangar-description".to_string(),
+            query: "foo".to_string(),
             hangar: true,
             description: true,
             ..Default::default()
@@ -1244,7 +1242,8 @@ mod test {
         // Assert 2 - Verify search by description
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
-        assert_hangar_fields_are_equal(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, None, Some(&hangar_projects[0]));
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
 
         // Act 3 - Search by author
         let params = SearchParams {
@@ -1258,7 +1257,8 @@ mod test {
         // Assert 3 - Verify search by author
         assert_that(&search_results).has_length(1);
         assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
-        assert_hangar_fields_are_equal(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, None, Some(&hangar_projects[0]));
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
 
         // Teardown
         context.drop().await?;
@@ -1268,7 +1268,305 @@ mod test {
 
     #[tokio::test]
     #[named]
-    async fn should_search_with_results_in_correct_order() -> Result<()> {
+    async fn should_search_spigot_resources_and_modrinth_projects() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_authors, spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
+        let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
+
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        for merged_project in merged_projects {
+            upsert_common_project(&context.pool, &merged_project).await?;
+        }
+
+        // Act 1 - Search by name
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            modrinth: true,
+            name: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 1 - Verify search by name
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+
+        // Act 2 - Search by description
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            modrinth: true,
+            description: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 2 - Verify search by description
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+
+        // Act 3 - Search by author
+        let params = SearchParams {
+            query: "alice".to_string(),
+            spigot: true,
+            modrinth: true,
+            author: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify search by author
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_modrinth_project(&search_results[0], &modrinth_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), None);
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_search_spigot_resources_and_hangar_projects() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_authors, spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let _modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
+        let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
+
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        for merged_project in merged_projects {
+            upsert_common_project(&context.pool, &merged_project).await?;
+        }
+
+        // Act 1 - Search by name
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            hangar: true,
+            name: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 1 - Verify search by name
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 2 - Search by description
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            hangar: true,
+            description: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 2 - Verify search by description
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 3 - Search by author
+        let params = SearchParams {
+            query: "alice".to_string(),
+            spigot: true,
+            hangar: true,
+            author: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify search by author
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), None, Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_search_modrinth_projects_and_hangar_projects() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (_spigot_authors, _spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
+        let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
+
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        for merged_project in merged_projects {
+            upsert_common_project(&context.pool, &merged_project).await?;
+        }
+
+        // Act 1 - Search by name
+        let params = SearchParams {
+            query: "foo".to_string(),
+            modrinth: true,
+            hangar: true,
+            name: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 1 - Verify search by name
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 2 - Search by description
+        let params = SearchParams {
+            query: "foo".to_string(),
+            modrinth: true,
+            hangar: true,
+            description: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 2 - Verify search by description
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 3 - Search by author
+        let params = SearchParams {
+            query: "alice".to_string(),
+            modrinth: true,
+            hangar: true,
+            author: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify search by author
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], None, Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_search_all_resources_and_projects() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let (spigot_authors, spigot_resources) = populate_test_spigot_authors_and_resources(&context.pool).await?;
+        let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
+        let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
+
+        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
+        for merged_project in merged_projects {
+            upsert_common_project(&context.pool, &merged_project).await?;
+        }
+
+        // Act 1 - Search by name
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            modrinth: true,
+            hangar: true,
+            name: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 1 - Verify search by name
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 2 - Search by description
+        let params = SearchParams {
+            query: "foo".to_string(),
+            spigot: true,
+            modrinth: true,
+            hangar: true,
+            description: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 2 - Verify search by description
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Act 3 - Search by author
+        let params = SearchParams {
+            query: "alice".to_string(),
+            spigot: true,
+            modrinth: true,
+            hangar: true,
+            author: true,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify search by author
+        assert_that(&search_results).has_length(1);
+        assert_dates_are_equal_to_hangar_project(&search_results[0], &hangar_projects[0]);
+        assert_stats_are_equal_to_projects(&search_results[0], Some(&spigot_resources[0]), Some(&modrinth_projects[0]), Some(&hangar_projects[0]));
+        assert_spigot_fields_are_equal(&search_results[0].project, &spigot_authors[0], &spigot_resources[0]);
+        assert_modrinth_fields_are_equal(&search_results[0].project, &modrinth_projects[0]);
+        assert_hangar_fields_are_equal(&search_results[0].project, &hangar_projects[0]);
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_return_search_results_in_correct_order() -> Result<()> {
         // Setup
         let context = DatabaseTestContext::new(function_name!()).await;
 
@@ -1291,9 +1589,9 @@ mod test {
 
         // Assert 1 - Verify results are in date_created order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("baz".to_string());
-        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("bar".to_string());
-        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("foo".to_string());
+        assert_that(&search_results[0].date_created).is_equal_to(datetime!(2022-01-03 0:00 UTC));
+        assert_that(&search_results[1].date_created).is_equal_to(datetime!(2022-01-02 0:00 UTC));
+        assert_that(&search_results[2].date_created).is_equal_to(datetime!(2022-01-01 0:00 UTC));
 
         // Act 2 - Sort by date_updated order
         let params = SearchParams {
@@ -1306,9 +1604,9 @@ mod test {
 
         // Assert 2 - Verify results are in date_updated order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("foo".to_string());
-        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("bar".to_string());
-        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("baz".to_string());
+        assert_that(&search_results[0].date_updated).is_equal_to(datetime!(2022-02-03 0:00 UTC));
+        assert_that(&search_results[1].date_updated).is_equal_to(datetime!(2022-02-02 0:00 UTC));
+        assert_that(&search_results[2].date_updated).is_equal_to(datetime!(2022-02-01 0:00 UTC));
 
         // Act 3 - Sort by downloads order
         let params = SearchParams {
@@ -1321,9 +1619,9 @@ mod test {
 
         // Assert 3 - Verify results are in downloads order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("bar".to_string());
-        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("baz".to_string());
-        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("foo".to_string());
+        assert_that(&search_results[0].downloads).is_equal_to(300);
+        assert_that(&search_results[1].downloads).is_equal_to(200);
+        assert_that(&search_results[2].downloads).is_equal_to(100);
 
         // Act 4 - Sort by likes and stars order
         let params = SearchParams {
@@ -1336,9 +1634,9 @@ mod test {
 
         // Assert 4 - Verify results are in likes and stars order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("baz".to_string());
-        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("foo".to_string());
-        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("bar".to_string());
+        assert_that(&search_results[0].likes_and_stars).is_equal_to(300);
+        assert_that(&search_results[1].likes_and_stars).is_equal_to(200);
+        assert_that(&search_results[2].likes_and_stars).is_equal_to(100);
 
         // Act 5 - Sort by follows and watchers order
         let params = SearchParams {
@@ -1351,9 +1649,9 @@ mod test {
 
         // Assert 5 - Verify results are in follows and watchers order
         assert_that(&search_results).has_length(3);
-        assert_that(&search_results[0].hangar_slug).is_some().is_equal_to("bar".to_string());
-        assert_that(&search_results[1].hangar_slug).is_some().is_equal_to("foo".to_string());
-        assert_that(&search_results[2].hangar_slug).is_some().is_equal_to("baz".to_string());
+        assert_that(&search_results[0].follows_and_watchers).is_equal_to(300);
+        assert_that(&search_results[1].follows_and_watchers).is_equal_to(200);
+        assert_that(&search_results[2].follows_and_watchers).is_equal_to(100);
 
         // Teardown
         context.drop().await?;
@@ -1361,19 +1659,45 @@ mod test {
         Ok(())
     }
 
-    fn assert_dates_are_equal_to_spigot_resource(common_project: &CommonProject, spigot_resource: &SpigotResource) {
-        assert_that(&common_project.date_created).is_equal_to(spigot_resource.date_created);
-        assert_that(&common_project.date_updated).is_equal_to(spigot_resource.date_updated);
+    fn assert_dates_are_equal_to_spigot_resource(search_result: &CommonProjectSearchResult, spigot_resource: &SpigotResource) {
+        assert_that(&search_result.date_created).is_equal_to(spigot_resource.date_created);
+        assert_that(&search_result.date_updated).is_equal_to(spigot_resource.date_updated);
     }
 
-    fn assert_dates_are_equal_to_modrinth_project(common_project: &CommonProject, modrinth_project: &ModrinthProject) {
-        assert_that(&common_project.date_created).is_equal_to(modrinth_project.date_created);
-        assert_that(&common_project.date_updated).is_equal_to(modrinth_project.date_updated);
+    fn assert_dates_are_equal_to_modrinth_project(search_result: &CommonProjectSearchResult, modrinth_project: &ModrinthProject) {
+        assert_that(&search_result.date_created).is_equal_to(modrinth_project.date_created);
+        assert_that(&search_result.date_updated).is_equal_to(modrinth_project.date_updated);
     }
 
-    fn assert_dates_are_equal_to_hangar_project(common_project: &CommonProject, hangar_project: &HangarProject) {
-        assert_that(&common_project.date_created).is_equal_to(hangar_project.date_created);
-        assert_that(&common_project.date_updated).is_equal_to(hangar_project.date_updated);
+    fn assert_dates_are_equal_to_hangar_project(search_result: &CommonProjectSearchResult, hangar_project: &HangarProject) {
+        assert_that(&search_result.date_created).is_equal_to(hangar_project.date_created);
+        assert_that(&search_result.date_updated).is_equal_to(hangar_project.date_updated);
+    }
+
+    fn assert_stats_are_equal_to_projects(search_result: &CommonProjectSearchResult, spigot_resource: Option<&SpigotResource>, modrinth_project: Option<&ModrinthProject>, hangar_project: Option<&HangarProject>) {
+        let mut expected_downloads = 0;
+        let mut expected_likes_and_stars = 0;
+        let mut expected_follows_and_watchers = 0;
+
+        if let Some(resource) = spigot_resource {
+            expected_downloads += resource.downloads;
+            expected_likes_and_stars += resource.likes;
+        }
+
+        if let Some(project) = modrinth_project {
+            expected_downloads += project.downloads;
+            expected_follows_and_watchers += project.follows;
+        }
+
+        if let Some(project) = hangar_project {
+            expected_downloads += project.downloads;
+            expected_likes_and_stars += project.stars;
+            expected_follows_and_watchers += project.watchers;
+        }
+
+        assert_that(&search_result.downloads).is_equal_to(expected_downloads);
+        assert_that(&search_result.likes_and_stars).is_equal_to(expected_likes_and_stars);
+        assert_that(&search_result.follows_and_watchers).is_equal_to(expected_follows_and_watchers);
     }
 
     fn assert_spigot_fields_are_equal(common_project: &CommonProject, spigot_author: &SpigotAuthor, spigot_resource: &SpigotResource) {

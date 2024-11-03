@@ -226,7 +226,7 @@ pub mod test {
         let latest_update_date = get_latest_modrinth_project_update_date(&context.pool).await?;
 
         // Assert
-        assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));
+        assert_that(&latest_update_date).is_equal_to(datetime!(2021-02-03 0:00 UTC));
 
         // Teardown
         context.drop().await?;
@@ -256,8 +256,8 @@ pub mod test {
                 name: "foo-modrinth".to_string(),
                 description: "foo-modrinth-description".to_string(),
                 author: "alice".to_string(),
-                date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2023-01-01 0:00 UTC),
+                date_created: datetime!(2021-01-01 0:00 UTC),
+                date_updated: datetime!(2021-02-03 0:00 UTC),
                 downloads: 100,
                 follows: 200,
                 version_id: Some("aaaa1111".to_string()),
@@ -275,8 +275,8 @@ pub mod test {
                 name: "bar-modrinth".to_string(),
                 description: "bar-modrinth-description".to_string(),
                 author: "bob".to_string(),
-                date_created: datetime!(2020-01-02 0:00 UTC),
-                date_updated: datetime!(2022-01-01 0:00 UTC),
+                date_created: datetime!(2021-01-02 0:00 UTC),
+                date_updated: datetime!(2021-02-02 0:00 UTC),
                 downloads: 300,
                 follows: 300,
                 version_id: Some("bbbb1111".to_string()),
@@ -294,8 +294,8 @@ pub mod test {
                 name: "baz-modrinth".to_string(),
                 description: "baz-modrinth-description".to_string(),
                 author: "eve".to_string(),
-                date_created: datetime!(2020-01-03 0:00 UTC),
-                date_updated: datetime!(2021-01-01 0:00 UTC),
+                date_created: datetime!(2021-01-03 0:00 UTC),
+                date_updated: datetime!(2021-02-01 0:00 UTC),
                 downloads: 200,
                 follows: 100,
                 version_id: Some("cccc1111".to_string()),

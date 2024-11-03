@@ -9,7 +9,7 @@ use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebProject {
+pub struct WebSearchResult {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
@@ -43,7 +43,7 @@ pub struct WebProject {
     pub source_repository_name: Option<String>
 }
 
-impl WebProject {
+impl WebSearchResult {
     fn spigot_url(&self) -> Option<String> {
         Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
     }
@@ -66,40 +66,40 @@ impl WebProject {
 }
 
 #[cfg(feature = "ssr")]
-impl From<mc_plugin_finder::database::common::project::CommonProject> for WebProject {
-    fn from(project: mc_plugin_finder::database::common::project::CommonProject) -> Self {
-        WebProject {
-            id: project.id,
-            date_created: project.date_created,
-            date_updated: project.date_updated,
-            downloads: project.downloads,
-            likes_and_stars: project.likes_and_stars,
-            follows_and_watchers: project.follows_and_watchers,
+impl From<mc_plugin_finder::database::common::project::CommonProjectSearchResult> for WebSearchResult {
+    fn from(search_result: mc_plugin_finder::database::common::project::CommonProjectSearchResult) -> Self {
+        WebSearchResult {
+            id: search_result.project.id,
+            date_created: search_result.date_created,
+            date_updated: search_result.date_updated,
+            downloads: search_result.downloads,
+            likes_and_stars: search_result.likes_and_stars,
+            follows_and_watchers: search_result.follows_and_watchers,
 
-            spigot_id: project.spigot_id,
-            spigot_slug: project.spigot_slug,
-            spigot_name: project.spigot_name,
-            spigot_description: project.spigot_description,
-            spigot_author: project.spigot_author,
-            spigot_version: project.spigot_version,
-            spigot_premium: project.spigot_premium,
+            spigot_id: search_result.project.spigot_id,
+            spigot_slug: search_result.project.spigot_slug,
+            spigot_name: search_result.project.spigot_name,
+            spigot_description: search_result.project.spigot_description,
+            spigot_author: search_result.project.spigot_author,
+            spigot_version: search_result.project.spigot_version,
+            spigot_premium: search_result.project.spigot_premium,
 
-            modrinth_id: project.modrinth_id,
-            modrinth_slug: project.modrinth_slug,
-            modrinth_name: project.modrinth_name,
-            modrinth_description: project.modrinth_description,
-            modrinth_author: project.modrinth_author,
-            modrinth_version: project.modrinth_version,
+            modrinth_id: search_result.project.modrinth_id,
+            modrinth_slug: search_result.project.modrinth_slug,
+            modrinth_name: search_result.project.modrinth_name,
+            modrinth_description: search_result.project.modrinth_description,
+            modrinth_author: search_result.project.modrinth_author,
+            modrinth_version: search_result.project.modrinth_version,
 
-            hangar_slug: project.hangar_slug,
-            hangar_name: project.hangar_name,
-            hangar_description: project.hangar_description,
-            hangar_author: project.hangar_author,
-            hangar_version: project.hangar_version,
+            hangar_slug: search_result.project.hangar_slug,
+            hangar_name: search_result.project.hangar_name,
+            hangar_description: search_result.project.hangar_description,
+            hangar_author: search_result.project.hangar_author,
+            hangar_version: search_result.project.hangar_version,
 
-            source_repository_host: project.source_repository_host,
-            source_repository_owner: project.source_repository_owner,
-            source_repository_name: project.source_repository_name
+            source_repository_host: search_result.source_repository_host,
+            source_repository_owner: search_result.source_repository_owner,
+            source_repository_name: search_result.source_repository_name
         }
     }
 }
@@ -228,7 +228,7 @@ pub async fn search_action(params: WebSearchParams) -> Result<WebSearchParams, S
 }
 
 #[server(SearchProjects)]
-pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebProject>, ServerFnError> {
+pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchResult>, ServerFnError> {
     use self::ssr::*;
     use mc_plugin_finder::database::common::project::search_common_projects;
 
@@ -331,7 +331,7 @@ fn SearchForm(
 #[component]
 fn SearchResults(
     /// The resource that performs the search when the search form is submitted.
-    resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebProject>, ServerFnError>>
+    resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebSearchResult>, ServerFnError>>
 ) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <p>"Loading..."</p> }>
@@ -392,7 +392,7 @@ fn SearchResults(
 #[component]
 fn SearchRow(
     /// The project representing this row.
-    project: WebProject
+    project: WebSearchResult
 ) -> impl IntoView {
     let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
     let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();

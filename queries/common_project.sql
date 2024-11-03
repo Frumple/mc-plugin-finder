@@ -1,13 +1,9 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
+--: CommonProjectSearchResultEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
-  GREATEST(s.date_created, m.date_created, h.date_created) AS date_created,
-  GREATEST(s.date_updated, m.date_updated, h.date_updated) AS date_updated,
-  COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0) AS downloads,
-  COALESCE(s.likes, 0) + COALESCE(h.stars, 0) AS likes_and_stars,
-  COALESCE(m.follows, 0) + COALESCE(h.watchers, 0) AS follows_and_watchers,
 
   s.id AS spigot_id,
   s.slug AS spigot_slug,
@@ -28,11 +24,7 @@ SELECT
   h.name AS hangar_name,
   h.description AS hangar_description,
   h.author AS hangar_author,
-  h.version_name AS hangar_version,
-
-  COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
-  COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
-  COALESCE(s.source_repository_name, m.source_repository_name, h.source_repository_name) AS source_repository_name
+  h.version_name AS hangar_version
 FROM
   spigot_resource s
   INNER JOIN spigot_author a
@@ -61,16 +53,10 @@ WHERE
   GREATEST(s.date_updated, m.date_updated, h.date_updated) > :date_updated;
 
 --! upsert_common_project (id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
-INSERT INTO common_project (id, date_created, date_updated, downloads, likes_and_stars, follows_and_watchers, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
-  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :date_created, :date_updated, :downloads, :likes_and_stars, :follows_and_watchers, :spigot_id, :spigot_name, :spigot_description, :spigot_author, :modrinth_id, :modrinth_name, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_author)
+INSERT INTO common_project (id, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
+  VALUES (COALESCE(:id, nextval('common_project_id_seq')), :spigot_id, :spigot_name, :spigot_description, :spigot_author, :modrinth_id, :modrinth_name, :modrinth_description, :modrinth_author, :hangar_slug, :hangar_name, :hangar_description, :hangar_author)
   ON CONFLICT (id)
   DO UPDATE SET
-    date_created = EXCLUDED.date_created,
-    date_updated = EXCLUDED.date_updated,
-    downloads = EXCLUDED.downloads,
-    likes_and_stars = EXCLUDED.likes_and_stars,
-    follows_and_watchers = EXCLUDED.follows_and_watchers,
-
     spigot_id = EXCLUDED.spigot_id,
     spigot_name = EXCLUDED.spigot_name,
     spigot_description = EXCLUDED.spigot_description,
@@ -89,11 +75,6 @@ INSERT INTO common_project (id, date_created, date_updated, downloads, likes_and
 --! get_common_projects : CommonProjectEntity
 SELECT
   id,
-  date_created,
-  date_updated,
-  downloads,
-  likes_and_stars,
-  follows_and_watchers,
 
   spigot_id,
   NULL AS spigot_slug,
@@ -114,43 +95,88 @@ SELECT
   hangar_name,
   hangar_description,
   hangar_author,
-  NULL AS hangar_version,
-
-  NULL AS source_repository_host,
-  NULL AS source_repository_owner,
-  NULL AS source_repository_name
+  NULL AS hangar_version
 FROM
   common_project;
 
---! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field) : CommonProjectEntity
+--! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field) : CommonProjectSearchResultEntity
 SELECT
   c.id,
-  c.date_created,
-  c.date_updated,
-  c.downloads,
-  c.likes_and_stars,
-  c.follows_and_watchers,
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_created, m.date_created)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_created, h.date_created)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.date_created, h.date_created)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.date_created
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.date_created
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_created
+       ELSE timestamptz '-infinity'
+  END
+  AS date_created,
 
-  c.spigot_id,
-  s.slug AS spigot_slug,
-  c.spigot_name,
-  c.spigot_description,
-  c.spigot_author,
-  s.version_name AS spigot_version,
-  s.premium AS spigot_premium,
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_updated, m.date_updated, h.date_updated)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_updated, m.date_updated)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_updated, h.date_updated)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.date_updated, h.date_updated)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.date_updated
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.date_updated
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_updated
+       ELSE timestamptz '-infinity'
+  END
+  AS date_updated,
 
-  c.modrinth_id,
-  m.slug AS modrinth_slug,
-  c.modrinth_name,
-  c.modrinth_description,
-  c.modrinth_author,
-  m.version_name AS modrinth_version,
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(h.downloads, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(s.downloads, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.downloads, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.downloads, 0)
+       ELSE 0
+  END
+  AS downloads,
 
-  c.hangar_slug,
-  c.hangar_name,
-  c.hangar_description,
-  c.hangar_author,
-  h.version_name AS hangar_version,
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN 0
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
+       ELSE 0
+  END
+  AS likes_and_stars,
+
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN 0
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
+       ELSE 0
+  END
+  AS follows_and_watchers,
+
+  (CASE WHEN :spigot IS TRUE THEN c.spigot_id ELSE NULL END) AS spigot_id,
+  (CASE WHEN :spigot IS TRUE THEN s.slug ELSE NULL END) AS spigot_slug,
+  (CASE WHEN :spigot IS TRUE THEN c.spigot_name ELSE NULL END) AS spigot_name,
+  (CASE WHEN :spigot IS TRUE THEN c.spigot_description ELSE NULL END) AS spigot_description,
+  (CASE WHEN :spigot IS TRUE THEN c.spigot_author ELSE NULL END) AS spigot_author,
+  (CASE WHEN :spigot IS TRUE THEN s.version_name ELSE NULL END) AS spigot_version,
+  (CASE WHEN :spigot IS TRUE THEN s.premium ELSE NULL END) AS spigot_premium,
+
+  (CASE WHEN :modrinth IS TRUE THEN c.modrinth_id ELSE NULL END) AS modrinth_id,
+  (CASE WHEN :modrinth IS TRUE THEN m.slug ELSE NULL END) AS modrinth_slug,
+  (CASE WHEN :modrinth IS TRUE THEN c.modrinth_name ELSE NULL END) AS modrinth_name,
+  (CASE WHEN :modrinth IS TRUE THEN c.modrinth_description ELSE NULL END) AS modrinth_description,
+  (CASE WHEN :modrinth IS TRUE THEN c.modrinth_author ELSE NULL END) AS modrinth_author,
+  (CASE WHEN :modrinth IS TRUE THEN m.version_name ELSE NULL END) AS modrinth_version,
+
+  (CASE WHEN :hangar IS TRUE THEN c.hangar_slug ELSE NULL END) AS hangar_slug,
+  (CASE WHEN :hangar IS TRUE THEN c.hangar_name ELSE NULL END) AS hangar_name,
+  (CASE WHEN :hangar IS TRUE THEN c.hangar_description ELSE NULL END) AS hangar_description,
+  (CASE WHEN :hangar IS TRUE THEN c.hangar_author ELSE NULL END) AS hangar_author,
+  (CASE WHEN :hangar IS TRUE THEN h.version_name ELSE NULL END) AS hangar_version,
 
   COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
   COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
@@ -227,9 +253,55 @@ WHERE
     ELSE FALSE
   END
 
-ORDER BY
-  (CASE WHEN :sort_field = 'date_created' THEN c.date_created END) DESC,
-  (CASE WHEN :sort_field = 'date_updated' THEN c.date_updated END) DESC,
-  (CASE WHEN :sort_field = 'downloads' THEN c.downloads END) DESC,
-  (CASE WHEN :sort_field = 'likes_and_stars' THEN c.likes_and_stars END) DESC,
-  (CASE WHEN :sort_field = 'follows_and_watchers' THEN c.follows_and_watchers END) DESC;
+  ORDER BY
+    CASE
+      WHEN :sort_field = 'date_created' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_created, m.date_created)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_created, h.date_created)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.date_created, h.date_created)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.date_created
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.date_created
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_created
+        END
+
+      WHEN :sort_field = 'date_updated' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_updated, m.date_updated, h.date_updated)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_updated, m.date_updated)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_updated, h.date_updated)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.date_updated, h.date_updated)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.date_updated
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.date_updated
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_updated
+        END
+    END DESC,
+    CASE
+      WHEN :sort_field = 'downloads' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(h.downloads, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(s.downloads, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.downloads, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.downloads, 0)
+        END
+      WHEN :sort_field = 'likes_and_stars' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN 0
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
+      END
+
+      WHEN :sort_field = 'follows_and_watchers' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN 0
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
+      END
+    END DESC;

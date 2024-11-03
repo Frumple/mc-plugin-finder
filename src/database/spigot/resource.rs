@@ -265,7 +265,7 @@ pub mod test {
         let latest_update_date = get_latest_spigot_resource_update_date(&context.pool).await?;
 
         // Assert
-        assert_that(&latest_update_date).is_equal_to(datetime!(2023-01-01 0:00 UTC));
+        assert_that(&latest_update_date).is_equal_to(datetime!(2020-02-03 0:00 UTC));
 
         // Teardown
         context.drop().await?;
@@ -300,7 +300,7 @@ pub mod test {
                 description: "foo-spigot-description".to_string(),
                 slug: "foo.1".to_string(),
                 date_created: datetime!(2020-01-01 0:00 UTC),
-                date_updated: datetime!(2023-01-01 0:00 UTC),
+                date_updated: datetime!(2020-02-03 0:00 UTC),
                 downloads: 100,
                 likes: 200,
                 author_id: 1,
@@ -319,7 +319,7 @@ pub mod test {
                 description: "bar-spigot-description".to_string(),
                 slug: "bar.2".to_string(),
                 date_created: datetime!(2020-01-02 0:00 UTC),
-                date_updated: datetime!(2022-01-01 0:00 UTC),
+                date_updated: datetime!(2020-02-02 0:00 UTC),
                 downloads: 300,
                 likes: 100,
                 author_id: 2,
@@ -338,7 +338,7 @@ pub mod test {
                 description: "baz-spigot-description".to_string(),
                 slug: "baz.3".to_string(),
                 date_created: datetime!(2020-01-03 0:00 UTC),
-                date_updated: datetime!(2021-01-01 0:00 UTC),
+                date_updated: datetime!(2020-02-01 0:00 UTC),
                 downloads: 200,
                 likes: 300,
                 author_id: 3,
