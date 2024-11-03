@@ -391,29 +391,29 @@ fn SearchResults(
 /// A single row in the search results.
 #[component]
 fn SearchRow(
-    /// The project representing this row.
-    project: WebSearchResult
+    /// The search result representing this row.
+    search_result: WebSearchResult
 ) -> impl IntoView {
     let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
     let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();
 
-    let date_created = project.date_created.format(&date_format);
-    let time_created = project.date_created.format(&time_format);
+    let date_created = search_result.date_created.format(&date_format);
+    let time_created = search_result.date_created.format(&time_format);
 
-    let date_updated = project.date_updated.format(&date_format);
-    let time_updated = project.date_updated.format(&time_format);
+    let date_updated = search_result.date_updated.format(&date_format);
+    let time_updated = search_result.date_updated.format(&time_format);
 
-    let has_spigot = project.spigot_name.is_some();
-    let has_modrinth = project.modrinth_name.is_some();
-    let has_hangar = project.hangar_name.is_some();
+    let has_spigot = search_result.spigot_name.is_some();
+    let has_modrinth = search_result.modrinth_name.is_some();
+    let has_hangar = search_result.hangar_name.is_some();
 
-    let spigot_url = project.spigot_url();
-    let modrinth_url = project.modrinth_url();
-    let hangar_url = project.hangar_url();
-    let source_repository_url = project.source_repository_url();
-    let source_repository_url_wbr = project.source_repository_url_wbr();
+    let spigot_url = search_result.spigot_url();
+    let modrinth_url = search_result.modrinth_url();
+    let hangar_url = search_result.hangar_url();
+    let source_repository_url = search_result.source_repository_url();
+    let source_repository_url_wbr = search_result.source_repository_url_wbr();
 
-    let is_spigot_premium = project.spigot_premium.unwrap_or_default();
+    let is_spigot_premium = search_result.spigot_premium.unwrap_or_default();
 
     view! {
         <li class="search-results__list-item">
@@ -428,15 +428,15 @@ fn SearchRow(
             </div>
 
             <div class="search-results__downloads-cell">
-                <span class="search-results__downloads">{project.downloads}</span>
+                <span class="search-results__downloads">{search_result.downloads}</span>
             </div>
 
             <div class="search-results__likes-and-stars-cell">
-                <span class="search-results__likes-and-stars">{project.likes_and_stars}</span>
+                <span class="search-results__likes-and-stars">{search_result.likes_and_stars}</span>
             </div>
 
             <div class="search-results__follows-and-watchers-cell">
-                <span class="search-results__follows-and-watchers">{project.follows_and_watchers}</span>
+                <span class="search-results__follows-and-watchers">{search_result.follows_and_watchers}</span>
             </div>
 
             <div class="search-results__spigot-cell">
@@ -449,57 +449,57 @@ fn SearchRow(
                         </span>
                     </Show>
                     <span class="search-results__plugin-name">
-                        <a href=spigot_url target="_blank">{project.spigot_name}</a>
+                        <a href=spigot_url target="_blank">{search_result.spigot_name}</a>
                     </span>
                     <Show when=move || { has_spigot }>
                         <span>"  "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{project.spigot_version}</span>
+                    <span class="search-results__plugin-version">{search_result.spigot_version}</span>
                     <Show when=move || { has_spigot }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{project.spigot_author}</span>
+                    <span class="search-results__plugin-author">{search_result.spigot_author}</span>
                 </div>
                 <div class="search-results__cell-description">
-                    {project.spigot_description}
+                    {search_result.spigot_description}
                 </div>
             </div>
 
             <div class="search-results__modrinth-cell">
                 <div class="search-results__cell-title">
                     <span class="search-results__plugin-name">
-                        <a href=modrinth_url target="_blank">{project.modrinth_name}</a>
+                        <a href=modrinth_url target="_blank">{search_result.modrinth_name}</a>
                     </span>
                     <Show when=move || { has_modrinth }>
                         <span>" "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{project.modrinth_version}</span>
+                    <span class="search-results__plugin-version">{search_result.modrinth_version}</span>
                     <Show when=move || { has_modrinth }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{project.modrinth_author}</span>
+                    <span class="search-results__plugin-author">{search_result.modrinth_author}</span>
                 </div>
                 <div class="search-results__cell-description">
-                    {project.modrinth_description}
+                    {search_result.modrinth_description}
                 </div>
             </div>
 
             <div class="search-results__hangar-cell">
                 <div class="search-results__cell-title">
                     <span class="search-results__plugin-name">
-                        <a href=hangar_url target="_blank">{project.hangar_name}</a>
+                        <a href=hangar_url target="_blank">{search_result.hangar_name}</a>
                     </span>
                     <Show when=move || { has_hangar }>
                         <span>" "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{project.hangar_version}</span>
+                    <span class="search-results__plugin-version">{search_result.hangar_version}</span>
                     <Show when=move || { has_hangar }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{project.hangar_author}</span>
+                    <span class="search-results__plugin-author">{search_result.hangar_author}</span>
                 </div>
                 <div class="search-results__cell-description">
-                    {project.hangar_description}
+                    {search_result.hangar_description}
                 </div>
             </div>
 
