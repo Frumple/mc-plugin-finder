@@ -308,18 +308,18 @@ fn SearchForm(
             <input id="name-checkbox" type="checkbox" name="params[name]" class="search-form__name-checkbox" value="true" checked />
             <label for="name-checkbox" class="search-form__name-label">Name</label>
 
-            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" checked />
+            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" />
             <label for="description-checkbox" class="search-form__description-label">Description</label>
 
-            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" checked />
+            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" />
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
             <span class="search-form__sort-text">Sort by:</span>
 
             <select name="params[sort_field]" class="search-form__sort-field">
                 <option value="date_created">Newest</option>
-                <option value="date_updated" selected>Recently Updated</option>
-                <option value="downloads">Downloads</option>
+                <option value="date_updated">Recently Updated</option>
+                <option value="downloads" selected>Downloads</option>
                 <option value="likes_and_stars">Likes + Stars</option>
                 <option value="follows_and_watchers">Follows + Watchers</option>
             </select>
@@ -352,7 +352,7 @@ fn SearchResults(
                                                 .into_iter()
                                                 .map(move |project| {
                                                     view! {
-                                                        <SearchRow project=project />
+                                                        <SearchRow search_result=project />
                                                     }
                                                 })
                                                 .collect_view()
