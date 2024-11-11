@@ -45,7 +45,8 @@ fn is_source_repository_host(host: &str) -> bool {
     matches!(host,
         "github.com" |
         "gitlab.com" |
-        "bitbucket.org"
+        "bitbucket.org" |
+        "codeberg.org"
     )
 }
 
