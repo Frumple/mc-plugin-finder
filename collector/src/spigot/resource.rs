@@ -14,7 +14,7 @@ use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::fmt::Debug;
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
@@ -22,11 +22,10 @@ use unicode_segmentation::UnicodeSegmentation;
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
-// TODO: Replace OnceLock with LazyCell when it stabilizes in std: https://github.com/rust-lang/rust/issues/109736
-static BRACKETS_REGEX: OnceLock<Regex> = OnceLock::new();
-static RESOURCE_NAME_REGEX: OnceLock<Regex> = OnceLock::new();
-static DISCOUNT_REGEX: OnceLock<Regex> = OnceLock::new();
-static SLUG_REGEX: OnceLock<Regex> = OnceLock::new();
+static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
+static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
+static DISCOUNT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"SALE|OFF").unwrap());
+static SLUG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
@@ -353,12 +352,12 @@ fn replace_emoji_with_separators(input: &str) -> String {
 }
 
 fn replace_brackets_and_bracket_contents_with_separators(input: &str) -> String {
-    let re = BRACKETS_REGEX.get_or_init(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
+    let re = &*BRACKETS_REGEX;
     re.replace_all(input, "|").into_owned()
 }
 
 fn remove_discount_text(input: &str) -> String {
-    let re = DISCOUNT_REGEX.get_or_init(|| Regex::new( r"SALE|OFF").unwrap());
+    let re = &*DISCOUNT_REGEX;
     re.replace_all(input, "").into_owned()
 }
 
@@ -393,13 +392,13 @@ fn remove_discount_text(input: &str) -> String {
             - "Economy++"
  */
 fn extract_resource_name(input: &str) -> Option<String> {
-    let re = RESOURCE_NAME_REGEX.get_or_init(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
+    let re = &*RESOURCE_NAME_REGEX;
     let mat = re.find(input)?;
     Some(mat.as_str().to_string())
 }
 
 fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
-    let re = SLUG_REGEX.get_or_init(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
+    let re = &*SLUG_REGEX;
     let caps = re.captures(url)?;
     Some(caps[1].to_string())
 }
