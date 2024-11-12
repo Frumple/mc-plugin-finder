@@ -11,7 +11,7 @@ body {
 .search-form {
 	display: grid;
 	grid-template:
-	  "query-input          query-input          query-input          query-input          query-input          search-button        search-button       " auto
+	  "query-input          query-input          query-input          query-input          query-input          query-input          query-input         " auto
 		"repository-text      spigot-checkbox      spigot-label         modrinth-checkbox    modrinth-label       hangar-checkbox      hangar-label        " auto
 		"fields-text          name-checkbox        name-label           description-checkbox description-label    author-checkbox      author-label        " auto
 		"sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container" auto
@@ -23,10 +23,6 @@ body {
 
 .search-form__query-input {
   grid-area: query-input;
-}
-
-.search-form__search-button {
-  grid-area: search-button;
 }
 
 .search-form__repository-text {

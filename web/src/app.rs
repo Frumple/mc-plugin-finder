@@ -291,34 +291,33 @@ fn SearchForm(
 ) -> impl IntoView {
     view! {
         <ActionForm action class="search-form">
-            <input type="text" name="params[query]" class="search-form__query-input" />
-            <input type="submit" value="Search" class="search-form__search-button" />
+            <input type="text" name="params[query]" class="search-form__query-input" oninput="this.form.requestSubmit()" />
 
             <span class="search-form__repository-text">Repository:</span>
 
-            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="search-form__spigot-checkbox" value="true" checked />
+            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="spigot-checkbox" class="search-form__spigot-label">Spigot</label>
 
-            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="search-form__modrinth-checkbox" value="true" checked />
+            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="search-form__modrinth-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="modrinth-checkbox" class="search-form__modrinth-label">Modrinth</label>
 
-            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="search-form__hangar-checkbox" value="true" checked />
+            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="hangar-checkbox" class="search-form__hangar-label">Hangar</label>
 
             <span class="search-form__fields-text">Fields:</span>
 
-            <input id="name-checkbox" type="checkbox" name="params[name]" class="search-form__name-checkbox" value="true" checked />
+            <input id="name-checkbox" type="checkbox" name="params[name]" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="name-checkbox" class="search-form__name-label">Name</label>
 
-            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" />
+            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" oninput="this.form.requestSubmit()" />
             <label for="description-checkbox" class="search-form__description-label">Description</label>
 
-            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" />
+            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" oninput="this.form.requestSubmit()" />
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
             <div class="search-form__sort-limit-container">
                 <label for="sort-select" class="search-form__sort-label">Sort by:</label>
-                <select id="sort-select" name="params[sort]" class="search-form__sort-select">
+                <select id="sort-select" name="params[sort]" class="search-form__sort-select" onchange="this.form.requestSubmit()">
                     <option value="date_created">Newest</option>
                     <option value="date_updated">Recently Updated</option>
                     <option value="downloads" selected>Downloads</option>
@@ -327,7 +326,7 @@ fn SearchForm(
                 </select>
 
                 <label for="limit-select" class="search-form__limit-label">Show per page:</label>
-                <select id="limit-select" name="params[limit]" class="search-form__limit-select">
+                <select id="limit-select" name="params[limit]" class="search-form__limit-select" onchange="this.form.requestSubmit()">
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
