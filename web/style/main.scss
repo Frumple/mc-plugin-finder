@@ -11,18 +11,18 @@ body {
 .search-form {
 	display: grid;
 	grid-template:
-	  "query-field     query-field     query-field  query-field          query-field       search-button   search-button" auto
-		"repository-text spigot-checkbox spigot-label modrinth-checkbox    modrinth-label    hangar-checkbox hangar-label " auto
-		"fields-text     name-checkbox   name-label   description-checkbox description-label author-checkbox author-label " auto
-		"sort-text       sort-field      sort-field   sort-field           sort-field        sort-field      sort-field   " auto
+	  "query-input          query-input          query-input          query-input          query-input          search-button        search-button       " auto
+		"repository-text      spigot-checkbox      spigot-label         modrinth-checkbox    modrinth-label       hangar-checkbox      hangar-label        " auto
+		"fields-text          name-checkbox        name-label           description-checkbox description-label    author-checkbox      author-label        " auto
+		"sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container sort-limit-container" auto
 		/ auto auto auto auto auto auto auto;
   gap: 5px;
 	align-self: center;
 	text-align: left;
 }
 
-.search-form__query-field {
-  grid-area: query-field;
+.search-form__query-input {
+  grid-area: query-input;
 }
 
 .search-form__search-button {
@@ -85,13 +85,27 @@ body {
   grid-area: author-label;
 }
 
-.search-form__sort-text {
-	grid-area: sort-text;
+.search-form__sort-label {
+	grid-area: sort-label;
 }
 
-.search-form__sort-field {
-	grid-area: sort-field;
-	justify-self: left;
+.search-form__sort-limit-container {
+	grid-area: sort-limit-container;
+	display: flex;
+	justify-content: space-between;
+	gap: 5px;
+}
+
+.search-form__sort-select {
+
+}
+
+.search-form__limit-label {
+
+}
+
+.search-form__limit-select {
+
 }
 
 .search-results__container {

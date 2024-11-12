@@ -4,7 +4,7 @@
 #[allow(unused_imports)] #[allow(dead_code)] pub mod types { }#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub id: Option<i64>,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_description: Option<T2>,pub spigot_author: Option<T3>,pub modrinth_id: Option<T4>,pub modrinth_name: Option<T5>,pub modrinth_description: Option<T6>,pub modrinth_author: Option<T7>,pub hangar_slug: Option<T8>,pub hangar_name: Option<T9>,pub hangar_description: Option<T10>,pub hangar_author: Option<T11>,}#[derive( Debug)] pub struct SearchCommonProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub modrinth: bool,pub hangar: bool,pub name: bool,pub query: T1,pub description: bool,pub author: bool,pub sort_field: T2,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub id: Option<i64>,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_description: Option<T2>,pub spigot_author: Option<T3>,pub modrinth_id: Option<T4>,pub modrinth_name: Option<T5>,pub modrinth_description: Option<T6>,pub modrinth_author: Option<T7>,pub hangar_slug: Option<T8>,pub hangar_name: Option<T9>,pub hangar_description: Option<T10>,pub hangar_author: Option<T11>,}#[derive( Debug)] pub struct SearchCommonProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub modrinth: bool,pub hangar: bool,pub name: bool,pub query: T1,pub description: bool,pub author: bool,pub sort: T2,pub limit: i64,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
 { pub id : Option<i32>,pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,}
 impl<'a> From<CommonProjectEntityBorrowed<'a>> for CommonProjectEntity
 {
@@ -443,29 +443,31 @@ WHERE
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
       END
-    END DESC")) } pub struct
+    END DESC
+
+LIMIT $9")) } pub struct
 SearchCommonProjectsStmt(cornucopia_async::private::Stmt); impl SearchCommonProjectsStmt
 { pub fn bind<'a, C:
 GenericClient,T1:
 cornucopia_async::StringSql,T2:
 cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-spigot: &'a bool,modrinth: &'a bool,hangar: &'a bool,name: &'a bool,query: &'a T1,description: &'a bool,author: &'a bool,sort_field: &'a T2,) -> CommonProjectSearchResultEntityQuery<'a,C,
-CommonProjectSearchResultEntity, 8>
+spigot: &'a bool,modrinth: &'a bool,hangar: &'a bool,name: &'a bool,query: &'a T1,description: &'a bool,author: &'a bool,sort: &'a T2,limit: &'a i64,) -> CommonProjectSearchResultEntityQuery<'a,C,
+CommonProjectSearchResultEntity, 9>
 {
     CommonProjectSearchResultEntityQuery
     {
-        client, params: [spigot,modrinth,hangar,name,query,description,author,sort_field,], stmt: &mut self.0, extractor:
+        client, params: [spigot,modrinth,hangar,name,query,description,author,sort,limit,], stmt: &mut self.0, extractor:
         |row| { CommonProjectSearchResultEntityBorrowed { id: row.get(0),date_created: row.get(1),date_updated: row.get(2),downloads: row.get(3),likes_and_stars: row.get(4),follows_and_watchers: row.get(5),spigot_id: row.get(6),spigot_slug: row.get(7),spigot_name: row.get(8),spigot_description: row.get(9),spigot_author: row.get(10),spigot_version: row.get(11),spigot_premium: row.get(12),modrinth_id: row.get(13),modrinth_slug: row.get(14),modrinth_name: row.get(15),modrinth_description: row.get(16),modrinth_author: row.get(17),modrinth_version: row.get(18),hangar_slug: row.get(19),hangar_name: row.get(20),hangar_description: row.get(21),hangar_author: row.get(22),hangar_version: row.get(23),source_repository_host: row.get(24),source_repository_owner: row.get(25),source_repository_name: row.get(26),} }, mapper: |it| { <CommonProjectSearchResultEntity>::from(it) },
     }
 } }impl <'a, C: GenericClient,T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> cornucopia_async::Params<'a,
 SearchCommonProjectsParams<T1,T2,>, CommonProjectSearchResultEntityQuery<'a, C,
-CommonProjectSearchResultEntity, 8>, C> for SearchCommonProjectsStmt
+CommonProjectSearchResultEntity, 9>, C> for SearchCommonProjectsStmt
 {
     fn
     params(&'a mut self, client: &'a  C, params: &'a
     SearchCommonProjectsParams<T1,T2,>) -> CommonProjectSearchResultEntityQuery<'a, C,
-    CommonProjectSearchResultEntity, 8>
-    { self.bind(client, &params.spigot,&params.modrinth,&params.hangar,&params.name,&params.query,&params.description,&params.author,&params.sort_field,) }
+    CommonProjectSearchResultEntity, 9>
+    { self.bind(client, &params.spigot,&params.modrinth,&params.hangar,&params.name,&params.query,&params.description,&params.author,&params.sort,&params.limit,) }
 }}pub mod hangar_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub slug: T1,pub author: T2,pub name: T3,pub description: T4,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub downloads: i32,pub stars: i32,pub watchers: i32,pub visibility: T5,pub avatar_url: T6,pub version_name: Option<T7>,pub source_url: Option<T8>,pub source_repository_host: Option<T9>,pub source_repository_owner: Option<T10>,pub source_repository_name: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity
 { pub slug : String,pub author : String,pub name : String,pub description : String,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : String,pub avatar_url : String,pub version_name : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct HangarProjectEntityBorrowed<'a> { pub slug : &'a str,pub author : &'a str,pub name : &'a str,pub description : &'a str,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : &'a str,pub avatar_url : &'a str,pub version_name : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}

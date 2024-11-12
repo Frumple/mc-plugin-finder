@@ -86,7 +86,7 @@ impl From<CommonProjectEntity> for CommonProject {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SearchParams {
     pub query: String,
     pub spigot: bool,
@@ -95,7 +95,24 @@ pub struct SearchParams {
     pub name: bool,
     pub description: bool,
     pub author: bool,
-    pub sort_field: SearchParamsSortField,
+    pub sort: SearchParamsSort,
+    pub limit: i64
+}
+
+impl Default for SearchParams {
+    fn default() -> Self {
+        SearchParams {
+            query: String::default(),
+            spigot: bool::default(),
+            modrinth: bool::default(),
+            hangar: bool::default(),
+            name: bool::default(),
+            description: bool::default(),
+            author: bool::default(),
+            sort: SearchParamsSort::default(),
+            limit: 25
+        }
+    }
 }
 
 impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
@@ -109,29 +126,30 @@ impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
             name: params.name,
             description: params.description,
             author: params.author,
-            sort_field: params.sort_field.into()
+            sort: params.sort.into(),
+            limit: params.limit
         }
     }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub enum SearchParamsSortField {
+pub enum SearchParamsSort {
     DateCreated,
-    #[default]
     DateUpdated,
+    #[default]
     Downloads,
     LikesAndStars,
     FollowsAndWatchers,
 }
 
-impl From<SearchParamsSortField> for String {
-    fn from(sort_field: SearchParamsSortField) -> Self {
-        match sort_field {
-            SearchParamsSortField::DateCreated => "date_created".to_string(),
-            SearchParamsSortField::DateUpdated => "date_updated".to_string(),
-            SearchParamsSortField::Downloads => "downloads".to_string(),
-            SearchParamsSortField::LikesAndStars => "likes_and_stars".to_string(),
-            SearchParamsSortField::FollowsAndWatchers => "follows_and_watchers".to_string()
+impl From<SearchParamsSort> for String {
+    fn from(sort: SearchParamsSort) -> Self {
+        match sort {
+            SearchParamsSort::DateCreated => "date_created".to_string(),
+            SearchParamsSort::DateUpdated => "date_updated".to_string(),
+            SearchParamsSort::Downloads => "downloads".to_string(),
+            SearchParamsSort::LikesAndStars => "likes_and_stars".to_string(),
+            SearchParamsSort::FollowsAndWatchers => "follows_and_watchers".to_string()
         }
     }
 }
@@ -1582,7 +1600,7 @@ mod test {
         let params = SearchParams {
             hangar: true,
             name: true,
-            sort_field: SearchParamsSortField::DateCreated,
+            sort: SearchParamsSort::DateCreated,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
@@ -1597,7 +1615,7 @@ mod test {
         let params = SearchParams {
             hangar: true,
             name: true,
-            sort_field: SearchParamsSortField::DateUpdated,
+            sort: SearchParamsSort::DateUpdated,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
@@ -1612,7 +1630,7 @@ mod test {
         let params = SearchParams {
             hangar: true,
             name: true,
-            sort_field: SearchParamsSortField::Downloads,
+            sort: SearchParamsSort::Downloads,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
@@ -1627,7 +1645,7 @@ mod test {
         let params = SearchParams {
             hangar: true,
             name: true,
-            sort_field: SearchParamsSortField::LikesAndStars,
+            sort: SearchParamsSort::LikesAndStars,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
@@ -1642,7 +1660,7 @@ mod test {
         let params = SearchParams {
             hangar: true,
             name: true,
-            sort_field: SearchParamsSortField::FollowsAndWatchers,
+            sort: SearchParamsSort::FollowsAndWatchers,
             ..Default::default()
         };
         let search_results = search_common_projects(&context.pool, &params).await?;

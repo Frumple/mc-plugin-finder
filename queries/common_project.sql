@@ -99,7 +99,7 @@ SELECT
 FROM
   common_project;
 
---! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort_field) : CommonProjectSearchResultEntity
+--! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit) : CommonProjectSearchResultEntity
 SELECT
   c.id,
   CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
@@ -255,7 +255,7 @@ WHERE
 
   ORDER BY
     CASE
-      WHEN :sort_field = 'date_created' THEN
+      WHEN :sort = 'date_created' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_created, m.date_created)
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_created, h.date_created)
@@ -265,7 +265,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_created
         END
 
-      WHEN :sort_field = 'date_updated' THEN
+      WHEN :sort = 'date_updated' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_updated, m.date_updated, h.date_updated)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_updated, m.date_updated)
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.date_updated, h.date_updated)
@@ -276,7 +276,7 @@ WHERE
         END
     END DESC,
     CASE
-      WHEN :sort_field = 'downloads' THEN
+      WHEN :sort = 'downloads' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(h.downloads, 0)
@@ -285,7 +285,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.downloads, 0)
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.downloads, 0)
         END
-      WHEN :sort_field = 'likes_and_stars' THEN
+      WHEN :sort = 'likes_and_stars' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
@@ -295,7 +295,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
       END
 
-      WHEN :sort_field = 'follows_and_watchers' THEN
+      WHEN :sort = 'follows_and_watchers' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
@@ -304,4 +304,6 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
       END
-    END DESC;
+    END DESC
+
+LIMIT :limit;

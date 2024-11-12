@@ -119,7 +119,8 @@ pub struct WebSearchParams {
     pub description: bool,
     #[serde(default)]
     pub author: bool,
-    pub sort_field: WebSearchParamsSortField,
+    pub sort: WebSearchParamsSort,
+    pub limit: i64
 }
 
 #[cfg(feature = "ssr")]
@@ -133,23 +134,24 @@ impl From<WebSearchParams> for mc_plugin_finder::database::common::project::Sear
             name: params.name,
             description: params.description,
             author: params.author,
-            sort_field: params.sort_field.into()
+            sort: params.sort.into(),
+            limit: params.limit
         }
     }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum WebSearchParamsSortField {
+pub enum WebSearchParamsSort {
     DateCreated,
-    #[default]
     DateUpdated,
+    #[default]
     Downloads,
     LikesAndStars,
     FollowsAndWatchers,
 }
 
-impl FromStr for WebSearchParamsSortField {
+impl FromStr for WebSearchParamsSort {
     type Err = ();
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
@@ -165,14 +167,14 @@ impl FromStr for WebSearchParamsSortField {
 }
 
 #[cfg(feature = "ssr")]
-impl From<WebSearchParamsSortField> for mc_plugin_finder::database::common::project::SearchParamsSortField {
-    fn from(sort_field: WebSearchParamsSortField) -> Self {
+impl From<WebSearchParamsSort> for mc_plugin_finder::database::common::project::SearchParamsSort {
+    fn from(sort_field: WebSearchParamsSort) -> Self {
         match sort_field {
-            WebSearchParamsSortField::DateCreated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateCreated,
-            WebSearchParamsSortField::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSortField::DateUpdated,
-            WebSearchParamsSortField::Downloads => mc_plugin_finder::database::common::project::SearchParamsSortField::Downloads,
-            WebSearchParamsSortField::LikesAndStars => mc_plugin_finder::database::common::project::SearchParamsSortField::LikesAndStars,
-            WebSearchParamsSortField::FollowsAndWatchers => mc_plugin_finder::database::common::project::SearchParamsSortField::FollowsAndWatchers
+            WebSearchParamsSort::DateCreated => mc_plugin_finder::database::common::project::SearchParamsSort::DateCreated,
+            WebSearchParamsSort::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSort::DateUpdated,
+            WebSearchParamsSort::Downloads => mc_plugin_finder::database::common::project::SearchParamsSort::Downloads,
+            WebSearchParamsSort::LikesAndStars => mc_plugin_finder::database::common::project::SearchParamsSort::LikesAndStars,
+            WebSearchParamsSort::FollowsAndWatchers => mc_plugin_finder::database::common::project::SearchParamsSort::FollowsAndWatchers
         }
     }
 }
@@ -289,7 +291,7 @@ fn SearchForm(
 ) -> impl IntoView {
     view! {
         <ActionForm action class="search-form">
-            <input type="text" name="params[query]" class="search-form__query-field" />
+            <input type="text" name="params[query]" class="search-form__query-input" />
             <input type="submit" value="Search" class="search-form__search-button" />
 
             <span class="search-form__repository-text">Repository:</span>
@@ -314,15 +316,23 @@ fn SearchForm(
             <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" />
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
-            <span class="search-form__sort-text">Sort by:</span>
+            <div class="search-form__sort-limit-container">
+                <label for="sort-select" class="search-form__sort-label">Sort by:</label>
+                <select id="sort-select" name="params[sort]" class="search-form__sort-select">
+                    <option value="date_created">Newest</option>
+                    <option value="date_updated">Recently Updated</option>
+                    <option value="downloads" selected>Downloads</option>
+                    <option value="likes_and_stars">Likes + Stars</option>
+                    <option value="follows_and_watchers">Follows + Watchers</option>
+                </select>
 
-            <select name="params[sort_field]" class="search-form__sort-field">
-                <option value="date_created">Newest</option>
-                <option value="date_updated">Recently Updated</option>
-                <option value="downloads" selected>Downloads</option>
-                <option value="likes_and_stars">Likes + Stars</option>
-                <option value="follows_and_watchers">Follows + Watchers</option>
-            </select>
+                <label for="limit-select" class="search-form__limit-label">Show per page:</label>
+                <select id="limit-select" name="params[limit]" class="search-form__limit-select">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </ActionForm>
     }
 }
