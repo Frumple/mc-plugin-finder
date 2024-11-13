@@ -198,7 +198,31 @@ pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
+    // TODO: Move javascript to external file
     view! {
+        <Script>
+            "
+            const submitForm = (form) => {
+                form.requestSubmit()
+            }
+
+            const debounce = (callback, delay) => {
+                let timeoutId = null;
+
+                return (...args) => {
+                    window.clearTimeout(timeoutId);
+
+                    timeoutId = window.setTimeout(() => {
+                        callback(...args);
+                    }, delay);
+                };
+            }
+
+            const SUBMIT_FORM_DEBOUNCE_DELAY = 250;
+            const submitFormDebounce = debounce(submitForm, SUBMIT_FORM_DEBOUNCE_DELAY);
+            "
+        </Script>
+
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/web.css"/>
@@ -291,7 +315,7 @@ fn SearchForm(
 ) -> impl IntoView {
     view! {
         <ActionForm action class="search-form">
-            <input type="text" name="params[query]" class="search-form__query-input" oninput="this.form.requestSubmit()" />
+            <input type="text" name="params[query]" class="search-form__query-input" oninput="submitFormDebounce(this.form)" />
 
             <span class="search-form__repository-text">Repository:</span>
 
