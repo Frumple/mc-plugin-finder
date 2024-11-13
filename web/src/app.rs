@@ -104,7 +104,7 @@ impl From<mc_plugin_finder::database::common::project::CommonProjectSearchResult
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchParams {
     pub query: String,
     #[serde(default)]
@@ -121,6 +121,22 @@ pub struct WebSearchParams {
     pub author: bool,
     pub sort: WebSearchParamsSort,
     pub limit: i64
+}
+
+impl Default for WebSearchParams {
+    fn default() -> Self {
+        WebSearchParams {
+            query: String::default(),
+            spigot: bool::default(),
+            modrinth: bool::default(),
+            hangar: bool::default(),
+            name: bool::default(),
+            description: bool::default(),
+            author: bool::default(),
+            sort: WebSearchParamsSort::default(),
+            limit: 25
+        }
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -277,22 +293,21 @@ fn HomePage() -> impl IntoView {
             match value {
                 Some(result) => {
                     match result {
-                        Ok(params) => {
-                            // Return no results if the query is an empty string
-                            if params.query.is_empty() {
-                                Ok(vec![])
-
-                            // Otherwise, perform the search
-                            } else {
-                                search_projects(params).await
-                            }
-                        },
-                        // Pass on any server errors to the view
+                        Ok(params) => search_projects(params).await,
                         Err(err) => Err(err)
                     }
                 },
-                // TODO: Don't show "No projects were found" on first load.
-                None => Ok(vec![])
+                // When the page first loads, run a search based on initial settings
+                None => {
+                    let params = WebSearchParams {
+                        spigot: true,
+                        modrinth: true,
+                        hangar: true,
+                        name: true,
+                        ..Default::default()
+                    };
+                    search_projects(params).await
+                }
             }
         }
     );
