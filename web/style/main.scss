@@ -187,12 +187,14 @@ body {
 	@extend .search_results__stat-column;
 	display: flex;
 	flex-direction: column;
+	align-self: center;
 }
 
 .search-results__main-cell {
 	@extend .search_results__main-column;
 	display: flex;
 	flex-direction: column;
+	align-self: flex-start;
 }
 
 .search-results__created-cell {
@@ -249,6 +251,10 @@ body {
 
 .search-results__follows-and-watchers {
 
+}
+
+.search-results__cell-title {
+	margin-bottom: 5px;
 }
 
 .search-results__plugin-premium {
