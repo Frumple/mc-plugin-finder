@@ -318,7 +318,6 @@ mod test {
     use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
     use crate::database::hangar::project::test::{populate_test_hangar_project, populate_test_hangar_projects};
 
-    use crate::database::modrinth;
     use crate::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
     use crate::database::modrinth::project::test::{populate_test_modrinth_project, populate_test_modrinth_projects};
 

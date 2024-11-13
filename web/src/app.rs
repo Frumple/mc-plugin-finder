@@ -8,6 +8,9 @@ use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
+type SearchResourceParams = Option<Result<WebSearchParams, ServerFnError>>;
+type SearchResourceResults = Result<Vec<WebSearchResult>, ServerFnError>;
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
     pub id: Option<i32>,
@@ -379,7 +382,7 @@ fn SearchForm(
 #[component]
 fn SearchResults(
     /// The resource that performs the search when the search form is submitted.
-    resource: Resource<Option<Result<WebSearchParams, ServerFnError>>, Result<Vec<WebSearchResult>, ServerFnError>>
+    resource: Resource<SearchResourceParams, SearchResourceResults>
 ) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <p>"Loading..."</p> }>
