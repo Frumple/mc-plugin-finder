@@ -8,9 +8,6 @@ use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
-type SearchResourceParams = Option<Result<WebSearchParams, ServerFnError>>;
-type SearchResourceResults = Result<Vec<WebSearchResult>, ServerFnError>;
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
     pub id: Option<i32>,
@@ -107,93 +104,32 @@ impl From<mc_plugin_finder::database::common::project::CommonProjectSearchResult
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
 pub struct WebSearchParams {
-    pub query: String,
-    #[serde(default)]
-    pub spigot: bool,
-    #[serde(default)]
-    pub modrinth: bool,
-    #[serde(default)]
-    pub hangar: bool,
-    #[serde(default)]
-    pub name: bool,
-    #[serde(default)]
-    pub description: bool,
-    #[serde(default)]
-    pub author: bool,
-    pub sort: WebSearchParamsSort,
-    pub limit: i64
-}
-
-impl Default for WebSearchParams {
-    fn default() -> Self {
-        WebSearchParams {
-            query: String::default(),
-            spigot: bool::default(),
-            modrinth: bool::default(),
-            hangar: bool::default(),
-            name: bool::default(),
-            description: bool::default(),
-            author: bool::default(),
-            sort: WebSearchParamsSort::default(),
-            limit: 25
-        }
-    }
+    pub query: Option<String>,
+    pub spigot: Option<bool>,
+    pub modrinth: Option<bool>,
+    pub hangar: Option<bool>,
+    pub name: Option<bool>,
+    pub description: Option<bool>,
+    pub author: Option<bool>,
+    pub sort: Option<String>,
+    pub limit: Option<i64>
 }
 
 #[cfg(feature = "ssr")]
 impl From<WebSearchParams> for mc_plugin_finder::database::common::project::SearchParams {
     fn from(params: WebSearchParams) -> Self {
         mc_plugin_finder::database::common::project::SearchParams {
-            query: params.query,
-            spigot: params.spigot,
-            modrinth: params.modrinth,
-            hangar: params.hangar,
-            name: params.name,
-            description: params.description,
-            author: params.author,
-            sort: params.sort.into(),
-            limit: params.limit
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum WebSearchParamsSort {
-    DateCreated,
-    DateUpdated,
-    #[default]
-    Downloads,
-    LikesAndStars,
-    FollowsAndWatchers,
-}
-
-impl FromStr for WebSearchParamsSort {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input {
-            "date_created"         => Ok(Self::DateCreated),
-            "date_updated"         => Ok(Self::DateUpdated),
-            "downloads"            => Ok(Self::Downloads),
-            "likes_and_stars"      => Ok(Self::LikesAndStars),
-            "follows_and_watchers" => Ok(Self::FollowsAndWatchers),
-            _                      => Err(())
-        }
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<WebSearchParamsSort> for mc_plugin_finder::database::common::project::SearchParamsSort {
-    fn from(sort_field: WebSearchParamsSort) -> Self {
-        match sort_field {
-            WebSearchParamsSort::DateCreated => mc_plugin_finder::database::common::project::SearchParamsSort::DateCreated,
-            WebSearchParamsSort::DateUpdated => mc_plugin_finder::database::common::project::SearchParamsSort::DateUpdated,
-            WebSearchParamsSort::Downloads => mc_plugin_finder::database::common::project::SearchParamsSort::Downloads,
-            WebSearchParamsSort::LikesAndStars => mc_plugin_finder::database::common::project::SearchParamsSort::LikesAndStars,
-            WebSearchParamsSort::FollowsAndWatchers => mc_plugin_finder::database::common::project::SearchParamsSort::FollowsAndWatchers
+            query: params.query.unwrap_or_default(),
+            spigot: params.spigot.unwrap_or_default(),
+            modrinth: params.modrinth.unwrap_or_default(),
+            hangar: params.hangar.unwrap_or_default(),
+            name: params.name.unwrap_or_default(),
+            description: params.description.unwrap_or_default(),
+            author: params.author.unwrap_or_default(),
+            sort: mc_plugin_finder::database::common::project::SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
+            limit: params.limit.unwrap_or(25)
         }
     }
 }
@@ -267,11 +203,6 @@ pub fn App() -> impl IntoView {
     }
 }
 
-#[server(SearchAction)]
-pub async fn search_action(params: WebSearchParams) -> Result<WebSearchParams, ServerFnError> {
-    Ok(params)
-}
-
 #[server(SearchProjects)]
 pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchResult>, ServerFnError> {
     use self::ssr::*;
@@ -286,80 +217,65 @@ pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchRes
     }
 }
 
+async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> Result<Vec<WebSearchResult>, ServerFnError> {
+    match params_result {
+        Ok(params) => search_projects(params).await,
+        Err(error) => Err(ServerFnError::ServerError(error.to_string()))
+    }
+}
+
 #[component]
 fn HomePage() -> impl IntoView {
-    let action = create_server_action::<SearchAction>();
+    let params_memo = use_query::<WebSearchParams>();
+    let params_fn = move || params_memo();
 
     let resource = create_resource(
-        move || action.value().get(),
-        |value| async move {
-            match value {
-                Some(result) => {
-                    match result {
-                        Ok(params) => search_projects(params).await,
-                        Err(err) => Err(err)
-                    }
-                },
-                // When the page first loads, run a search based on initial settings
-                None => {
-                    let params = WebSearchParams {
-                        spigot: true,
-                        modrinth: true,
-                        hangar: true,
-                        name: true,
-                        ..Default::default()
-                    };
-                    search_projects(params).await
-                }
-            }
-        }
+        params_fn,
+        fetch_projects
     );
 
     view! {
         <h1>"MC Plugin Finder"</h1>
 
         <div class="home-page__container">
-            <SearchForm action=action />
-            <SearchResults resource=resource />
+            <SearchForm />
+            <SearchResults resource />
         </div>
     }
 }
 
 /// Provides controls for performing a search.
 #[component]
-fn SearchForm(
-    /// The action that is run when submitting this form.
-    action: Action<SearchAction, Result<WebSearchParams, ServerFnError>>
-) -> impl IntoView {
+fn SearchForm() -> impl IntoView {
     view! {
-        <ActionForm action class="search-form">
-            <input type="text" name="params[query]" class="search-form__query-input" oninput="submitFormDebounce(this.form)" />
+        <Form action="" class="search-form">
+            <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" />
 
             <span class="search-form__repository-text">Repository:</span>
 
-            <input id="spigot-checkbox" type="checkbox" name="params[spigot]" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="spigot-checkbox" type="checkbox" name="spigot" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="spigot-checkbox" class="search-form__spigot-label">Spigot</label>
 
-            <input id="modrinth-checkbox" type="checkbox" name="params[modrinth]" class="search-form__modrinth-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="modrinth-checkbox" type="checkbox" name="modrinth" class="search-form__modrinth-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="modrinth-checkbox" class="search-form__modrinth-label">Modrinth</label>
 
-            <input id="hangar-checkbox" type="checkbox" name="params[hangar]" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="hangar-checkbox" type="checkbox" name="hangar" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="hangar-checkbox" class="search-form__hangar-label">Hangar</label>
 
             <span class="search-form__fields-text">Fields:</span>
 
-            <input id="name-checkbox" type="checkbox" name="params[name]" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="name-checkbox" type="checkbox" name="name" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
             <label for="name-checkbox" class="search-form__name-label">Name</label>
 
-            <input id="description-checkbox" type="checkbox" name="params[description]" class="search-form__description-checkbox" value="true" oninput="this.form.requestSubmit()" />
+            <input id="description-checkbox" type="checkbox" name="description" class="search-form__description-checkbox" value="true" oninput="this.form.requestSubmit()" />
             <label for="description-checkbox" class="search-form__description-label">Description</label>
 
-            <input id="author-checkbox" type="checkbox" name="params[author]" class="search-form__author-checkbox" value="true" oninput="this.form.requestSubmit()" />
+            <input id="author-checkbox" type="checkbox" name="author" class="search-form__author-checkbox" value="true" oninput="this.form.requestSubmit()" />
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
             <div class="search-form__sort-limit-container">
                 <label for="sort-select" class="search-form__sort-label">Sort by:</label>
-                <select id="sort-select" name="params[sort]" class="search-form__sort-select" onchange="this.form.requestSubmit()">
+                <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()">
                     <option value="date_created">Newest</option>
                     <option value="date_updated">Recently Updated</option>
                     <option value="downloads" selected>Downloads</option>
@@ -368,13 +284,13 @@ fn SearchForm(
                 </select>
 
                 <label for="limit-select" class="search-form__limit-label">Show per page:</label>
-                <select id="limit-select" name="params[limit]" class="search-form__limit-select" onchange="this.form.requestSubmit()">
+                <select id="limit-select" name="limit" class="search-form__limit-select" onchange="this.form.requestSubmit()">
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
             </div>
-        </ActionForm>
+        </Form>
     }
 }
 
@@ -382,7 +298,7 @@ fn SearchForm(
 #[component]
 fn SearchResults(
     /// The resource that performs the search when the search form is submitted.
-    resource: Resource<SearchResourceParams, SearchResourceResults>
+    resource: Resource<Result<WebSearchParams, ParamsError>, Result<Vec<WebSearchResult>, ServerFnError>>
 ) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <p>"Loading..."</p> }>

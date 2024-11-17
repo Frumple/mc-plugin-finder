@@ -3,6 +3,7 @@ use crate::database::cornucopia::queries::common_project::{self, CommonProjectEn
 use anyhow::Result;
 use cornucopia_async::Params;
 use deadpool_postgres::Pool;
+use std::str::FromStr;
 use thiserror::Error;
 use time::OffsetDateTime;
 use time::macros::datetime;
@@ -142,6 +143,7 @@ pub enum SearchParamsSort {
     FollowsAndWatchers,
 }
 
+// TODO: Re-implement this into a bidirection one-to-one String/Enum mapping
 impl From<SearchParamsSort> for String {
     fn from(sort: SearchParamsSort) -> Self {
         match sort {
@@ -150,6 +152,21 @@ impl From<SearchParamsSort> for String {
             SearchParamsSort::Downloads => "downloads".to_string(),
             SearchParamsSort::LikesAndStars => "likes_and_stars".to_string(),
             SearchParamsSort::FollowsAndWatchers => "follows_and_watchers".to_string()
+        }
+    }
+}
+
+impl FromStr for SearchParamsSort {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "date_created"         => Ok(Self::DateCreated),
+            "date_updated"         => Ok(Self::DateUpdated),
+            "downloads"            => Ok(Self::Downloads),
+            "likes_and_stars"      => Ok(Self::LikesAndStars),
+            "follows_and_watchers" => Ok(Self::FollowsAndWatchers),
+            _                      => Err(())
         }
     }
 }
