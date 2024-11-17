@@ -123,6 +123,30 @@ pub struct WebSearchParams {
 #[cfg(feature = "ssr")]
 impl From<WebSearchParams> for SearchParams {
     fn from(params: WebSearchParams) -> Self {
+        // If there are no query parameters (such as when first loading the page),
+        // perform a different default search that matches initial search settings.
+        if params.query.is_none() &&
+           params.spigot.is_none() &&
+           params.modrinth.is_none() &&
+           params.hangar.is_none() &&
+           params.name.is_none() &&
+           params.description.is_none() &&
+           params.author.is_none() &&
+           params.sort.is_none() &&
+           params.limit.is_none() {
+            return SearchParams {
+                query: "".to_string(),
+                spigot: true,
+                modrinth: true,
+                hangar: true,
+                name: true,
+                description: false,
+                author: false,
+                sort: SearchParamsSort::Downloads,
+                limit: 25
+            };
+        }
+
         SearchParams {
             query: params.query.unwrap_or_default(),
             spigot: params.spigot.unwrap_or_default(),
