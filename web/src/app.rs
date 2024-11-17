@@ -8,6 +8,9 @@ use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
+#[cfg(feature = "ssr")]
+use mc_plugin_finder::database::common::project::{CommonProjectSearchResult, SearchParams, SearchParamsSort};
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
     pub id: Option<i32>,
@@ -66,8 +69,8 @@ impl WebSearchResult {
 }
 
 #[cfg(feature = "ssr")]
-impl From<mc_plugin_finder::database::common::project::CommonProjectSearchResult> for WebSearchResult {
-    fn from(search_result: mc_plugin_finder::database::common::project::CommonProjectSearchResult) -> Self {
+impl From<CommonProjectSearchResult> for WebSearchResult {
+    fn from(search_result: CommonProjectSearchResult) -> Self {
         WebSearchResult {
             id: search_result.project.id,
             date_created: search_result.date_created,
@@ -118,9 +121,9 @@ pub struct WebSearchParams {
 }
 
 #[cfg(feature = "ssr")]
-impl From<WebSearchParams> for mc_plugin_finder::database::common::project::SearchParams {
+impl From<WebSearchParams> for SearchParams {
     fn from(params: WebSearchParams) -> Self {
-        mc_plugin_finder::database::common::project::SearchParams {
+        SearchParams {
             query: params.query.unwrap_or_default(),
             spigot: params.spigot.unwrap_or_default(),
             modrinth: params.modrinth.unwrap_or_default(),
@@ -128,7 +131,7 @@ impl From<WebSearchParams> for mc_plugin_finder::database::common::project::Sear
             name: params.name.unwrap_or_default(),
             description: params.description.unwrap_or_default(),
             author: params.author.unwrap_or_default(),
-            sort: mc_plugin_finder::database::common::project::SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
+            sort: SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
             limit: params.limit.unwrap_or(25)
         }
     }
