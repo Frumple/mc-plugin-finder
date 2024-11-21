@@ -4,12 +4,12 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Tables
 
 -- Spigot
-CREATE UNLOGGED TABLE IF NOT EXISTS spigot_author (
+CREATE TABLE IF NOT EXISTS spigot_author (
   id SERIAL PRIMARY KEY,
   name text NOT NULL
 );
 
-CREATE UNLOGGED TABLE IF NOT EXISTS spigot_resource (
+CREATE TABLE IF NOT EXISTS spigot_resource (
   id SERIAL PRIMARY KEY,
   name text NOT NULL,
   parsed_name text,
@@ -30,7 +30,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS spigot_resource (
 );
 
 -- Modrinth
-CREATE UNLOGGED TABLE IF NOT EXISTS modrinth_project (
+CREATE TABLE IF NOT EXISTS modrinth_project (
   id text PRIMARY KEY,
   slug text NOT NULL,
   name text NOT NULL,
@@ -51,7 +51,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS modrinth_project (
 );
 
 -- Hangar
-CREATE UNLOGGED TABLE IF NOT EXISTS hangar_project (
+CREATE TABLE IF NOT EXISTS hangar_project (
   slug text PRIMARY KEY,
   author text NOT NULL,
   name text NOT NULL,
@@ -71,7 +71,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS hangar_project (
 );
 
 -- Common
-CREATE UNLOGGED TABLE IF NOT EXISTS common_project (
+CREATE TABLE IF NOT EXISTS common_project (
   id SERIAL PRIMARY KEY,
   spigot_id integer REFERENCES spigot_resource,
   spigot_name text,
