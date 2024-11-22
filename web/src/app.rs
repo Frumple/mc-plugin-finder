@@ -117,7 +117,28 @@ pub struct WebSearchParams {
     pub description: Option<bool>,
     pub author: Option<bool>,
     pub sort: Option<String>,
-    pub limit: Option<i64>
+    pub limit: Option<i64>,
+    pub offset: Option<i64>
+}
+
+impl WebSearchParams {
+    fn form_url(&self) -> String {
+        "?".to_string() +
+        &serde_urlencoded::to_string(self).unwrap_or(
+            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&offset=0".to_string())
+    }
+
+    fn previous_url(&self) -> String {
+        let mut params = self.clone();
+        params.offset = Some(params.offset.unwrap_or_default() - params.limit.unwrap_or_default());
+        params.form_url()
+    }
+
+    fn next_url(&self) -> String {
+        let mut params = self.clone();
+        params.offset = Some(params.offset.unwrap_or_default() + params.limit.unwrap_or_default());
+        params.form_url()
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -133,7 +154,8 @@ impl From<WebSearchParams> for SearchParams {
            params.description.is_none() &&
            params.author.is_none() &&
            params.sort.is_none() &&
-           params.limit.is_none() {
+           params.limit.is_none() &&
+           params.offset.is_none() {
             return SearchParams {
                 query: "".to_string(),
                 spigot: true,
@@ -143,7 +165,8 @@ impl From<WebSearchParams> for SearchParams {
                 description: false,
                 author: false,
                 sort: SearchParamsSort::Downloads,
-                limit: 25
+                limit: 25,
+                offset: 0
             };
         }
 
@@ -156,7 +179,8 @@ impl From<WebSearchParams> for SearchParams {
             description: params.description.unwrap_or_default(),
             author: params.author.unwrap_or_default(),
             sort: SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
-            limit: params.limit.unwrap_or(25)
+            limit: params.limit.unwrap_or(25),
+            offset: params.offset.unwrap_or_default()
         }
     }
 }
@@ -254,10 +278,8 @@ async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> 
 #[component]
 fn HomePage() -> impl IntoView {
     let params_memo = use_query::<WebSearchParams>();
-    let params_fn = move || params_memo();
-
     let resource = create_resource(
-        params_fn,
+        params_memo,
         fetch_projects
     );
 
@@ -266,7 +288,7 @@ fn HomePage() -> impl IntoView {
 
         <div class="home-page__container">
             <SearchForm />
-            <SearchResults resource />
+            <SearchResults params_memo resource />
         </div>
     }
 }
@@ -317,6 +339,8 @@ fn SearchForm() -> impl IntoView {
                     <option value="100">100</option>
                 </select>
             </div>
+
+            <input type="hidden" name="offset" value="0" />
         </Form>
     }
 }
@@ -324,6 +348,8 @@ fn SearchForm() -> impl IntoView {
 /// Displays projects matching the given search.
 #[component]
 fn SearchResults(
+    /// Memo that tracks the URL query parameters for the search.
+    params_memo: Memo<Result<WebSearchParams, ParamsError>>,
     /// The resource that performs the search when the search form is submitted.
     resource: Resource<Result<WebSearchParams, ParamsError>, Result<Vec<WebSearchResult>, ServerFnError>>
 ) -> impl IntoView {
@@ -357,6 +383,22 @@ fn SearchResults(
                         }
                     };
 
+                    let pagination = {
+                        move || {
+                            params_memo.get()
+                                .map(move |params| {
+                                    let first = move || params.offset.unwrap_or_default() + 1;
+                                    let last = move || params.offset.unwrap_or_default() + params.limit.unwrap_or_default();
+
+                                    view! {
+                                        <a href=params.previous_url()>"< Previous"</a>
+                                        <span>{first} - {last}</span>
+                                        <a href=params.next_url()>"Next >"</a>
+                                    }
+                                })
+                        }
+                    };
+
                     view! {
                         <div class="search-results__container">
                             <div class="search-results__header-row">
@@ -373,6 +415,9 @@ fn SearchResults(
                             <ul class="search-results__list">
                                 {results}
                             </ul>
+                            <nav class="search-results__pagination">
+                                {pagination}
+                            </nav>
                         </div>
                     }
                 }

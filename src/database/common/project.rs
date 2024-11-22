@@ -97,7 +97,8 @@ pub struct SearchParams {
     pub description: bool,
     pub author: bool,
     pub sort: SearchParamsSort,
-    pub limit: i64
+    pub limit: i64,
+    pub offset: i64
 }
 
 impl Default for SearchParams {
@@ -111,7 +112,8 @@ impl Default for SearchParams {
             description: bool::default(),
             author: bool::default(),
             sort: SearchParamsSort::default(),
-            limit: 25
+            limit: 25,
+            offset: i64::default()
         }
     }
 }
@@ -128,7 +130,8 @@ impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
             description: params.description,
             author: params.author,
             sort: params.sort.into(),
-            limit: params.limit
+            limit: params.limit,
+            offset: params.offset
         }
     }
 }

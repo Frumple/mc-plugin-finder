@@ -47,7 +47,9 @@ pub fn ErrorTemplate(
         use leptos_axum::ResponseOptions;
         let response = use_context::<ResponseOptions>();
         if let Some(response) = response {
-            response.set_status(errors[0].status_code());
+            if errors.len() > 1 {
+                response.set_status(errors[0].status_code());
+            }
         }
     }
 

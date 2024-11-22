@@ -99,7 +99,7 @@ SELECT
 FROM
   common_project;
 
---! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit) : CommonProjectSearchResultEntity
+--! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit, offset) : CommonProjectSearchResultEntity
 SELECT
   c.id,
   CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
@@ -306,4 +306,6 @@ WHERE
       END
     END DESC
 
-LIMIT :limit;
+LIMIT :limit
+
+OFFSET :offset;
