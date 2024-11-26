@@ -101,6 +101,7 @@ FROM
 
 --! search_common_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit, offset) : CommonProjectSearchResultEntity
 SELECT
+  COUNT(*) OVER() AS full_count,
   c.id,
   CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
        WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.date_created, m.date_created)

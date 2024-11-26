@@ -13,6 +13,8 @@ use mc_plugin_finder::database::common::project::{CommonProjectSearchResult, Sea
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
+    pub full_count: i64,
+
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
@@ -72,6 +74,8 @@ impl WebSearchResult {
 impl From<CommonProjectSearchResult> for WebSearchResult {
     fn from(search_result: CommonProjectSearchResult) -> Self {
         WebSearchResult {
+            full_count: search_result.full_count,
+
             id: search_result.project.id,
             date_created: search_result.date_created,
             date_updated: search_result.date_updated,
@@ -117,26 +121,55 @@ pub struct WebSearchParams {
     pub description: Option<bool>,
     pub author: Option<bool>,
     pub sort: Option<String>,
-    pub limit: Option<i64>,
-    pub offset: Option<i64>
+    pub limit: Option<u32>,
+    pub page: Option<u32>
 }
 
 impl WebSearchParams {
+    fn offset(&self) -> Option<u32> {
+        if let Some(page) = self.page {
+            if let Some(limit) = self.limit {
+                return Some(page.saturating_sub(1).saturating_mul(limit))
+            }
+        }
+        None
+    }
+
+    // TODO: Handle number conversions properly
+    fn total_pages(&self, full_count: i64) -> Option<u32> {
+        if let Some(limit) = self.limit {
+            return Some((full_count as f64 / limit as f64).ceil() as u32)
+        }
+        None
+    }
+
     fn form_url(&self) -> String {
         "?".to_string() +
         &serde_urlencoded::to_string(self).unwrap_or(
-            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&offset=0".to_string())
+            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&page=1".to_string())
+    }
+
+    fn first_url(&self) -> String {
+        let mut params = self.clone();
+        params.page = Some(0);
+        params.form_url()
     }
 
     fn previous_url(&self) -> String {
         let mut params = self.clone();
-        params.offset = Some(params.offset.unwrap_or_default() - params.limit.unwrap_or_default());
+        params.page = Some(params.page.unwrap_or_default().saturating_sub(1));
         params.form_url()
     }
 
     fn next_url(&self) -> String {
         let mut params = self.clone();
-        params.offset = Some(params.offset.unwrap_or_default() + params.limit.unwrap_or_default());
+        params.page = Some(params.page.unwrap_or_default().saturating_add(1));
+        params.form_url()
+    }
+
+    fn last_url(&self, full_count: i64) -> String {
+        let mut params = self.clone();
+        params.page = Some(params.total_pages(full_count).unwrap_or(1));
         params.form_url()
     }
 }
@@ -155,7 +188,7 @@ impl From<WebSearchParams> for SearchParams {
            params.author.is_none() &&
            params.sort.is_none() &&
            params.limit.is_none() &&
-           params.offset.is_none() {
+           params.page.is_none() {
             return SearchParams {
                 query: "".to_string(),
                 spigot: true,
@@ -170,6 +203,8 @@ impl From<WebSearchParams> for SearchParams {
             };
         }
 
+        let offset = params.offset();
+
         SearchParams {
             query: params.query.unwrap_or_default(),
             spigot: params.spigot.unwrap_or_default(),
@@ -179,8 +214,8 @@ impl From<WebSearchParams> for SearchParams {
             description: params.description.unwrap_or_default(),
             author: params.author.unwrap_or_default(),
             sort: SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
-            limit: params.limit.unwrap_or(25),
-            offset: params.offset.unwrap_or_default()
+            limit: params.limit.unwrap_or(25).into(),
+            offset: offset.unwrap_or_default().into()
         }
     }
 }
@@ -340,7 +375,7 @@ fn SearchForm() -> impl IntoView {
                 </select>
             </div>
 
-            <input type="hidden" name="offset" value="0" />
+            <input type="hidden" name="page" value="1" />
         </Form>
     }
 }
@@ -368,34 +403,61 @@ fn SearchResults(
                                         if projects.is_empty() {
                                             view! { <p>"No projects were found."</p> }.into_view()
                                         } else {
-                                            projects
+                                            let full_count = projects[0].full_count;
+
+                                            let rows = projects
                                                 .into_iter()
                                                 .map(move |project| {
                                                     view! {
                                                         <SearchRow search_result=project />
                                                     }
                                                 })
-                                                .collect_view()
+                                                .collect_view();
+
+                                            let pagination = {
+                                                move || {
+                                                    params_memo.get()
+                                                        .map(move |params| {
+                                                            let page = params.page.unwrap_or_default();
+                                                            let offset = params.offset().unwrap_or_default();
+                                                            let total_pages = params.total_pages(full_count).unwrap_or_default();
+
+                                                            let first = move || offset + 1;
+                                                            let last = move || offset + params.limit.unwrap_or_default();
+
+                                                            let first_url = params.first_url();
+                                                            let previous_url = params.previous_url();
+
+                                                            let next_url = params.next_url();
+                                                            let last_url = params.last_url(full_count);
+
+                                                            view! {
+                                                                <Show when=move || { page > 1 }>
+                                                                    <a href=first_url.clone()>"⟪ First"</a>
+                                                                    <a href=previous_url.clone()>"⟨ Previous"</a>
+                                                                </Show>
+                                                                <span>{first} - {last} of {full_count}</span>
+                                                                <Show when=move || { page < total_pages }>
+                                                                    <a href=next_url.clone()>"Next ⟩"</a>
+                                                                    <a href=last_url.clone()>"Last ⟫"</a>
+                                                                </Show>
+                                                            }
+                                                        })
+                                                }
+                                            };
+
+                                            view! {
+                                                <ul class="search-results__list">
+                                                    {rows}
+                                                </ul>
+                                                <nav class="search-results__pagination">
+                                                    {pagination}
+                                                </nav>
+                                            }.into_view()
                                         }
                                     }
                                 })
                                 .unwrap_or_default()
-                        }
-                    };
-
-                    let pagination = {
-                        move || {
-                            params_memo.get()
-                                .map(move |params| {
-                                    let first = move || params.offset.unwrap_or_default() + 1;
-                                    let last = move || params.offset.unwrap_or_default() + params.limit.unwrap_or_default();
-
-                                    view! {
-                                        <a href=params.previous_url()>"< Previous"</a>
-                                        <span>{first} - {last}</span>
-                                        <a href=params.next_url()>"Next >"</a>
-                                    }
-                                })
                         }
                     };
 
@@ -412,12 +474,7 @@ fn SearchResults(
                                 <span class="search-results__hangar-header">Hangar</span>
                                 <span class="search-results__source-header">Source Code</span>
                             </div>
-                            <ul class="search-results__list">
-                                {results}
-                            </ul>
-                            <nav class="search-results__pagination">
-                                {pagination}
-                            </nav>
+                            {results}
                         </div>
                     }
                 }

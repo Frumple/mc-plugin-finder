@@ -175,7 +175,10 @@ body {
 }
 
 .search-results__pagination {
-
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+  margin: 10px;
 }
 
 .search-results__list-item {

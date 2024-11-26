@@ -176,6 +176,8 @@ impl FromStr for SearchParamsSort {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CommonProjectSearchResult {
+    pub full_count: i64,
+
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
     pub downloads: i32,
@@ -192,6 +194,8 @@ pub struct CommonProjectSearchResult {
 impl From<CommonProjectSearchResultEntity> for CommonProjectSearchResult {
     fn from(entity: CommonProjectSearchResultEntity) -> Self {
         CommonProjectSearchResult {
+            full_count: entity.full_count,
+
             date_created: entity.date_created,
             date_updated: entity.date_updated,
             downloads: entity.downloads,
