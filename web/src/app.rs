@@ -151,7 +151,7 @@ impl WebSearchParams {
 
     fn first_url(&self) -> String {
         let mut params = self.clone();
-        params.page = Some(0);
+        params.page = Some(1);
         params.form_url()
     }
 
@@ -447,27 +447,45 @@ fn SearchResults(
                                                     params_memo.get()
                                                         .map(move |params| {
                                                             let page = params.page.unwrap_or_default();
-                                                            let offset = params.offset().unwrap_or_default();
                                                             let total_pages = params.total_pages(full_count).unwrap_or_default();
-
-                                                            let first = move || offset + 1;
-                                                            let last = move || offset + params.limit.unwrap_or_default();
 
                                                             let first_url = params.first_url();
                                                             let previous_url = params.previous_url();
+                                                            let previous_url_clone = previous_url.clone();
+
+                                                            let current_url = params.form_url();
 
                                                             let next_url = params.next_url();
+                                                            let next_url_clone = next_url.clone();
                                                             let last_url = params.last_url(full_count);
 
                                                             view! {
                                                                 <Show when=move || { page > 1 }>
-                                                                    <a href=first_url.clone()>"⟪ First"</a>
-                                                                    <a href=previous_url.clone()>"⟨ Previous"</a>
+                                                                    <a href=previous_url.clone()>"<"</a>
+                                                                    <a href=first_url.clone()>"1"</a>
                                                                 </Show>
-                                                                <span>{first} - {last} of {full_count}</span>
+
+                                                                <Show when=move || { page > 3 }>
+                                                                    <span>"—"</span>
+                                                                </Show>
+
+                                                                <Show when=move || { page > 2 }>
+                                                                    <a href=previous_url_clone.clone()>{page - 1}</a>
+                                                                </Show>
+
+                                                                <a href=current_url.clone()>{page}</a>
+
+                                                                <Show when=move || { page < total_pages - 1 }>
+                                                                    <a href=next_url_clone.clone()>{page + 1}</a>
+                                                                </Show>
+
+                                                                <Show when=move || { page < total_pages - 2 }>
+                                                                    <span>"—"</span>
+                                                                </Show>
+
                                                                 <Show when=move || { page < total_pages }>
-                                                                    <a href=next_url.clone()>"Next ⟩"</a>
-                                                                    <a href=last_url.clone()>"Last ⟫"</a>
+                                                                    <a href=last_url.clone()>{total_pages}</a>
+                                                                    <a href=next_url.clone()>">"</a>
                                                                 </Show>
                                                             }
                                                         })
