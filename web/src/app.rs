@@ -174,35 +174,26 @@ impl WebSearchParams {
     }
 }
 
+impl Default for WebSearchParams {
+    fn default() -> Self {
+        WebSearchParams {
+            query: Some("".to_string()),
+            spigot: Some(false),
+            modrinth: Some(false),
+            hangar: Some(false),
+            name: Some(false),
+            description: Some(false),
+            author: Some(false),
+            sort: Some("downloads".to_string()),
+            limit: Some(25),
+            page: Some(1)
+        }
+    }
+}
+
 #[cfg(feature = "ssr")]
 impl From<WebSearchParams> for SearchParams {
     fn from(params: WebSearchParams) -> Self {
-        // If there are no query parameters (such as when first loading the page),
-        // perform a different default search that matches initial search settings.
-        if params.query.is_none() &&
-           params.spigot.is_none() &&
-           params.modrinth.is_none() &&
-           params.hangar.is_none() &&
-           params.name.is_none() &&
-           params.description.is_none() &&
-           params.author.is_none() &&
-           params.sort.is_none() &&
-           params.limit.is_none() &&
-           params.page.is_none() {
-            return SearchParams {
-                query: "".to_string(),
-                spigot: true,
-                modrinth: true,
-                hangar: true,
-                name: true,
-                description: false,
-                author: false,
-                sort: SearchParamsSort::Downloads,
-                limit: 25,
-                offset: 0
-            };
-        }
-
         let offset = params.offset();
 
         SearchParams {
@@ -312,7 +303,39 @@ async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> 
 
 #[component]
 fn HomePage() -> impl IntoView {
-    let params_memo = use_query::<WebSearchParams>();
+    let params_memo_original = use_query::<WebSearchParams>();
+
+    let params_memo = create_memo(move |_| {
+        params_memo_original().map( |params| {
+            // When first loading the home page with no query paramemters,
+            // perform a default search on all repositories using the name field only.
+            if params.query.is_none() &&
+               params.spigot.is_none() &&
+               params.modrinth.is_none() &&
+               params.hangar.is_none() &&
+               params.name.is_none() &&
+               params.description.is_none() &&
+               params.author.is_none() &&
+               params.sort.is_none() &&
+               params.limit.is_none() &&
+               params.page.is_none() {
+                return WebSearchParams {
+                    query: Some("".to_string()),
+                    spigot: Some(true),
+                    modrinth: Some(true),
+                    hangar: Some(true),
+                    name: Some(true),
+                    description: None,
+                    author: None,
+                    sort: Some("downloads".to_string()),
+                    limit: Some(25),
+                    page: Some(1)
+                }
+            }
+            params
+        })
+    });
+
     let resource = create_resource(
         params_memo,
         fetch_projects
@@ -322,7 +345,7 @@ fn HomePage() -> impl IntoView {
         <h1>"MC Plugin Finder"</h1>
 
         <div class="home-page__container">
-            <SearchForm />
+            <SearchForm params_memo />
             <SearchResults params_memo resource />
         </div>
     }
@@ -330,45 +353,50 @@ fn HomePage() -> impl IntoView {
 
 /// Provides controls for performing a search.
 #[component]
-fn SearchForm() -> impl IntoView {
+fn SearchForm(
+    /// Memo that tracks the URL query parameters for the search.
+    params_memo: Memo<Result<WebSearchParams, ParamsError>>
+) -> impl IntoView {
+    let params = move || params_memo.get().unwrap_or_default();
+
     view! {
         <Form action="" class="search-form">
-            <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" />
+            <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" value=params().query />
 
             <span class="search-form__repository-text">Repository:</span>
 
-            <input id="spigot-checkbox" type="checkbox" name="spigot" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="spigot-checkbox" type="checkbox" name="spigot" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().spigot />
             <label for="spigot-checkbox" class="search-form__spigot-label">Spigot</label>
 
-            <input id="modrinth-checkbox" type="checkbox" name="modrinth" class="search-form__modrinth-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="modrinth-checkbox" type="checkbox" name="modrinth" class="search-form__modrinth-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().modrinth />
             <label for="modrinth-checkbox" class="search-form__modrinth-label">Modrinth</label>
 
-            <input id="hangar-checkbox" type="checkbox" name="hangar" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="hangar-checkbox" type="checkbox" name="hangar" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().hangar />
             <label for="hangar-checkbox" class="search-form__hangar-label">Hangar</label>
 
             <span class="search-form__fields-text">Fields:</span>
 
-            <input id="name-checkbox" type="checkbox" name="name" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked />
+            <input id="name-checkbox" type="checkbox" name="name" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().name />
             <label for="name-checkbox" class="search-form__name-label">Name</label>
 
-            <input id="description-checkbox" type="checkbox" name="description" class="search-form__description-checkbox" value="true" oninput="this.form.requestSubmit()" />
+            <input id="description-checkbox" type="checkbox" name="description" class="search-form__description-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().description />
             <label for="description-checkbox" class="search-form__description-label">Description</label>
 
-            <input id="author-checkbox" type="checkbox" name="author" class="search-form__author-checkbox" value="true" oninput="this.form.requestSubmit()" />
+            <input id="author-checkbox" type="checkbox" name="author" class="search-form__author-checkbox" value="true" oninput="this.form.requestSubmit()" checked=params().author />
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
             <div class="search-form__sort-limit-container">
                 <label for="sort-select" class="search-form__sort-label">Sort by:</label>
-                <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()">
+                <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()" prop:value=params().sort>
                     <option value="date_created">Newest</option>
                     <option value="date_updated">Recently Updated</option>
-                    <option value="downloads" selected>Downloads</option>
+                    <option value="downloads">Downloads</option>
                     <option value="likes_and_stars">Likes + Stars</option>
                     <option value="follows_and_watchers">Follows + Watchers</option>
                 </select>
 
                 <label for="limit-select" class="search-form__limit-label">Show per page:</label>
-                <select id="limit-select" name="limit" class="search-form__limit-select" onchange="this.form.requestSubmit()">
+                <select id="limit-select" name="limit" class="search-form__limit-select" onchange="this.form.requestSubmit()" prop:value=params().limit>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
