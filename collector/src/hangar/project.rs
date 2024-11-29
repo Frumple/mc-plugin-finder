@@ -31,7 +31,9 @@ impl GetHangarProjectsRequest {
         Self {
             limit: 25,
             offset: 0,
-            sort: "updated".to_string()
+            // Get projects in reverse recently updated order.
+            // "-updated" is not documented in the official Hangar v1 docs.
+            sort: "-updated".to_string()
         }
     }
 }
