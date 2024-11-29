@@ -181,6 +181,21 @@ body {
   margin: 10px;
 }
 
+.search-results__pagination-item {
+	padding: 5px 10px;
+}
+
+.search-results__pagination-link {
+	@extend .search-results__pagination-item;
+	border: 1px solid black;
+	text-decoration: none;
+}
+
+.search-results__pagination-link_current {
+	@extend .search-results__pagination-link;
+	font-weight: bold;
+}
+
 .search-results__list-item {
 	display: flex;
 	flex-wrap: nowrap;

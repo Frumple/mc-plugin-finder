@@ -461,31 +461,31 @@ fn SearchResults(
 
                                                             view! {
                                                                 <Show when=move || { page > 1 }>
-                                                                    <a href=previous_url.clone()>"<"</a>
-                                                                    <a href=first_url.clone()>"1"</a>
+                                                                    <a class="search-results__pagination-link" href=previous_url.clone()>"<"</a>
+                                                                    <a class="search-results__pagination-link" href=first_url.clone()>"1"</a>
                                                                 </Show>
 
                                                                 <Show when=move || { page > 3 }>
-                                                                    <span>"—"</span>
+                                                                    <span class="search-results__pagination-item">"—"</span>
                                                                 </Show>
 
                                                                 <Show when=move || { page > 2 }>
-                                                                    <a href=previous_url_clone.clone()>{page - 1}</a>
+                                                                    <a class="search-results__pagination-link" href=previous_url_clone.clone()>{page - 1}</a>
                                                                 </Show>
 
-                                                                <a href=current_url.clone()>{page}</a>
+                                                                <a class="search-results__pagination-link_current" href=current_url.clone()>{page}</a>
 
                                                                 <Show when=move || { page < total_pages - 1 }>
-                                                                    <a href=next_url_clone.clone()>{page + 1}</a>
+                                                                    <a class="search-results__pagination-link" href=next_url_clone.clone()>{page + 1}</a>
                                                                 </Show>
 
                                                                 <Show when=move || { page < total_pages - 2 }>
-                                                                    <span>"—"</span>
+                                                                    <span class="search-results__pagination-item">"—"</span>
                                                                 </Show>
 
                                                                 <Show when=move || { page < total_pages }>
-                                                                    <a href=last_url.clone()>{total_pages}</a>
-                                                                    <a href=next_url.clone()>">"</a>
+                                                                    <a class="search-results__pagination-link" href=last_url.clone()>{total_pages}</a>
+                                                                    <a class="search-results__pagination-link" href=next_url.clone()>">"</a>
                                                                 </Show>
                                                             }
                                                         })
