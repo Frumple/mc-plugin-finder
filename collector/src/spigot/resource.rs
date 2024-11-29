@@ -19,7 +19,7 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
 
-const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,downloads,likes,file,author,version,premium,sourceCodeLink";
+const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,testedVersions,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
@@ -93,6 +93,7 @@ pub struct IncomingSpigotResource {
     icon: Option<IncomingSpigotResourceNestedIcon>,
     release_date: i64,
     update_date: i64,
+    tested_versions: Option<Vec<String>>,
     downloads: i32,
     likes: Option<i32>,
     file: Option<IncomingSpigotResourceNestedFile>,
@@ -287,15 +288,18 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 slug,
                 date_created: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
                 date_updated: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
+                // "testedVersions" may not exist in the API response, default to an empty vec if this is the case.
+                // Assume that the last entry in the given list of versions from the API is the latest version.
+                latest_minecraft_version: incoming_resource.tested_versions.unwrap_or_default().last().cloned(),
                 downloads: incoming_resource.downloads,
-                // "likes" may not exist, default to 0 if this is the case.
+                // "likes" may not exist in the API response, default to 0 if this is the case.
                 likes: incoming_resource.likes.unwrap_or_default(),
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
                 version_name: version_name.clone(),
-                // "premium" may not exist, default to false if this is the case.
+                // "premium" may not exist in the API response, default to false if this is the case.
                 premium: incoming_resource.premium.unwrap_or_default(),
-                // "icon" may not exist, set "icon_url" and "icon_data" if this is the case.
+                // "icon" may not exist in the API response, set "icon_url" and "icon_data" to None if this is the case.
                 icon_url: incoming_resource.icon.as_ref().map(|icon| icon.url.clone()),
                 icon_data: incoming_resource.icon.map(|icon| icon.data),
                 source_url: incoming_resource.source_code_link.clone(),
@@ -571,6 +575,7 @@ mod test {
             slug: "foo.1".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2020-02-03 0:00 UTC),
+            latest_minecraft_version: Some("1.21".to_string()),
             downloads: 100,
             likes: 200,
             author_id: 1,
@@ -659,6 +664,7 @@ mod test {
                 }),
                 release_date: 1577836800,
                 update_date: 1580688000,
+                tested_versions: Some(vec!["1.20".to_string(), "1.20.6".to_string(), "1.21".to_string()]),
                 downloads: 100,
                 likes: Some(200),
                 file: Some(IncomingSpigotResourceNestedFile {
@@ -683,6 +689,7 @@ mod test {
                 }),
                 release_date: 1577923200,
                 update_date: 1580601600,
+                tested_versions: Some(vec!["1.6".to_string(), "1.7".to_string(), "1.8".to_string()]),
                 downloads: 300,
                 likes: Some(100),
                 file: Some(IncomingSpigotResourceNestedFile {

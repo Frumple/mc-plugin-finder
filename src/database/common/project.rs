@@ -373,6 +373,7 @@ mod test {
             slug: "bar.2".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2024-01-01 0:00 UTC),
+            latest_minecraft_version: Some("1.8".to_string()),
             downloads: 100,
             likes: 200,
             author_id: 1,

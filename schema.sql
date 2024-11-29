@@ -1,6 +1,12 @@
 -- Enable trigram module for text search
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+-- Enable collation for ordering Minecraft versions
+CREATE COLLATION en_natural (
+  LOCALE = 'en-US-u-kn-true',
+  PROVIDER = 'icu'
+);
+
 -- Tables
 
 -- Spigot
@@ -17,6 +23,7 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   slug text NOT NULL,
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
+  latest_minecraft_version text COLLATE en_natural,
   downloads integer NOT NULL,
   likes integer NOT NULL,
   author_id integer NOT NULL REFERENCES spigot_author,

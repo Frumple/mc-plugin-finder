@@ -1,8 +1,8 @@
---: SpigotResourceEntity(parsed_name?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SpigotResourceEntity(parsed_name?, latest_minecraft_version?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_spigot_resource (parsed_name?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, downloads, likes, author_id, version_id, version_name, premium, icon_url, icon_data, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:id, :name, :parsed_name, :description, :slug, :date_created, :date_updated, :downloads, :likes, :author_id, :version_id, :version_name, :premium, :icon_url, :icon_data, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_spigot_resource (parsed_name?, latest_minecraft_version?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, latest_minecraft_version, downloads, likes, author_id, version_id, version_name, premium, icon_url, icon_data, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :name, :parsed_name, :description, :slug, :date_created, :date_updated, :latest_minecraft_version, :downloads, :likes, :author_id, :version_id, :version_name, :premium, :icon_url, :icon_data, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (id)
   DO UPDATE SET
     name = EXCLUDED.name,
@@ -11,6 +11,7 @@ INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_crea
     slug = EXCLUDED.slug,
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
+    latest_minecraft_version = EXCLUDED.latest_minecraft_version,
     downloads = EXCLUDED.downloads,
     likes = EXCLUDED.likes,
     author_id = EXCLUDED.author_id,

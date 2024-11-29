@@ -16,6 +16,7 @@ pub struct SpigotResource {
     pub slug: String,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub latest_minecraft_version: Option<String>,
     pub downloads: i32,
     pub likes: i32,
     pub author_id: i32,
@@ -30,7 +31,7 @@ pub struct SpigotResource {
     pub source_repository_name: Option<String>
 }
 
-impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String, String, String> {
+impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(resource: SpigotResource) -> Self {
         UpsertSpigotResourceParams {
             id: resource.id,
@@ -42,6 +43,7 @@ impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String,
             icon_data: resource.icon_data,
             date_created: resource.date_created,
             date_updated: resource.date_updated,
+            latest_minecraft_version: resource.latest_minecraft_version,
             downloads: resource.downloads,
             likes: resource.likes,
             author_id: resource.author_id,
@@ -66,6 +68,7 @@ impl From<SpigotResourceEntity> for SpigotResource {
             slug: entity.slug,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+            latest_minecraft_version: entity.latest_minecraft_version,
             downloads: entity.downloads,
             likes: entity.likes,
             author_id: entity.author_id,
@@ -195,6 +198,7 @@ pub mod test {
             slug: "foo-updated.1".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2021-07-01 0:00 UTC),
+            latest_minecraft_version: Some("1.21.4".to_string()),
             downloads: 101,
             likes: 201,
             author_id: 1,
@@ -310,6 +314,7 @@ pub mod test {
                 slug: "foo.1".to_string(),
                 date_created: datetime!(2020-01-01 0:00 UTC),
                 date_updated: datetime!(2020-02-03 0:00 UTC),
+                latest_minecraft_version: Some("1.21".to_string()),
                 downloads: 100,
                 likes: 200,
                 author_id: 1,
@@ -331,6 +336,7 @@ pub mod test {
                 slug: "bar.2".to_string(),
                 date_created: datetime!(2020-01-02 0:00 UTC),
                 date_updated: datetime!(2020-02-02 0:00 UTC),
+                latest_minecraft_version: Some("1.8".to_string()),
                 downloads: 300,
                 likes: 100,
                 author_id: 2,
@@ -352,6 +358,7 @@ pub mod test {
                 slug: "baz.3".to_string(),
                 date_created: datetime!(2020-01-03 0:00 UTC),
                 date_updated: datetime!(2020-02-01 0:00 UTC),
+                latest_minecraft_version: Some("1.16".to_string()),
                 downloads: 200,
                 likes: 300,
                 author_id: 3,
