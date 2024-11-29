@@ -61,6 +61,7 @@ mod test {
     #[case::github_url("https://github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::gitlab_url("https://gitlab.com/Frumple/bar", SourceRepository {host: "gitlab.com".to_string(), owner: "Frumple".to_string(), name: "bar".to_string()})]
     #[case::bitbucket_url("https://bitbucket.org/Frumple/baz", SourceRepository {host: "bitbucket.org".to_string(), owner: "Frumple".to_string(), name: "baz".to_string()})]
+    #[case::codeberg_url("https://codeberg.org/Frumple/qux", SourceRepository {host: "codeberg.org".to_string(), owner: "Frumple".to_string(), name: "qux".to_string()})]
     #[case::host_with_leading_www("https://www.github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::url_with_trailing_slash("https://github.com/Frumple/foo/", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
     #[case::url_with_trailing_path("https://github.com/Frumple/foo/wiki", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
