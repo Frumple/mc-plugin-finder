@@ -385,30 +385,34 @@ mod test {
     async fn should_process_incoming_project() -> Result<()> {
         // Arrange
         let incoming_project = create_test_modrinth_projects()[0].clone();
-        let source_url = "https://github.com/Frumple/foo";
+        let source_url = "https://github.com/alice/foo";
         let version_name = "v1.2.3";
 
         // Act
         let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
 
         // Assert
-        assert_that(&project.id).is_equal_to("aaaaaaaa".to_string());
-        assert_that(&project.slug).is_equal_to("foo".to_string());
-        assert_that(&project.name).is_equal_to("foo".to_string());
-        assert_that(&project.description).is_equal_to("foo-description".to_string());
-        assert_that(&project.author).is_equal_to("Frumple".to_string());
-        assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
-        assert_that(&project.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
-        assert_that(&project.downloads).is_equal_to(100);
-        assert_that(&project.follows).is_equal_to(200);
-        assert_that(&project.version_id).is_some().is_equal_to("aaaa1111".to_string());
-        assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
-        assert_that(&project.icon_url).is_some().is_equal_to("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string());
-        assert_that(&project.monetization_status).is_none();
-        assert_that(&project.source_url).is_some().is_equal_to(source_url.to_string());
-        assert_that(&project.source_repository_host).is_some().is_equal_to("github.com".to_string());
-        assert_that(&project.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
-        assert_that(&project.source_repository_name).is_some().is_equal_to("foo".to_string());
+        let expected_project = ModrinthProject {
+            id: "aaaaaaaa".to_string(),
+            slug: "foo".to_string(),
+            name: "foo-modrinth".to_string(),
+            description: "foo-modrinth-description".to_string(),
+            author: "alice".to_string(),
+            date_created: datetime!(2021-01-01 0:00 UTC),
+            date_updated: datetime!(2021-02-03 0:00 UTC),
+            downloads: 100,
+            follows: 200,
+            version_id: Some("aaaa1111".to_string()),
+            version_name: Some(version_name.to_string()),
+            icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
+            monetization_status: None,
+            source_url: Some(source_url.to_string()),
+            source_repository_host: Some("github.com".to_string()),
+            source_repository_owner: Some("alice".to_string()),
+            source_repository_name: Some("foo".to_string())
+        };
+
+        assert_that(&project).is_equal_to(expected_project);
 
         Ok(())
     }
@@ -418,11 +422,11 @@ mod test {
             IncomingModrinthProject {
                 project_id: "aaaaaaaa".to_string(),
                 slug: "foo".to_string(),
-                title: "foo".to_string(),
-                description: "foo-description".to_string(),
-                author: "Frumple".to_string(),
-                date_created: "2020-01-01T00:00:00Z".to_string(),
-                date_modified: "2021-01-01T00:00:00Z".to_string(),
+                title: "foo-modrinth".to_string(),
+                description: "foo-modrinth-description".to_string(),
+                author: "alice".to_string(),
+                date_created: "2021-01-01T00:00:00Z".to_string(),
+                date_modified: "2021-02-03T00:00:00Z".to_string(),
                 downloads: 100,
                 follows: 200,
                 latest_version: Some("aaaa1111".to_string()),
@@ -432,13 +436,13 @@ mod test {
             IncomingModrinthProject {
                 project_id: "bbbbbbbb".to_string(),
                 slug: "bar".to_string(),
-                title: "bar".to_string(),
-                description: "bar-description".to_string(),
-                author: "Frumple".to_string(),
-                date_created: "2020-01-01T00:00:00Z".to_string(),
-                date_modified: "2022-01-01T00:00:00Z".to_string(),
-                downloads: 100,
-                follows: 200,
+                title: "bar-modrinth".to_string(),
+                description: "bar-modrinth-description".to_string(),
+                author: "bob".to_string(),
+                date_created: "2021-01-02T00:00:00Z".to_string(),
+                date_modified: "2021-02-02T00:00:00Z".to_string(),
+                downloads: 300,
+                follows: 300,
                 latest_version: Some("bbbb1111".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
                 monetization_status: None

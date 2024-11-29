@@ -292,6 +292,7 @@ fn find_source_code_link(settings: IncomingHangarProjectSettings) -> Option<Stri
 mod test {
     use super::*;
     use crate::hangar::test::HangarTestServer;
+    use crate::util::SourceRepository;
 
     use speculoos::prelude::*;
     use time::macros::datetime;
@@ -346,22 +347,26 @@ mod test {
         let project = convert_incoming_project(incoming_project, &Some(version_name.to_string())).await?;
 
         // Assert
-        assert_that(&project.slug).is_equal_to("foo".to_string());
-        assert_that(&project.author).is_equal_to("Frumple".to_string());
-        assert_that(&project.name).is_equal_to("project-1".to_string());
-        assert_that(&project.description).is_equal_to("project-1-description".to_string());
-        assert_that(&project.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
-        assert_that(&project.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
-        assert_that(&project.downloads).is_equal_to(100);
-        assert_that(&project.stars).is_equal_to(200);
-        assert_that(&project.watchers).is_equal_to(300);
-        assert_that(&project.visibility).is_equal_to("public".to_string());
-        assert_that(&project.avatar_url).is_equal_to("https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string());
-        assert_that(&project.version_name).is_some().is_equal_to(version_name.to_string());
-        assert_that(&project.source_url).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
-        assert_that(&project.source_repository_host).is_some().is_equal_to("github.com".to_string());
-        assert_that(&project.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
-        assert_that(&project.source_repository_name).is_some().is_equal_to("foo".to_string());
+        let expected_project = HangarProject {
+            slug: "foo".to_string(),
+                author: "alice".to_string(),
+                name: "foo-hangar".to_string(),
+                description: "foo-hangar-description".to_string(),
+                date_created: datetime!(2022-01-01 0:00 UTC),
+                date_updated: datetime!(2022-02-03 0:00 UTC),
+                downloads: 100,
+                stars: 200,
+                watchers: 200,
+                visibility: "public".to_string(),
+                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                version_name: Some(version_name.to_string()),
+                source_url: Some("https://github.com/alice/foo".to_string()),
+                source_repository_host: Some("github.com".to_string()),
+                source_repository_owner: Some("alice".to_string()),
+                source_repository_name: Some("foo".to_string())
+        };
+
+        assert_that(&project).is_equal_to(expected_project);
 
         Ok(())
     }
@@ -369,45 +374,45 @@ mod test {
     fn create_test_projects() -> Vec<IncomingHangarProject> {
         vec![
             IncomingHangarProject {
-                name: "project-1".to_string(),
-                description: "project-1-description".to_string(),
+                name: "foo-hangar".to_string(),
+                description: "foo-hangar-description".to_string(),
                 namespace: IncomingHangarProjectNamespace {
-                    owner: "Frumple".to_string(),
+                    owner: "alice".to_string(),
                     slug: "foo".to_string()
                 },
-                created_at: "2020-01-01T00:00:00Z".to_string(),
-                last_updated: "2021-01-01T00:00:00Z".to_string(),
+                created_at: "2022-01-01T00:00:00Z".to_string(),
+                last_updated: "2022-02-03T00:00:00Z".to_string(),
                 stats: IncomingHangarProjectStats {
                     downloads: 100,
                     stars: 200,
-                    watchers: 300
+                    watchers: 200
                 },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
-                    links: create_test_project_links(),
+                    links: create_test_project_links( SourceRepository { host: "github.com".to_string(), owner: "alice".to_string(), name: "foo".to_string() } ),
                     tags: vec!["ADDON".to_string(), "SUPPORTS_FOLIA".to_string()],
                     keywords: vec!["foo".to_string(), "fi".to_string()]
                 }
             },
             IncomingHangarProject {
-                name: "project-2".to_string(),
-                description: "project-2-description".to_string(),
+                name: "bar-hangar".to_string(),
+                description: "bar-hangar-description".to_string(),
                 namespace: IncomingHangarProjectNamespace {
-                    owner: "Frumple".to_string(),
+                    owner: "bob".to_string(),
                     slug: "bar".to_string()
                 },
-                created_at: "2020-01-01T00:00:00Z".to_string(),
-                last_updated: "2022-01-01T00:00:00Z".to_string(),
+                created_at: "2022-01-02T00:00:00Z".to_string(),
+                last_updated: "2022-02-02T00:00:00Z".to_string(),
                 stats: IncomingHangarProjectStats {
-                    downloads: 100,
-                    stars: 200,
+                    downloads: 300,
+                    stars: 100,
                     watchers: 300
                 },
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
-                    links: create_test_project_links(),
+                    links: create_test_project_links( SourceRepository { host: "gitlab.com".to_string(), owner: "bob".to_string(), name: "bar".to_string() } ),
                     tags: vec!["ADDON".to_string(), "SUPPORTS_FOLIA".to_string()],
                     keywords: vec!["foo".to_string(), "fi".to_string()]
                 }
@@ -415,7 +420,7 @@ mod test {
         ]
     }
 
-    fn create_test_project_links() -> Vec<IncomingHangarProjectLinkGroup> {
+    fn create_test_project_links(repository: SourceRepository) -> Vec<IncomingHangarProjectLinkGroup> {
         vec![
             IncomingHangarProjectLinkGroup {
                 id: 0,
@@ -425,22 +430,22 @@ mod test {
                     IncomingHangarProjectLink {
                         id: 1,
                         name: "Issues".to_string(),
-                        url: Some("https://github.com/Frumple/foo/issues".to_string())
+                        url: Some(repository.url() + "/issues")
                     },
                     IncomingHangarProjectLink {
                         id: 2,
                         name: "Source".to_string(),
-                        url: Some("https://github.com/Frumple/foo".to_string())
+                        url: Some(repository.url())
                     },
                     IncomingHangarProjectLink {
                         id: 3,
                         name: "Support".to_string(),
-                        url: Some("https://github.com/Frumple/foo/discussions".to_string())
+                        url: Some(repository.url() + "/discussions")
                     },
                     IncomingHangarProjectLink {
                         id: 4,
                         name: "Wiki".to_string(),
-                        url: Some("https://github.com/Frumple/foo/wiki".to_string())
+                        url: Some(repository.url() + "/wiki")
                     }
                 ]
             }

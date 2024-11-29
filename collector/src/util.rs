@@ -7,6 +7,12 @@ pub struct SourceRepository {
     pub name: String
 }
 
+impl SourceRepository {
+    pub fn url(&self) -> String {
+        format!("https://{}/{}/{}", self.host, self.owner, self.name)
+    }
+}
+
 pub fn extract_source_repository_from_url(url: &str) -> Option<SourceRepository> {
     let parse_result = Url::parse(url);
 

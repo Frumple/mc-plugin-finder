@@ -563,22 +563,29 @@ mod test {
         let resource = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await?;
 
         // Assert
-        assert_that(&resource.id).is_equal_to(1);
-        assert_that(&resource.name).is_equal_to("resource-1".to_string());
-        assert_that(&resource.description).is_equal_to("resource-1-tag".to_string());
-        assert_that(&resource.slug).is_equal_to("foo.1".to_string());
-        assert_that(&resource.date_created).is_equal_to(datetime!(2020-01-01 0:00 UTC));
-        assert_that(&resource.date_updated).is_equal_to(datetime!(2021-01-01 0:00 UTC));
-        assert_that(&resource.downloads).is_equal_to(100);
-        assert_that(&resource.likes).is_equal_to(200);
-        assert_that(&resource.author_id).is_equal_to(1);
-        assert_that(&resource.version_id).is_equal_to(1);
-        assert_that(&resource.version_name).is_some().is_equal_to(version_name.to_string());
-        assert_that(&resource.premium).is_false();
-        assert_that(&resource.source_url).is_some().is_equal_to("https://github.com/Frumple/foo".to_string());
-        assert_that(&resource.source_repository_host).is_some().is_equal_to("github.com".to_string());
-        assert_that(&resource.source_repository_owner).is_some().is_equal_to("Frumple".to_string());
-        assert_that(&resource.source_repository_name).is_some().is_equal_to("foo".to_string());
+        let expected_resource = SpigotResource {
+            id: 1,
+            name: "foo-spigot".to_string(),
+            parsed_name: Some("foo-spigot".to_string()),
+            description: "foo-spigot-description".to_string(),
+            slug: "foo.1".to_string(),
+            date_created: datetime!(2020-01-01 0:00 UTC),
+            date_updated: datetime!(2020-02-03 0:00 UTC),
+            downloads: 100,
+            likes: 200,
+            author_id: 1,
+            version_id: 1,
+            version_name: Some(version_name.to_string()),
+            premium: false,
+            icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
+            icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
+            source_url: Some("https://github.com/alice/foo".to_string()),
+            source_repository_host: Some("github.com".to_string()),
+            source_repository_owner: Some("alice".to_string()),
+            source_repository_name: Some("foo".to_string())
+        };
+
+        assert_that(&resource).is_equal_to(expected_resource);
 
         Ok(())
     }
@@ -644,14 +651,14 @@ mod test {
         vec![
             IncomingSpigotResource {
                 id: 1,
-                name: "resource-1".to_string(),
-                tag: "resource-1-tag".to_string(),
+                name: "foo-spigot".to_string(),
+                tag: "foo-spigot-description".to_string(),
                 icon: Some(IncomingSpigotResourceNestedIcon {
                     url: "data/resource_icons/1/1.jpg".to_string(),
                     data: SPIGOT_BASE64_TEST_ICON_DATA.to_string(),
                 }),
                 release_date: 1577836800,
-                update_date: 1609459200,
+                update_date: 1580688000,
                 downloads: 100,
                 likes: Some(200),
                 file: Some(IncomingSpigotResourceNestedFile {
@@ -664,20 +671,20 @@ mod test {
                     id: 1
                 },
                 premium: Some(false),
-                source_code_link: Some("https://github.com/Frumple/foo".to_string())
+                source_code_link: Some("https://github.com/alice/foo".to_string())
             },
             IncomingSpigotResource {
                 id: 2,
-                name: "resource-2".to_string(),
-                tag: "resource-2-tag".to_string(),
+                name: "bar-spigot".to_string(),
+                tag: "bar-spigot-description".to_string(),
                 icon: Some(IncomingSpigotResourceNestedIcon {
                     url: "data/resource_icons/2/2.jpg".to_string(),
                     data: SPIGOT_BASE64_TEST_ICON_DATA.to_string()
                 }),
-                release_date: 1577836800,
-                update_date: 1640995200,
-                downloads: 100,
-                likes: Some(200),
+                release_date: 1577923200,
+                update_date: 1580601600,
+                downloads: 300,
+                likes: Some(100),
                 file: Some(IncomingSpigotResourceNestedFile {
                     url: "resources/bar.2/download?version=2".to_string()
                 }),
@@ -685,10 +692,10 @@ mod test {
                     id: 2
                 },
                 version: IncomingSpigotResourceNestedVersion {
-                    id: 2
+                    id: 1
                 },
                 premium: Some(false),
-                source_code_link: Some("https://gitlab.com/Frumple/bar".to_string())
+                source_code_link: Some("https://gitlab.com/bob/bar".to_string())
             }
         ]
     }
