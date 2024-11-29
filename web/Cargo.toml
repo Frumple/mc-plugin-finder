@@ -16,6 +16,7 @@ leptos_axum = { version = "0.6", optional = true }
 leptos_meta = { version = "0.6", features = ["nightly"] }
 leptos_router = { version = "0.6", features = ["nightly"] }
 mc-plugin-finder = { path = "..", optional = true }
+num-format = "0.4.4"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_urlencoded = "0.7.1"
 time = { version = "0.3.36", features = ["formatting", "macros", "parsing", "serde"] }

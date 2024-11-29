@@ -1,4 +1,5 @@
 use crate::error_template::{AppError, ErrorTemplate};
+use crate::util::format_number;
 
 use leptos::*;
 use leptos_meta::*;
@@ -49,6 +50,18 @@ pub struct WebSearchResult {
 }
 
 impl WebSearchResult {
+    fn downloads_formatted(&self) -> String {
+        format_number(&self.downloads)
+    }
+
+    fn likes_and_stars_formatted(&self) -> String {
+        format_number(&self.likes_and_stars)
+    }
+
+    fn follows_and_watchers_formatted(&self) -> String {
+        format_number(&self.follows_and_watchers)
+    }
+
     fn spigot_url(&self) -> Option<String> {
         Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
     }
@@ -545,6 +558,10 @@ fn SearchRow(
     let date_updated = search_result.date_updated.format(&date_format);
     let time_updated = search_result.date_updated.format(&time_format);
 
+    let downloads = search_result.downloads_formatted();
+    let likes_and_stars = search_result.likes_and_stars_formatted();
+    let follows_and_watchers = search_result.follows_and_watchers_formatted();
+
     let has_spigot = search_result.spigot_name.is_some();
     let has_modrinth = search_result.modrinth_name.is_some();
     let has_hangar = search_result.hangar_name.is_some();
@@ -570,15 +587,15 @@ fn SearchRow(
             </div>
 
             <div class="search-row__downloads-cell">
-                <span class="search-row__downloads">{search_result.downloads}</span>
+                <span class="search-row__downloads">{downloads}</span>
             </div>
 
             <div class="search-row__likes-and-stars-cell">
-                <span class="search-row__likes-and-stars">{search_result.likes_and_stars}</span>
+                <span class="search-row__likes-and-stars">{likes_and_stars}</span>
             </div>
 
             <div class="search-row__follows-and-watchers-cell">
-                <span class="search-row__follows-and-watchers">{search_result.follows_and_watchers}</span>
+                <span class="search-row__follows-and-watchers">{follows_and_watchers}</span>
             </div>
 
             <div class="search-row__spigot-cell">
