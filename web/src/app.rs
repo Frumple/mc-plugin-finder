@@ -475,11 +475,11 @@ fn SearchResults(
 
                                                                 <a class="search-results__pagination-link_current" href=current_url.clone()>{page}</a>
 
-                                                                <Show when=move || { page < total_pages - 1 }>
+                                                                <Show when=move || { page < total_pages.saturating_sub(1) }>
                                                                     <a class="search-results__pagination-link" href=next_url_clone.clone()>{page + 1}</a>
                                                                 </Show>
 
-                                                                <Show when=move || { page < total_pages - 2 }>
+                                                                <Show when=move || { page < total_pages.saturating_sub(2) }>
                                                                     <span class="search-results__pagination-item">"—"</span>
                                                                 </Show>
 
