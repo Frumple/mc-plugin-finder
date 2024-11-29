@@ -196,7 +196,7 @@ body {
 	font-weight: bold;
 }
 
-.search-results__list-item {
+.search-row__list-item {
 	display: flex;
 	flex-wrap: nowrap;
 	gap: 5px;
@@ -205,92 +205,96 @@ body {
 	padding: 5px;
 }
 
-.search-results__stat-cell {
+.search-row__stat-cell {
 	@extend .search_results__stat-column;
 	display: flex;
 	flex-direction: column;
 	align-self: center;
 }
 
-.search-results__main-cell {
+.search-row__main-cell {
 	@extend .search_results__main-column;
 	display: flex;
 	flex-direction: column;
 	align-self: flex-start;
 }
 
-.search-results__created-cell {
-	@extend .search-results__stat-cell;
+.search-row__created-cell {
+	@extend .search-row__stat-cell;
 }
 
-.search-results__updated-cell {
-	@extend .search-results__stat-cell;
+.search-row__updated-cell {
+	@extend .search-row__stat-cell;
 }
 
-.search-results__downloads-cell {
-	@extend .search-results__stat-cell;
+.search-row__downloads-cell {
+	@extend .search-row__stat-cell;
 }
 
-.search-results__likes-and-stars-cell {
-	@extend .search-results__stat-cell;
+.search-row__likes-and-stars-cell {
+	@extend .search-row__stat-cell;
 }
 
-.search-results__follows-and-watchers-cell {
-	@extend .search-results__stat-cell;
+.search-row__follows-and-watchers-cell {
+	@extend .search-row__stat-cell;
 }
 
-.search-results__spigot-cell {
-	@extend .search-results__main-cell;
+.search-row__spigot-cell {
+	@extend .search-row__main-cell;
 }
 
-.search-results__modrinth-cell {
-	@extend .search-results__main-cell;
+.search-row__modrinth-cell {
+	@extend .search-row__main-cell;
 }
 
-.search-results__hangar-cell {
-	@extend .search-results__main-cell;
+.search-row__hangar-cell {
+	@extend .search-row__main-cell;
 }
 
-.search-results__source-cell {
-	@extend .search-results__main-cell;
+.search-row__source-cell {
+	@extend .search-row__main-cell;
 }
 
-.search-results__date {
-
-}
-
-.search-results__time {
+.search-row__date {
 
 }
 
-.search-results__downloads {
+.search-row__time {
 
 }
 
-.search-results__likes-and-stars {
+.search-row__downloads {
 
 }
 
-.search-results__follows-and-watchers {
+.search-row__likes-and-stars {
 
 }
 
-.search-results__cell-title {
+.search-row__follows-and-watchers {
+
+}
+
+.search-row__cell-title {
 	margin-bottom: 5px;
 }
 
-.search-results__plugin-premium {
+.search-row__cell-description {
 
 }
 
-.search-results__plugin-name {
+.search-row__plugin-premium {
+
+}
+
+.search-row__plugin-name {
 	font-weight: bold;
 }
 
-.search-results__plugin-version {
+.search-row__plugin-version {
 
 }
 
-.search-results__plugin-author {
+.search-row__plugin-author {
 	font-style: italic;
 }

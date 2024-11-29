@@ -558,95 +558,95 @@ fn SearchRow(
     let is_spigot_premium = search_result.spigot_premium.unwrap_or_default();
 
     view! {
-        <li class="search-results__list-item">
-            <div class="search-results__created-cell">
-                <div class="search-results__date">{date_created}</div>
-                <div class="search-results__time">{time_created}</div>
+        <li class="search-row__list-item">
+            <div class="search-row__created-cell">
+                <div class="search-row__date">{date_created}</div>
+                <div class="search-row__time">{time_created}</div>
             </div>
 
-            <div class="search-results__updated-cell">
-                <div class="search-results__date">{date_updated}</div>
-                <div class="search-results__time">{time_updated}</div>
+            <div class="search-row__updated-cell">
+                <div class="search-row__date">{date_updated}</div>
+                <div class="search-row__time">{time_updated}</div>
             </div>
 
-            <div class="search-results__downloads-cell">
-                <span class="search-results__downloads">{search_result.downloads}</span>
+            <div class="search-row__downloads-cell">
+                <span class="search-row__downloads">{search_result.downloads}</span>
             </div>
 
-            <div class="search-results__likes-and-stars-cell">
-                <span class="search-results__likes-and-stars">{search_result.likes_and_stars}</span>
+            <div class="search-row__likes-and-stars-cell">
+                <span class="search-row__likes-and-stars">{search_result.likes_and_stars}</span>
             </div>
 
-            <div class="search-results__follows-and-watchers-cell">
-                <span class="search-results__follows-and-watchers">{search_result.follows_and_watchers}</span>
+            <div class="search-row__follows-and-watchers-cell">
+                <span class="search-row__follows-and-watchers">{search_result.follows_and_watchers}</span>
             </div>
 
-            <div class="search-results__spigot-cell">
-                <div class="search-results__cell-title">
+            <div class="search-row__spigot-cell">
+                <div class="search-row__cell-title">
                     <Show when=move || { is_spigot_premium }>
-                        <span class="search-results__plugin-premium">
+                        <span class="search-row__plugin-premium">
                             <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
                                 <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
                             </svg>
                         </span>
                     </Show>
-                    <span class="search-results__plugin-name">
+                    <span class="search-row__plugin-name">
                         <a href=spigot_url target="_blank">{search_result.spigot_name}</a>
                     </span>
                     <Show when=move || { has_spigot }>
                         <span>"  "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{search_result.spigot_version}</span>
+                    <span class="search-row__plugin-version">{search_result.spigot_version}</span>
                     <Show when=move || { has_spigot }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{search_result.spigot_author}</span>
+                    <span class="search-row__plugin-author">{search_result.spigot_author}</span>
                 </div>
-                <div class="search-results__cell-description">
+                <div class="search-row__cell-description">
                     {search_result.spigot_description}
                 </div>
             </div>
 
-            <div class="search-results__modrinth-cell">
-                <div class="search-results__cell-title">
-                    <span class="search-results__plugin-name">
+            <div class="search-row__modrinth-cell">
+                <div class="search-row__cell-title">
+                    <span class="search-row__plugin-name">
                         <a href=modrinth_url target="_blank">{search_result.modrinth_name}</a>
                     </span>
                     <Show when=move || { has_modrinth }>
                         <span>" "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{search_result.modrinth_version}</span>
+                    <span class="search-row__plugin-version">{search_result.modrinth_version}</span>
                     <Show when=move || { has_modrinth }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{search_result.modrinth_author}</span>
+                    <span class="search-row__plugin-author">{search_result.modrinth_author}</span>
                 </div>
-                <div class="search-results__cell-description">
+                <div class="search-row__cell-description">
                     {search_result.modrinth_description}
                 </div>
             </div>
 
-            <div class="search-results__hangar-cell">
-                <div class="search-results__cell-title">
-                    <span class="search-results__plugin-name">
+            <div class="search-row__hangar-cell">
+                <div class="search-row__cell-title">
+                    <span class="search-row__plugin-name">
                         <a href=hangar_url target="_blank">{search_result.hangar_name}</a>
                     </span>
                     <Show when=move || { has_hangar }>
                         <span>" "</span>
                     </Show>
-                    <span class="search-results__plugin-version">{search_result.hangar_version}</span>
+                    <span class="search-row__plugin-version">{search_result.hangar_version}</span>
                     <Show when=move || { has_hangar }>
                         <span>" by "</span>
                     </Show>
-                    <span class="search-results__plugin-author">{search_result.hangar_author}</span>
+                    <span class="search-row__plugin-author">{search_result.hangar_author}</span>
                 </div>
-                <div class="search-results__cell-description">
+                <div class="search-row__cell-description">
                     {search_result.hangar_description}
                 </div>
             </div>
 
-            <div class="search-results__source-cell">
-                <div class="search-results__cell-title">
+            <div class="search-row__source-cell">
+                <div class="search-row__cell-title">
                     <a href=source_repository_url target="_blank" inner_html=source_repository_url_wbr></a>
                 </div>
             </div>
