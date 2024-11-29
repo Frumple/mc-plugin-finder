@@ -348,6 +348,7 @@ mod test {
     use crate::database::spigot::author::SpigotAuthor;
     use crate::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
     use crate::database::spigot::resource::test::{populate_test_spigot_author_and_resource, populate_test_spigot_authors_and_resources};
+    use crate::database::spigot::test::SPIGOT_BASE64_TEST_ICON_DATA;
 
     use crate::database::test::DatabaseTestContext;
 
@@ -378,6 +379,8 @@ mod test {
             version_id: 1,
             version_name: None,
             premium: false,
+            icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
+            icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
             source_url: Some("https://gitlab.com/Frumple/bar".to_string()),
             source_repository_host: Some("gitlab.com".to_string()),
             source_repository_owner: Some("Frumple".to_string()),

@@ -22,13 +22,15 @@ pub struct SpigotResource {
     pub version_id: i32,
     pub version_name: Option<String>,
     pub premium: bool,
+    pub icon_url: Option<String>,
+    pub icon_data: Option<String>,
     pub source_url: Option<String>,
     pub source_repository_host: Option<String>,
     pub source_repository_owner: Option<String>,
     pub source_repository_name: Option<String>
 }
 
-impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String> {
+impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String, String, String> {
     fn from(resource: SpigotResource) -> Self {
         UpsertSpigotResourceParams {
             id: resource.id,
@@ -36,6 +38,8 @@ impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String,
             parsed_name: resource.parsed_name,
             description: resource.description,
             slug: resource.slug,
+            icon_url: resource.icon_url,
+            icon_data: resource.icon_data,
             date_created: resource.date_created,
             date_updated: resource.date_updated,
             downloads: resource.downloads,
@@ -68,6 +72,8 @@ impl From<SpigotResourceEntity> for SpigotResource {
             version_id: entity.version_id,
             version_name: entity.version_name,
             premium: entity.premium,
+            icon_url: entity.icon_url,
+            icon_data: entity.icon_data,
             source_url: entity.source_url,
             source_repository_host: entity.source_repository_host,
             source_repository_owner: entity.source_repository_owner,
@@ -136,6 +142,7 @@ pub mod test {
     use super::*;
     use crate::database::spigot::author::SpigotAuthor;
     use crate::database::spigot::author::test::{populate_test_spigot_author, populate_test_spigot_authors};
+    use crate::database::spigot::test::SPIGOT_BASE64_TEST_ICON_DATA;
     use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -194,6 +201,8 @@ pub mod test {
             version_id: 2,
             version_name: None,
             premium: true,
+            icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
+            icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
             source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
             source_repository_host: Some("github.com".to_string()),
             source_repository_owner: Some("Frumple".to_string()),
@@ -307,6 +316,8 @@ pub mod test {
                 version_id: 1,
                 version_name: None,
                 premium: false,
+                icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
+                icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
                 source_repository_host: Some("github.com".to_string()),
                 source_repository_owner: Some("alice".to_string()),
@@ -326,6 +337,8 @@ pub mod test {
                 version_id: 1,
                 version_name: None,
                 premium: false,
+                icon_url: Some("data/resource_icons/2/2.jpg".to_string()),
+                icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
                 source_repository_host: Some("gitlab.com".to_string()),
                 source_repository_owner: Some("bob".to_string()),
@@ -345,6 +358,8 @@ pub mod test {
                 version_id: 1,
                 version_name: None,
                 premium: false,
+                icon_url: Some("data/resource_icons/3/3.jpg".to_string()),
+                icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
                 source_repository_host: Some("bitbucket.org".to_string()),
                 source_repository_owner: Some("eve".to_string()),

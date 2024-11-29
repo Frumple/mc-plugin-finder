@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS spigot_resource (
   version_id integer NOT NULL,
   version_name text,
   premium boolean NOT NULL,
+  icon_url text,
+  icon_data text,
   source_url text,
   source_repository_host text,
   source_repository_owner text,

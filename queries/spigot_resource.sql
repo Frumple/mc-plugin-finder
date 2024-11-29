@@ -1,8 +1,8 @@
---: SpigotResourceEntity(parsed_name?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SpigotResourceEntity(parsed_name?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_spigot_resource (parsed_name?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, downloads, likes, author_id, version_id, version_name, premium, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:id, :name, :parsed_name, :description, :slug, :date_created, :date_updated, :downloads, :likes, :author_id, :version_id, :version_name, :premium, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_spigot_resource (parsed_name?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, downloads, likes, author_id, version_id, version_name, premium, icon_url, icon_data, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :name, :parsed_name, :description, :slug, :date_created, :date_updated, :downloads, :likes, :author_id, :version_id, :version_name, :premium, :icon_url, :icon_data, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (id)
   DO UPDATE SET
     name = EXCLUDED.name,
@@ -17,6 +17,8 @@ INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_crea
     version_id = EXCLUDED.version_id,
     version_name = EXCLUDED.version_name,
     premium = EXCLUDED.premium,
+    icon_url = EXCLUDED.icon_url,
+    icon_data = EXCLUDED.icon_data,
     source_url = EXCLUDED.source_url,
     source_repository_host = EXCLUDED.source_repository_host,
     source_repository_owner = EXCLUDED.source_repository_owner,

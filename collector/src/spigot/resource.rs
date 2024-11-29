@@ -19,7 +19,7 @@ use thiserror::Error;
 use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
 
-const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,releaseDate,updateDate,downloads,likes,file,author,version,premium,sourceCodeLink";
+const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
@@ -90,6 +90,7 @@ pub struct IncomingSpigotResource {
     id: i32,
     name: String,
     tag: String,
+    icon: Option<IncomingSpigotResourceNestedIcon>,
     release_date: i64,
     update_date: i64,
     downloads: i32,
@@ -99,6 +100,12 @@ pub struct IncomingSpigotResource {
     version: IncomingSpigotResourceNestedVersion,
     premium: Option<bool>,
     source_code_link: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct IncomingSpigotResourceNestedIcon {
+    url: String,
+    data: String
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -272,7 +279,6 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
             let parsed_name = parse_resource_name(&incoming_resource.name);
 
-            // "likes" and "premium" may not exist, default to 0 or false if this is the case.
             let mut resource = SpigotResource {
                 id: incoming_resource.id,
                 name: incoming_resource.name,
@@ -282,11 +288,16 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 date_created: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
                 date_updated: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
                 downloads: incoming_resource.downloads,
+                // "likes" may not exist, default to 0 if this is the case.
                 likes: incoming_resource.likes.unwrap_or_default(),
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
                 version_name: version_name.clone(),
+                // "premium" may not exist, default to false if this is the case.
                 premium: incoming_resource.premium.unwrap_or_default(),
+                // "icon" may not exist, set "icon_url" and "icon_data" if this is the case.
+                icon_url: incoming_resource.icon.as_ref().map(|icon| icon.url.clone()),
+                icon_data: incoming_resource.icon.map(|icon| icon.data),
                 source_url: incoming_resource.source_code_link.clone(),
                 source_repository_host: None,
                 source_repository_owner: None,
@@ -407,6 +418,7 @@ fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
 mod test {
     use super::*;
     use crate::spigot::test::SpigotTestServer;
+    use mc_plugin_finder::database::spigot::test::SPIGOT_BASE64_TEST_ICON_DATA;
 
     use rstest::*;
     use speculoos::prelude::*;
@@ -634,6 +646,10 @@ mod test {
                 id: 1,
                 name: "resource-1".to_string(),
                 tag: "resource-1-tag".to_string(),
+                icon: Some(IncomingSpigotResourceNestedIcon {
+                    url: "data/resource_icons/1/1.jpg".to_string(),
+                    data: SPIGOT_BASE64_TEST_ICON_DATA.to_string(),
+                }),
                 release_date: 1577836800,
                 update_date: 1609459200,
                 downloads: 100,
@@ -654,6 +670,10 @@ mod test {
                 id: 2,
                 name: "resource-2".to_string(),
                 tag: "resource-2-tag".to_string(),
+                icon: Some(IncomingSpigotResourceNestedIcon {
+                    url: "data/resource_icons/2/2.jpg".to_string(),
+                    data: SPIGOT_BASE64_TEST_ICON_DATA.to_string()
+                }),
                 release_date: 1577836800,
                 update_date: 1640995200,
                 downloads: 100,
