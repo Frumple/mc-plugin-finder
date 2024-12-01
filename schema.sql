@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS modrinth_project (
   author text NOT NULL,
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
+  latest_minecraft_version text COLLATE en_natural,
   downloads integer NOT NULL,
   follows integer NOT NULL,
   version_id text,

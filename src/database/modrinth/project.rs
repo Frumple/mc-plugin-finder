@@ -16,6 +16,7 @@ pub struct ModrinthProject {
     pub author: String,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub latest_minecraft_version: Option<String>,
     pub downloads: i32,
     pub follows: i32,
     pub version_id: Option<String>,
@@ -28,7 +29,7 @@ pub struct ModrinthProject {
     pub source_repository_name: Option<String>
 }
 
-impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, String, String, String, String, String, String, String, String, String, String, String> {
+impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: ModrinthProject) -> Self {
         UpsertModrinthProjectParams {
             id: project.id,
@@ -38,6 +39,7 @@ impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, Strin
             author: project.author,
             date_created: project.date_created,
             date_updated: project.date_updated,
+            latest_minecraft_version: project.latest_minecraft_version,
             downloads: project.downloads,
             follows: project.follows,
             version_id: project.version_id,
@@ -62,6 +64,7 @@ impl From<ModrinthProjectEntity> for ModrinthProject {
             author: entity.author,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+            latest_minecraft_version: entity.latest_minecraft_version,
             downloads: entity.downloads,
             follows: entity.follows,
             version_id: entity.version_id,
@@ -182,6 +185,7 @@ pub mod test {
             author: "Frumple".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2021-07-01 0:00 UTC),
+            latest_minecraft_version: Some("1.22".to_string()),
             downloads: 100,
             follows: 200,
             version_id: Some("aaaa2222".to_string()),
@@ -258,6 +262,7 @@ pub mod test {
                 author: "alice".to_string(),
                 date_created: datetime!(2021-01-01 0:00 UTC),
                 date_updated: datetime!(2021-02-03 0:00 UTC),
+                latest_minecraft_version: Some("1.21".to_string()),
                 downloads: 100,
                 follows: 200,
                 version_id: Some("aaaa1111".to_string()),
@@ -277,6 +282,7 @@ pub mod test {
                 author: "bob".to_string(),
                 date_created: datetime!(2021-01-02 0:00 UTC),
                 date_updated: datetime!(2021-02-02 0:00 UTC),
+                latest_minecraft_version: Some("1.8".to_string()),
                 downloads: 300,
                 follows: 300,
                 version_id: Some("bbbb1111".to_string()),
@@ -296,6 +302,7 @@ pub mod test {
                 author: "eve".to_string(),
                 date_created: datetime!(2021-01-03 0:00 UTC),
                 date_updated: datetime!(2021-02-01 0:00 UTC),
+                latest_minecraft_version: Some("1.16".to_string()),
                 downloads: 200,
                 follows: 100,
                 version_id: Some("cccc1111".to_string()),

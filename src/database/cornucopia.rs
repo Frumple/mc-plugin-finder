@@ -630,12 +630,12 @@ time::OffsetDateTime, 0>
         |row| { row.get(0) }, mapper: |it| { it },
     }
 } }}pub mod modrinth_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertModrinthProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,> { pub id: T1,pub slug: T2,pub name: T3,pub description: T4,pub author: T5,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub downloads: i32,pub follows: i32,pub version_id: Option<T6>,pub version_name: Option<T7>,pub icon_url: Option<T8>,pub monetization_status: Option<T9>,pub source_url: Option<T10>,pub source_repository_host: Option<T11>,pub source_repository_owner: Option<T12>,pub source_repository_name: Option<T13>,}#[derive( Debug, Clone, PartialEq,)] pub struct ModrinthProjectEntity
-{ pub id : String,pub slug : String,pub name : String,pub description : String,pub author : String,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub follows : i32,pub version_id : Option<String>,pub version_name : Option<String>,pub icon_url : Option<String>,pub monetization_status : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct ModrinthProjectEntityBorrowed<'a> { pub id : &'a str,pub slug : &'a str,pub name : &'a str,pub description : &'a str,pub author : &'a str,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub follows : i32,pub version_id : Option<&'a str>,pub version_name : Option<&'a str>,pub icon_url : Option<&'a str>,pub monetization_status : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertModrinthProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,T14: cornucopia_async::StringSql,> { pub id: T1,pub slug: T2,pub name: T3,pub description: T4,pub author: T5,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub latest_minecraft_version: Option<T6>,pub downloads: i32,pub follows: i32,pub version_id: Option<T7>,pub version_name: Option<T8>,pub icon_url: Option<T9>,pub monetization_status: Option<T10>,pub source_url: Option<T11>,pub source_repository_host: Option<T12>,pub source_repository_owner: Option<T13>,pub source_repository_name: Option<T14>,}#[derive( Debug, Clone, PartialEq,)] pub struct ModrinthProjectEntity
+{ pub id : String,pub slug : String,pub name : String,pub description : String,pub author : String,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<String>,pub downloads : i32,pub follows : i32,pub version_id : Option<String>,pub version_name : Option<String>,pub icon_url : Option<String>,pub monetization_status : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct ModrinthProjectEntityBorrowed<'a> { pub id : &'a str,pub slug : &'a str,pub name : &'a str,pub description : &'a str,pub author : &'a str,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<&'a str>,pub downloads : i32,pub follows : i32,pub version_id : Option<&'a str>,pub version_name : Option<&'a str>,pub icon_url : Option<&'a str>,pub monetization_status : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
 impl<'a> From<ModrinthProjectEntityBorrowed<'a>> for ModrinthProjectEntity
 {
-    fn from(ModrinthProjectEntityBorrowed { id,slug,name,description,author,date_created,date_updated,downloads,follows,version_id,version_name,icon_url,monetization_status,source_url,source_repository_host,source_repository_owner,source_repository_name,}: ModrinthProjectEntityBorrowed<'a>) ->
-    Self { Self { id: id.into(),slug: slug.into(),name: name.into(),description: description.into(),author: author.into(),date_created,date_updated,downloads,follows,version_id: version_id.map(|v| v.into()),version_name: version_name.map(|v| v.into()),icon_url: icon_url.map(|v| v.into()),monetization_status: monetization_status.map(|v| v.into()),source_url: source_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
+    fn from(ModrinthProjectEntityBorrowed { id,slug,name,description,author,date_created,date_updated,latest_minecraft_version,downloads,follows,version_id,version_name,icon_url,monetization_status,source_url,source_repository_host,source_repository_owner,source_repository_name,}: ModrinthProjectEntityBorrowed<'a>) ->
+    Self { Self { id: id.into(),slug: slug.into(),name: name.into(),description: description.into(),author: author.into(),date_created,date_updated,latest_minecraft_version: latest_minecraft_version.map(|v| v.into()),downloads,follows,version_id: version_id.map(|v| v.into()),version_name: version_name.map(|v| v.into()),icon_url: icon_url.map(|v| v.into()),monetization_status: monetization_status.map(|v| v.into()),source_url: source_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
 }pub struct ModrinthProjectEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -715,8 +715,8 @@ GenericClient
         Ok(it)
     }
 }pub fn upsert_modrinth_project() -> UpsertModrinthProjectStmt
-{ UpsertModrinthProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO modrinth_project (id, slug, name, description, author, date_created, date_updated, downloads, follows, version_id, version_name, icon_url, monetization_status, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+{ UpsertModrinthProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO modrinth_project (id, slug, name, description, author, date_created, date_updated, latest_minecraft_version, downloads, follows, version_id, version_name, icon_url, monetization_status, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
   ON CONFLICT(id)
   DO UPDATE SET
     id = EXCLUDED.id,
@@ -726,6 +726,7 @@ GenericClient
     author = EXCLUDED.author,
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
+    latest_minecraft_version = EXCLUDED.latest_minecraft_version,
     downloads = EXCLUDED.downloads,
     follows = EXCLUDED.follows,
     version_id = EXCLUDED.version_id,
@@ -751,20 +752,21 @@ cornucopia_async::StringSql,T10:
 cornucopia_async::StringSql,T11:
 cornucopia_async::StringSql,T12:
 cornucopia_async::StringSql,T13:
+cornucopia_async::StringSql,T14:
 cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-id: &'a T1,slug: &'a T2,name: &'a T3,description: &'a T4,author: &'a T5,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,downloads: &'a i32,follows: &'a i32,version_id: &'a Option<T6>,version_name: &'a Option<T7>,icon_url: &'a Option<T8>,monetization_status: &'a Option<T9>,source_url: &'a Option<T10>,source_repository_host: &'a Option<T11>,source_repository_owner: &'a Option<T12>,source_repository_name: &'a Option<T13>,) -> Result<u64, tokio_postgres::Error>
+id: &'a T1,slug: &'a T2,name: &'a T3,description: &'a T4,author: &'a T5,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,latest_minecraft_version: &'a Option<T6>,downloads: &'a i32,follows: &'a i32,version_id: &'a Option<T7>,version_name: &'a Option<T8>,icon_url: &'a Option<T9>,monetization_status: &'a Option<T10>,source_url: &'a Option<T11>,source_repository_host: &'a Option<T12>,source_repository_owner: &'a Option<T13>,source_repository_name: &'a Option<T14>,) -> Result<u64, tokio_postgres::Error>
 {
     let stmt = self.0.prepare(client).await?;
-    client.execute(stmt, &[id,slug,name,description,author,date_created,date_updated,downloads,follows,version_id,version_name,icon_url,monetization_status,source_url,source_repository_host,source_repository_owner,source_repository_name,]).await
-} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,>
-cornucopia_async::Params<'a, UpsertModrinthProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    client.execute(stmt, &[id,slug,name,description,author,date_created,date_updated,latest_minecraft_version,downloads,follows,version_id,version_name,icon_url,monetization_status,source_url,source_repository_host,source_repository_owner,source_repository_name,]).await
+} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,T14: cornucopia_async::StringSql,>
+cornucopia_async::Params<'a, UpsertModrinthProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
 tokio_postgres::Error>> + Send + 'a>>, C> for UpsertModrinthProjectStmt
 {
     fn
     params(&'a mut self, client: &'a  C, params: &'a
-    UpsertModrinthProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    UpsertModrinthProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
     tokio_postgres::Error>> + Send + 'a>>
-    { Box::pin(self.bind(client, &params.id,&params.slug,&params.name,&params.description,&params.author,&params.date_created,&params.date_updated,&params.downloads,&params.follows,&params.version_id,&params.version_name,&params.icon_url,&params.monetization_status,&params.source_url,&params.source_repository_host,&params.source_repository_owner,&params.source_repository_name,)) }
+    { Box::pin(self.bind(client, &params.id,&params.slug,&params.name,&params.description,&params.author,&params.date_created,&params.date_updated,&params.latest_minecraft_version,&params.downloads,&params.follows,&params.version_id,&params.version_name,&params.icon_url,&params.monetization_status,&params.source_url,&params.source_repository_host,&params.source_repository_owner,&params.source_repository_name,)) }
 }pub fn get_modrinth_projects() -> GetModrinthProjectsStmt
 { GetModrinthProjectsStmt(cornucopia_async::private::Stmt::new("SELECT * FROM modrinth_project")) } pub struct
 GetModrinthProjectsStmt(cornucopia_async::private::Stmt); impl GetModrinthProjectsStmt
@@ -776,7 +778,7 @@ ModrinthProjectEntity, 0>
     ModrinthProjectEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { ModrinthProjectEntityBorrowed { id: row.get(0),slug: row.get(1),name: row.get(2),description: row.get(3),author: row.get(4),date_created: row.get(5),date_updated: row.get(6),downloads: row.get(7),follows: row.get(8),version_id: row.get(9),version_name: row.get(10),icon_url: row.get(11),monetization_status: row.get(12),source_url: row.get(13),source_repository_host: row.get(14),source_repository_owner: row.get(15),source_repository_name: row.get(16),} }, mapper: |it| { <ModrinthProjectEntity>::from(it) },
+        |row| { ModrinthProjectEntityBorrowed { id: row.get(0),slug: row.get(1),name: row.get(2),description: row.get(3),author: row.get(4),date_created: row.get(5),date_updated: row.get(6),latest_minecraft_version: row.get(7),downloads: row.get(8),follows: row.get(9),version_id: row.get(10),version_name: row.get(11),icon_url: row.get(12),monetization_status: row.get(13),source_url: row.get(14),source_repository_host: row.get(15),source_repository_owner: row.get(16),source_repository_name: row.get(17),} }, mapper: |it| { <ModrinthProjectEntity>::from(it) },
     }
 } }pub fn get_latest_modrinth_project_update_date() -> GetLatestModrinthProjectUpdateDateStmt
 { GetLatestModrinthProjectUpdateDateStmt(cornucopia_async::private::Stmt::new("SELECT max(date_updated) FROM modrinth_project")) } pub struct

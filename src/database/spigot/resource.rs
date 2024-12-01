@@ -198,7 +198,7 @@ pub mod test {
             slug: "foo-updated.1".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2021-07-01 0:00 UTC),
-            latest_minecraft_version: Some("1.21.4".to_string()),
+            latest_minecraft_version: Some("1.22".to_string()),
             downloads: 101,
             likes: 201,
             author_id: 1,

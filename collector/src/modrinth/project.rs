@@ -8,16 +8,20 @@ use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
+use regex::Regex;
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 use std::cell::Cell;
 use std::fmt::Debug;
+use std::sync::LazyLock;
 use thiserror::Error;
 use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
 
 const MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD: usize = 2;
+
+static MINECRAFT_VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+(\.\d)?(-pre\d+|-rc\d+)?$").unwrap());
 
 #[derive(Clone, Debug, Serialize)]
 struct SearchModrinthProjectsRequest {
@@ -72,6 +76,7 @@ pub struct IncomingModrinthProject {
     author: String,
     date_created: String,
     date_modified: String,
+    versions: Vec<String>,
     downloads: i32,
     follows: i32,
     latest_version: Option<String>,
@@ -270,6 +275,7 @@ impl<T> PageTurner<SearchModrinthProjectsRequest> for ModrinthClient<T> where T:
 
 async fn convert_incoming_project(incoming_project: IncomingModrinthProject, source_url: &Option<String>, version_name: &Option<String>) -> Result<ModrinthProject> {
     let project_id = incoming_project.project_id;
+    let latest_minecraft_version = filter_mainline_minecraft_versions(incoming_project.versions.last().cloned());
 
     let mut project = ModrinthProject {
         id: project_id,
@@ -279,6 +285,8 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
         author: incoming_project.author,
         date_created: OffsetDateTime::parse(&incoming_project.date_created, &Rfc3339)?,
         date_updated: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
+        // Assume that the last entry in the given list of versions from the API is the latest version.
+        latest_minecraft_version,
         downloads: incoming_project.downloads,
         follows: incoming_project.follows,
         version_id: incoming_project.latest_version,
@@ -302,6 +310,16 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
     }
 
     Ok(project)
+}
+
+// Ignore snapshots and other versions like "b1.7.3" that can mess up the ordering of versions.
+fn filter_mainline_minecraft_versions(latest_minecraft_version: Option<String>) -> Option<String> {
+    if let Some(ref version) = latest_minecraft_version {
+        if MINECRAFT_VERSION_REGEX.is_match(version) {
+            return latest_minecraft_version;
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -400,6 +418,7 @@ mod test {
             author: "alice".to_string(),
             date_created: datetime!(2021-01-01 0:00 UTC),
             date_updated: datetime!(2021-02-03 0:00 UTC),
+            latest_minecraft_version: Some("1.21".to_string()),
             downloads: 100,
             follows: 200,
             version_id: Some("aaaa1111".to_string()),
@@ -417,6 +436,40 @@ mod test {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn should_process_incoming_project_where_latest_minecraft_version_is_a_snapshot() -> Result<()> {
+        // Arrange
+        let mut incoming_project = create_test_modrinth_projects()[0].clone();
+        incoming_project.versions = vec!["1.21.2".to_string(), "1.21.3".to_string(), "24w46a".to_string()];
+        let source_url = "https://github.com/alice/foo";
+        let version_name = "v1.2.3";
+
+        // Act
+        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
+
+        // Assert
+        assert_that(&project.latest_minecraft_version).is_none();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_process_incoming_project_where_latest_minecraft_version_is_beta() -> Result<()> {
+        // Arrange
+        let mut incoming_project = create_test_modrinth_projects()[0].clone();
+        incoming_project.versions = vec!["b1.7.3".to_string()];
+        let source_url = "https://github.com/alice/foo";
+        let version_name = "v1.2.3";
+
+        // Act
+        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
+
+        // Assert
+        assert_that(&project.latest_minecraft_version).is_none();
+
+        Ok(())
+    }
+
     fn create_test_modrinth_projects() -> Vec<IncomingModrinthProject> {
         vec![
             IncomingModrinthProject {
@@ -427,6 +480,7 @@ mod test {
                 author: "alice".to_string(),
                 date_created: "2021-01-01T00:00:00Z".to_string(),
                 date_modified: "2021-02-03T00:00:00Z".to_string(),
+                versions: vec!["1.20".to_string(), "1.20.6".to_string(), "1.21".to_string()],
                 downloads: 100,
                 follows: 200,
                 latest_version: Some("aaaa1111".to_string()),
@@ -441,6 +495,7 @@ mod test {
                 author: "bob".to_string(),
                 date_created: "2021-01-02T00:00:00Z".to_string(),
                 date_modified: "2021-02-02T00:00:00Z".to_string(),
+                versions: vec!["1.6".to_string(), "1.7".to_string(), "1.8".to_string()],
                 downloads: 300,
                 follows: 300,
                 latest_version: Some("bbbb1111".to_string()),
