@@ -27,12 +27,14 @@ pub struct CommonProject {
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
     pub modrinth_version: Option<String>,
+    pub modrinth_icon_url: Option<String>,
 
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>,
-    pub hangar_version: Option<String>
+    pub hangar_version: Option<String>,
+    pub hangar_avatar_url: Option<String>
 }
 
 impl From<CommonProject> for UpsertCommonProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
@@ -77,12 +79,14 @@ impl From<CommonProjectEntity> for CommonProject {
             modrinth_description: entity.modrinth_description,
             modrinth_author: entity.modrinth_author,
             modrinth_version: entity.modrinth_version,
+            modrinth_icon_url: entity.modrinth_icon_url,
 
             hangar_slug: entity.hangar_slug,
             hangar_name: entity.hangar_name,
             hangar_description: entity.hangar_description,
             hangar_author: entity.hangar_author,
-            hangar_version: entity.hangar_version
+            hangar_version: entity.hangar_version,
+            hangar_avatar_url: entity.hangar_avatar_url
         }
     }
 }
@@ -224,12 +228,14 @@ impl From<CommonProjectSearchResultEntity> for CommonProjectSearchResult {
                 modrinth_description: entity.modrinth_description,
                 modrinth_author: entity.modrinth_author,
                 modrinth_version: entity.modrinth_version,
+                modrinth_icon_url: entity.modrinth_icon_url,
 
                 hangar_slug: entity.hangar_slug,
                 hangar_name: entity.hangar_name,
                 hangar_description: entity.hangar_description,
                 hangar_author: entity.hangar_author,
                 hangar_version: entity.hangar_version,
+                hangar_avatar_url: entity.hangar_avatar_url
             },
 
             source_repository_host: entity.source_repository_host,

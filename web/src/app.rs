@@ -38,12 +38,14 @@ pub struct WebSearchResult {
     pub modrinth_description: Option<String>,
     pub modrinth_author: Option<String>,
     pub modrinth_version: Option<String>,
+    pub modrinth_icon_url: Option<String>,
 
     pub hangar_slug: Option<String>,
     pub hangar_name: Option<String>,
     pub hangar_description: Option<String>,
     pub hangar_author: Option<String>,
     pub hangar_version: Option<String>,
+    pub hangar_avatar_url: Option<String>,
 
     pub source_repository_host: Option<String>,
     pub source_repository_owner: Option<String>,
@@ -112,12 +114,14 @@ impl From<CommonProjectSearchResult> for WebSearchResult {
             modrinth_description: search_result.project.modrinth_description,
             modrinth_author: search_result.project.modrinth_author,
             modrinth_version: search_result.project.modrinth_version,
+            modrinth_icon_url: search_result.project.modrinth_icon_url,
 
             hangar_slug: search_result.project.hangar_slug,
             hangar_name: search_result.project.hangar_name,
             hangar_description: search_result.project.hangar_description,
             hangar_author: search_result.project.hangar_author,
             hangar_version: search_result.project.hangar_version,
+            hangar_avatar_url: search_result.project.hangar_avatar_url,
 
             source_repository_host: search_result.source_repository_host,
             source_repository_owner: search_result.source_repository_owner,
@@ -357,7 +361,7 @@ fn HomePage() -> impl IntoView {
     );
 
     view! {
-        <h1>"MC Plugin Finder"</h1>
+        <h1 class="home-page__title">"MC Plugin Finder"</h1>
 
         <div class="home-page__container">
             <SearchForm params_memo />
@@ -572,9 +576,16 @@ fn SearchRow(
     let has_modrinth = search_result.modrinth_name.is_some();
     let has_hangar = search_result.hangar_name.is_some();
 
+    let modrinth_name = search_result.modrinth_name.clone();
+    let hangar_name = search_result.hangar_name.clone();
+
     let spigot_url = search_result.spigot_url();
     let modrinth_url = search_result.modrinth_url();
     let hangar_url = search_result.hangar_url();
+
+    let modrinth_icon_url = search_result.modrinth_icon_url.clone();
+    let hangar_avatar_url = search_result.hangar_avatar_url.clone();
+
     let source_repository_url = search_result.source_repository_url();
     let source_repository_url_wbr = search_result.source_repository_url_wbr();
 
@@ -609,67 +620,75 @@ fn SearchRow(
             </div>
 
             <div class="search-row__spigot-cell">
-                <div class="search-row__cell-title">
-                    <Show when=move || { is_spigot_premium }>
-                        <span class="search-row__plugin-premium">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
-                                <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
-                            </svg>
+                <div class="search-row__title-and-description">
+                    <div class="search-row__cell-title">
+                        <Show when=move || { is_spigot_premium }>
+                            <span class="search-row__plugin-premium">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
+                                    <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
+                                </svg>
+                            </span>
+                        </Show>
+                        <span class="search-row__plugin-name">
+                            <a href=spigot_url target="_blank">{search_result.spigot_name}</a>
                         </span>
-                    </Show>
-                    <span class="search-row__plugin-name">
-                        <a href=spigot_url target="_blank">{search_result.spigot_name}</a>
-                    </span>
-                    <Show when=move || { has_spigot }>
-                        <span>"  "</span>
-                    </Show>
-                    <span class="search-row__plugin-version">{search_result.spigot_version}</span>
-                    <Show when=move || { has_spigot }>
-                        <span>" by "</span>
-                    </Show>
-                    <span class="search-row__plugin-author">{search_result.spigot_author}</span>
-                </div>
-                <div class="search-row__cell-description">
-                    {search_result.spigot_description}
+                        <Show when=move || { has_spigot }>
+                            <span>"  "</span>
+                        </Show>
+                        <span class="search-row__plugin-version">{search_result.spigot_version}</span>
+                        <Show when=move || { has_spigot }>
+                            <span>" by "</span>
+                        </Show>
+                        <span class="search-row__plugin-author">{search_result.spigot_author}</span>
+                    </div>
+                    <div class="search-row__cell-description">
+                        {search_result.spigot_description}
+                    </div>
                 </div>
             </div>
 
             <div class="search-row__modrinth-cell">
-                <div class="search-row__cell-title">
-                    <span class="search-row__plugin-name">
-                        <a href=modrinth_url target="_blank">{search_result.modrinth_name}</a>
-                    </span>
-                    <Show when=move || { has_modrinth }>
-                        <span>" "</span>
-                    </Show>
-                    <span class="search-row__plugin-version">{search_result.modrinth_version}</span>
-                    <Show when=move || { has_modrinth }>
-                        <span>" by "</span>
-                    </Show>
-                    <span class="search-row__plugin-author">{search_result.modrinth_author}</span>
-                </div>
-                <div class="search-row__cell-description">
-                    {search_result.modrinth_description}
-                </div>
+                <Show when=move || { has_modrinth }>
+                    <a href=modrinth_url.clone() target="_blank">
+                        <img class="search-row__image" src=modrinth_icon_url.clone() title=modrinth_name.clone() loading="lazy" />
+                    </a>
+                    <div class="search-row__title-and-description">
+                        <div class="search-row__cell-title">
+                            <span class="search-row__plugin-name">
+                                <a href=modrinth_url.clone() target="_blank">{modrinth_name.clone()}</a>
+                            </span>
+                            <span>" "</span>
+                            <span class="search-row__plugin-version">{search_result.modrinth_version.clone()}</span>
+                            <span>" by "</span>
+                            <span class="search-row__plugin-author">{search_result.modrinth_author.clone()}</span>
+                        </div>
+                        <div class="search-row__cell-description">
+                            {search_result.modrinth_description.clone()}
+                        </div>
+                    </div>
+                </Show>
             </div>
 
             <div class="search-row__hangar-cell">
-                <div class="search-row__cell-title">
-                    <span class="search-row__plugin-name">
-                        <a href=hangar_url target="_blank">{search_result.hangar_name}</a>
-                    </span>
-                    <Show when=move || { has_hangar }>
-                        <span>" "</span>
-                    </Show>
-                    <span class="search-row__plugin-version">{search_result.hangar_version}</span>
-                    <Show when=move || { has_hangar }>
-                        <span>" by "</span>
-                    </Show>
-                    <span class="search-row__plugin-author">{search_result.hangar_author}</span>
-                </div>
-                <div class="search-row__cell-description">
-                    {search_result.hangar_description}
-                </div>
+                <Show when=move || { has_hangar }>
+                    <a href=hangar_url.clone() target="_blank">
+                        <img class="search-row__image" src=hangar_avatar_url.clone() title=hangar_name.clone() loading="lazy" />
+                    </a>
+                    <div class="search-row__title-and-description">
+                        <div class="search-row__cell-title">
+                            <span class="search-row__plugin-name">
+                                <a href=hangar_url.clone() target="_blank">{hangar_name.clone()}</a>
+                            </span>
+                            <span>" "</span>
+                            <span class="search-row__plugin-version">{search_result.hangar_version.clone()}</span>
+                            <span>" by "</span>
+                            <span class="search-row__plugin-author">{search_result.hangar_author.clone()}</span>
+                        </div>
+                        <div class="search-row__cell-description">
+                            {search_result.hangar_description.clone()}
+                        </div>
+                    </div>
+                </Show>
             </div>
 
             <div class="search-row__source-cell">

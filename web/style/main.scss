@@ -1,5 +1,8 @@
 body {
 	font-family: sans-serif;
+}
+
+.home-page__title {
 	text-align: center;
 }
 
@@ -203,6 +206,7 @@ body {
 .search-row__list-item {
 	display: flex;
 	flex-wrap: nowrap;
+	align-items: center;
 	gap: 5px;
 	list-style-type: none;
 	border: 1px lightgray solid;
@@ -219,8 +223,8 @@ body {
 .search-row__main-cell {
 	@extend .search_results__main-column;
 	display: flex;
-	flex-direction: column;
 	align-self: flex-start;
+	gap: 5px;
 }
 
 .search-row__created-cell {
@@ -261,6 +265,18 @@ body {
 
 .search-row__source-cell {
 	@extend .search-row__main-cell;
+}
+
+.search-row__image {
+	align-self: center;
+	width: 75px;
+	height: 75px;
+}
+
+.search-row__title-and-description {
+	display: flex;
+	flex-direction: column;
+	align-self: flex-start;
 }
 
 .search-row__date {
