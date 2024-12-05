@@ -405,6 +405,7 @@ fn SearchForm(
                 <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()" prop:value=move || params().sort>
                     <option value="date_created">Newest</option>
                     <option value="date_updated">Recently Updated</option>
+                    <option value="latest_minecraft_version">Latest MC Version</option>
                     <option value="downloads">Downloads</option>
                     <option value="likes_and_stars">Likes + Stars</option>
                     <option value="follows_and_watchers">Follows + Watchers</option>

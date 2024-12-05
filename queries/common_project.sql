@@ -287,6 +287,19 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.date_updated
         END
     END DESC,
+
+    CASE
+      WHEN :sort = 'latest_minecraft_version' THEN
+        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.latest_minecraft_version
+             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.latest_minecraft_version
+             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.latest_minecraft_version
+        END
+    END DESC NULLS LAST,
+
     CASE
       WHEN :sort = 'downloads' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
@@ -297,6 +310,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.downloads, 0)
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.downloads, 0)
         END
+
       WHEN :sort = 'likes_and_stars' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
              WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
@@ -305,7 +319,7 @@ WHERE
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(s.likes, 0)
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN 0
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.stars, 0)
-      END
+        END
 
       WHEN :sort = 'follows_and_watchers' THEN
         CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
@@ -315,7 +329,7 @@ WHERE
              WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN 0
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(m.follows, 0)
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(h.watchers, 0)
-      END
+        END
     END DESC
 
 LIMIT :limit

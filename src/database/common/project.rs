@@ -140,6 +140,7 @@ impl From<SearchParams> for SearchCommonProjectsParams<String, String> {
 pub enum SearchParamsSort {
     DateCreated,
     DateUpdated,
+    LatestMinecraftVersion,
     #[default]
     Downloads,
     LikesAndStars,
@@ -152,6 +153,7 @@ impl From<SearchParamsSort> for String {
         match sort {
             SearchParamsSort::DateCreated => "date_created".to_string(),
             SearchParamsSort::DateUpdated => "date_updated".to_string(),
+            SearchParamsSort::LatestMinecraftVersion => "latest_minecraft_version".to_string(),
             SearchParamsSort::Downloads => "downloads".to_string(),
             SearchParamsSort::LikesAndStars => "likes_and_stars".to_string(),
             SearchParamsSort::FollowsAndWatchers => "follows_and_watchers".to_string()
@@ -164,12 +166,13 @@ impl FromStr for SearchParamsSort {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "date_created"         => Ok(Self::DateCreated),
-            "date_updated"         => Ok(Self::DateUpdated),
-            "downloads"            => Ok(Self::Downloads),
-            "likes_and_stars"      => Ok(Self::LikesAndStars),
-            "follows_and_watchers" => Ok(Self::FollowsAndWatchers),
-            _                      => Err(())
+            "date_created"             => Ok(Self::DateCreated),
+            "date_updated"             => Ok(Self::DateUpdated),
+            "latest_minecraft_version" => Ok(Self::LatestMinecraftVersion),
+            "downloads"                => Ok(Self::Downloads),
+            "likes_and_stars"          => Ok(Self::LikesAndStars),
+            "follows_and_watchers"     => Ok(Self::FollowsAndWatchers),
+            _                          => Err(())
         }
     }
 }
@@ -1655,7 +1658,22 @@ mod test {
         assert_that(&search_results[1].date_updated).is_equal_to(datetime!(2022-02-02 0:00 UTC));
         assert_that(&search_results[2].date_updated).is_equal_to(datetime!(2022-02-01 0:00 UTC));
 
-        // Act 3 - Sort by downloads order
+        // Act 3 - Sort by latest Minecraft version order
+        let params = SearchParams {
+            hangar: true,
+            name: true,
+            sort: SearchParamsSort::LatestMinecraftVersion,
+            ..Default::default()
+        };
+        let search_results = search_common_projects(&context.pool, &params).await?;
+
+        // Assert 3 - Verify results are in latest Minecraft version order
+        assert_that(&search_results).has_length(3);
+        assert_that(&search_results[0].latest_minecraft_version).is_some().is_equal_to("1.21.4".to_string());
+        assert_that(&search_results[1].latest_minecraft_version).is_some().is_equal_to("1.16.5".to_string());
+        assert_that(&search_results[2].latest_minecraft_version).is_some().is_equal_to("1.8".to_string());
+
+        // Act 4 - Sort by downloads order
         let params = SearchParams {
             hangar: true,
             name: true,
@@ -1664,13 +1682,13 @@ mod test {
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
 
-        // Assert 3 - Verify results are in downloads order
+        // Assert 4 - Verify results are in downloads order
         assert_that(&search_results).has_length(3);
         assert_that(&search_results[0].downloads).is_equal_to(300);
         assert_that(&search_results[1].downloads).is_equal_to(200);
         assert_that(&search_results[2].downloads).is_equal_to(100);
 
-        // Act 4 - Sort by likes and stars order
+        // Act 5 - Sort by likes and stars order
         let params = SearchParams {
             hangar: true,
             name: true,
@@ -1679,13 +1697,13 @@ mod test {
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
 
-        // Assert 4 - Verify results are in likes and stars order
+        // Assert 5 - Verify results are in likes and stars order
         assert_that(&search_results).has_length(3);
         assert_that(&search_results[0].likes_and_stars).is_equal_to(300);
         assert_that(&search_results[1].likes_and_stars).is_equal_to(200);
         assert_that(&search_results[2].likes_and_stars).is_equal_to(100);
 
-        // Act 5 - Sort by follows and watchers order
+        // Act 6 - Sort by follows and watchers order
         let params = SearchParams {
             hangar: true,
             name: true,
@@ -1694,7 +1712,7 @@ mod test {
         };
         let search_results = search_common_projects(&context.pool, &params).await?;
 
-        // Assert 5 - Verify results are in follows and watchers order
+        // Assert 6 - Verify results are in follows and watchers order
         assert_that(&search_results).has_length(3);
         assert_that(&search_results[0].follows_and_watchers).is_equal_to(300);
         assert_that(&search_results[1].follows_and_watchers).is_equal_to(200);

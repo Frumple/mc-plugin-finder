@@ -426,6 +426,19 @@ WHERE
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.date_updated
         END
     END DESC,
+
+    CASE
+      WHEN $8 = 'latest_minecraft_version' THEN
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.latest_minecraft_version, h.latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.latest_minecraft_version
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.latest_minecraft_version
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.latest_minecraft_version
+        END
+    END DESC NULLS LAST,
+
     CASE
       WHEN $8 = 'downloads' THEN
         CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
@@ -436,6 +449,7 @@ WHERE
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.downloads, 0)
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.downloads, 0)
         END
+
       WHEN $8 = 'likes_and_stars' THEN
         CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
              WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(s.likes, 0)
@@ -444,7 +458,7 @@ WHERE
              WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(s.likes, 0)
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN 0
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.stars, 0)
-      END
+        END
 
       WHEN $8 = 'follows_and_watchers' THEN
         CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
@@ -454,7 +468,7 @@ WHERE
              WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN 0
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
-      END
+        END
     END DESC
 
 LIMIT $9
