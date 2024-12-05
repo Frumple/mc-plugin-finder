@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS hangar_project (
   author text NOT NULL,
   name text NOT NULL,
   description text NOT NULL,
+  latest_minecraft_version text COLLATE en_natural,
   date_created timestamptz NOT NULL,
   date_updated timestamptz NOT NULL,
   downloads integer NOT NULL,

@@ -22,6 +22,9 @@ pub struct GetHangarVersionsRequest {
 impl GetHangarVersionsRequest {
     fn create_request() -> Self {
         Self {
+            // Hangar's "projects/{slug}/versions" seems to order versions for newest to oldest.
+            // This allows us to assume that the first version returned is the latest,
+            // so we only get the first version in our request.
             limit: 1,
             offset: 0
         }
@@ -35,9 +38,17 @@ pub struct GetHangarVersionsResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IncomingHangarVersion {
-    name: String
+    name: String,
+    platform_dependencies: IncomingHangarVersionProjectDependencies
     // TODO: Get visibility and channel?
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub struct IncomingHangarVersionProjectDependencies {
+    paper: Option<Vec<String>>
 }
 
 #[derive(Debug, Error)]
@@ -74,14 +85,14 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         result
     }
 
-    async fn process_hangar_project(&self, project: HangarProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+    async fn process_hangar_project(&self, mut project: HangarProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
         let version_result = self.get_latest_hangar_project_version_from_api(&project.slug).await;
 
         match version_result {
-            Ok(version_name) => {
-                let mut new_project = project.clone();
-                new_project.version_name = Some(version_name);
-                let db_result = upsert_hangar_project(db_pool, &new_project).await;
+            Ok(version) => {
+                apply_incoming_hangar_version_to_hangar_project(&mut project, &version);
+
+                let db_result = upsert_hangar_project(db_pool, &project).await;
 
                 match db_result {
                     Ok(_) => count_cell.set(count_cell.get() + 1),
@@ -97,12 +108,9 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     #[instrument(
         skip(self)
     )]
-    pub async fn get_latest_hangar_project_version_from_api(&self, slug: &str) -> Result<String> {
+    pub async fn get_latest_hangar_project_version_from_api(&self, slug: &str) -> Result<IncomingHangarVersion> {
         self.rate_limiter.until_ready().await;
 
-        // Hangar's "projects/{slug}/versions" seems to order versions for newest to oldest.
-        // This allows us to assume that the first version returned is the latest.
-        // However, there is no guarantee this behaviour will remain in the future.
         let request = GetHangarVersionsRequest::create_request();
 
         let path = &["projects/", slug, "/versions"].concat();
@@ -125,7 +133,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
                     )
                 }
 
-                Ok(response.result[0].name.clone())
+                Ok(response.result[0].clone())
             }
             _ => {
                 Err (
@@ -139,34 +147,43 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     }
 }
 
+pub fn apply_incoming_hangar_version_to_hangar_project(project: &mut HangarProject, version: &IncomingHangarVersion) {
+    project.version_name = Some(version.name.clone());
+
+    // Paper versions from Hangar are in lexicographical order, meaning versions like "1.8" are considered later than versions like "1.21.3".
+    // To get the proper latest version, we sort the versions in numerical order and get the last element.
+    if let Some(paper) = &version.platform_dependencies.paper {
+        let mut paper_versions = paper.clone();
+        numeric_sort::sort(&mut paper_versions);
+        project.latest_minecraft_version = paper_versions.last().cloned();
+    }
+}
+
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
     use crate::hangar::test::HangarTestServer;
 
     use speculoos::prelude::*;
+    use time::macros::datetime;
     use wiremock::{Mock, ResponseTemplate};
     use wiremock::matchers::{method, path, query_param};
 
     #[tokio::test]
-    async fn should_get_latest_project_version_name_from_api() -> Result<()> {
+    async fn should_get_latest_project_version_from_api() -> Result<()> {
         // Arrange
         let hangar_server = HangarTestServer::new().await;
 
         let request = GetHangarVersionsRequest::create_request();
 
-        let expected_version = "v1.2.3";
+        let expected_version = create_test_version();
         let expected_response = GetHangarVersionsResponse {
             pagination: HangarResponsePagination {
-                limit: 0,
-                offset: 1,
-                count: 10
+                limit: 1,
+                offset: 0,
+                count: 1
             },
-            result: vec![
-                IncomingHangarVersion {
-                    name: expected_version.to_string()
-                }
-            ]
+            result: vec![expected_version.clone()]
         };
 
         let response_template = ResponseTemplate::new(200)
@@ -187,7 +204,7 @@ mod test {
         let version = hangar_client.get_latest_hangar_project_version_from_api(slug).await;
 
         // Assert
-        assert_that(&version).is_ok().is_equal_to(expected_version.to_string());
+        assert_that(&version).is_ok().is_equal_to(expected_version);
 
         Ok(())
     }
@@ -201,9 +218,9 @@ mod test {
 
         let response = GetHangarVersionsResponse {
             pagination: HangarResponsePagination {
-                limit: 0,
-                offset: 1,
-                count: 10
+                limit: 1,
+                offset: 0,
+                count: 1
             },
             result: vec![]
         };
@@ -237,5 +254,81 @@ mod test {
         }
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_apply_incoming_hangar_version_to_hangar_project() -> Result<()> {
+        // Arrange
+        let mut project= create_test_project();
+
+        let mut expected_project = project.clone();
+        expected_project.version_name = Some("v1.2.3".to_string());
+        expected_project.latest_minecraft_version = Some("1.21.3".to_string());
+
+        let version = create_test_version();
+
+        // Act
+        apply_incoming_hangar_version_to_hangar_project(&mut project, &version);
+
+        // Assert
+        assert_that(&project).is_equal_to(expected_project);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_apply_incoming_hangar_version_with_no_paper_versions_to_hangar_project() -> Result<()> {
+        // Arrange
+        let mut project= create_test_project();
+
+        let mut expected_project = project.clone();
+        expected_project.version_name = Some("v1.2.3".to_string());
+        expected_project.latest_minecraft_version = None;
+
+        let version = IncomingHangarVersion {
+            name: "v1.2.3".to_string(),
+            platform_dependencies: IncomingHangarVersionProjectDependencies {
+                paper: None
+            }
+        };
+
+        // Act
+        apply_incoming_hangar_version_to_hangar_project(&mut project, &version);
+
+        // Assert
+        assert_that(&project).is_equal_to(expected_project);
+
+        Ok(())
+    }
+
+    fn create_test_project() -> HangarProject {
+        HangarProject {
+            slug: "foo".to_string(),
+            author: "alice".to_string(),
+            name: "foo-hangar".to_string(),
+            description: "foo-hangar-description".to_string(),
+            date_created: datetime!(2022-01-01 0:00 UTC),
+            date_updated: datetime!(2022-02-03 0:00 UTC),
+            latest_minecraft_version: None,
+            downloads: 100,
+            stars: 200,
+            watchers: 200,
+            visibility: "public".to_string(),
+            avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+            version_name: None,
+            source_url: Some("https://github.com/alice/foo".to_string()),
+            source_repository_host: Some("github.com".to_string()),
+            source_repository_owner: Some("alice".to_string()),
+            source_repository_name: Some("foo".to_string())
+        }
+    }
+
+    pub fn create_test_version() -> IncomingHangarVersion {
+        IncomingHangarVersion {
+            name: "v1.2.3".to_string(),
+            platform_dependencies: IncomingHangarVersionProjectDependencies {
+                paper: Some(vec!["1.21.2".to_string(), "1.21.3".to_string(), "1.8".to_string(), "1.9".to_string()])
+            }
+        }
     }
 }

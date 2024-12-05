@@ -472,12 +472,12 @@ CommonProjectSearchResultEntity, 10>, C> for SearchCommonProjectsStmt
     CommonProjectSearchResultEntity, 10>
     { self.bind(client, &params.spigot,&params.modrinth,&params.hangar,&params.name,&params.query,&params.description,&params.author,&params.sort,&params.limit,&params.offset,) }
 }}pub mod hangar_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub slug: T1,pub author: T2,pub name: T3,pub description: T4,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub downloads: i32,pub stars: i32,pub watchers: i32,pub visibility: T5,pub avatar_url: T6,pub version_name: Option<T7>,pub source_url: Option<T8>,pub source_repository_host: Option<T9>,pub source_repository_owner: Option<T10>,pub source_repository_name: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity
-{ pub slug : String,pub author : String,pub name : String,pub description : String,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : String,pub avatar_url : String,pub version_name : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct HangarProjectEntityBorrowed<'a> { pub slug : &'a str,pub author : &'a str,pub name : &'a str,pub description : &'a str,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : &'a str,pub avatar_url : &'a str,pub version_name : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,> { pub slug: T1,pub author: T2,pub name: T3,pub description: T4,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub latest_minecraft_version: Option<T5>,pub downloads: i32,pub stars: i32,pub watchers: i32,pub visibility: T6,pub avatar_url: T7,pub version_name: Option<T8>,pub source_url: Option<T9>,pub source_repository_host: Option<T10>,pub source_repository_owner: Option<T11>,pub source_repository_name: Option<T12>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity
+{ pub slug : String,pub author : String,pub name : String,pub description : String,pub latest_minecraft_version : Option<String>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : String,pub avatar_url : String,pub version_name : Option<String>,pub source_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct HangarProjectEntityBorrowed<'a> { pub slug : &'a str,pub author : &'a str,pub name : &'a str,pub description : &'a str,pub latest_minecraft_version : Option<&'a str>,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub downloads : i32,pub stars : i32,pub watchers : i32,pub visibility : &'a str,pub avatar_url : &'a str,pub version_name : Option<&'a str>,pub source_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
 impl<'a> From<HangarProjectEntityBorrowed<'a>> for HangarProjectEntity
 {
-    fn from(HangarProjectEntityBorrowed { slug,author,name,description,date_created,date_updated,downloads,stars,watchers,visibility,avatar_url,version_name,source_url,source_repository_host,source_repository_owner,source_repository_name,}: HangarProjectEntityBorrowed<'a>) ->
-    Self { Self { slug: slug.into(),author: author.into(),name: name.into(),description: description.into(),date_created,date_updated,downloads,stars,watchers,visibility: visibility.into(),avatar_url: avatar_url.into(),version_name: version_name.map(|v| v.into()),source_url: source_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
+    fn from(HangarProjectEntityBorrowed { slug,author,name,description,latest_minecraft_version,date_created,date_updated,downloads,stars,watchers,visibility,avatar_url,version_name,source_url,source_repository_host,source_repository_owner,source_repository_name,}: HangarProjectEntityBorrowed<'a>) ->
+    Self { Self { slug: slug.into(),author: author.into(),name: name.into(),description: description.into(),latest_minecraft_version: latest_minecraft_version.map(|v| v.into()),date_created,date_updated,downloads,stars,watchers,visibility: visibility.into(),avatar_url: avatar_url.into(),version_name: version_name.map(|v| v.into()),source_url: source_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
 }pub struct HangarProjectEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -557,8 +557,8 @@ GenericClient
         Ok(it)
     }
 }pub fn upsert_hangar_project() -> UpsertHangarProjectStmt
-{ UpsertHangarProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, downloads, stars, watchers, visibility, avatar_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+{ UpsertHangarProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, latest_minecraft_version, downloads, stars, watchers, visibility, avatar_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
   ON CONFLICT (slug)
   DO UPDATE SET
     author = EXCLUDED.author,
@@ -566,6 +566,7 @@ GenericClient
     description = EXCLUDED.description,
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
+    latest_minecraft_version = EXCLUDED.latest_minecraft_version,
     downloads = EXCLUDED.downloads,
     stars = EXCLUDED.stars,
     watchers = EXCLUDED.watchers,
@@ -589,20 +590,21 @@ cornucopia_async::StringSql,T8:
 cornucopia_async::StringSql,T9:
 cornucopia_async::StringSql,T10:
 cornucopia_async::StringSql,T11:
+cornucopia_async::StringSql,T12:
 cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-slug: &'a T1,author: &'a T2,name: &'a T3,description: &'a T4,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,downloads: &'a i32,stars: &'a i32,watchers: &'a i32,visibility: &'a T5,avatar_url: &'a T6,version_name: &'a Option<T7>,source_url: &'a Option<T8>,source_repository_host: &'a Option<T9>,source_repository_owner: &'a Option<T10>,source_repository_name: &'a Option<T11>,) -> Result<u64, tokio_postgres::Error>
+slug: &'a T1,author: &'a T2,name: &'a T3,description: &'a T4,date_created: &'a time::OffsetDateTime,date_updated: &'a time::OffsetDateTime,latest_minecraft_version: &'a Option<T5>,downloads: &'a i32,stars: &'a i32,watchers: &'a i32,visibility: &'a T6,avatar_url: &'a T7,version_name: &'a Option<T8>,source_url: &'a Option<T9>,source_repository_host: &'a Option<T10>,source_repository_owner: &'a Option<T11>,source_repository_name: &'a Option<T12>,) -> Result<u64, tokio_postgres::Error>
 {
     let stmt = self.0.prepare(client).await?;
-    client.execute(stmt, &[slug,author,name,description,date_created,date_updated,downloads,stars,watchers,visibility,avatar_url,version_name,source_url,source_repository_host,source_repository_owner,source_repository_name,]).await
-} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,>
-cornucopia_async::Params<'a, UpsertHangarProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    client.execute(stmt, &[slug,author,name,description,date_created,date_updated,latest_minecraft_version,downloads,stars,watchers,visibility,avatar_url,version_name,source_url,source_repository_host,source_repository_owner,source_repository_name,]).await
+} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,>
+cornucopia_async::Params<'a, UpsertHangarProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
 tokio_postgres::Error>> + Send + 'a>>, C> for UpsertHangarProjectStmt
 {
     fn
     params(&'a mut self, client: &'a  C, params: &'a
-    UpsertHangarProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    UpsertHangarProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
     tokio_postgres::Error>> + Send + 'a>>
-    { Box::pin(self.bind(client, &params.slug,&params.author,&params.name,&params.description,&params.date_created,&params.date_updated,&params.downloads,&params.stars,&params.watchers,&params.visibility,&params.avatar_url,&params.version_name,&params.source_url,&params.source_repository_host,&params.source_repository_owner,&params.source_repository_name,)) }
+    { Box::pin(self.bind(client, &params.slug,&params.author,&params.name,&params.description,&params.date_created,&params.date_updated,&params.latest_minecraft_version,&params.downloads,&params.stars,&params.watchers,&params.visibility,&params.avatar_url,&params.version_name,&params.source_url,&params.source_repository_host,&params.source_repository_owner,&params.source_repository_name,)) }
 }pub fn get_hangar_projects() -> GetHangarProjectsStmt
 { GetHangarProjectsStmt(cornucopia_async::private::Stmt::new("SELECT * FROM hangar_project")) } pub struct
 GetHangarProjectsStmt(cornucopia_async::private::Stmt); impl GetHangarProjectsStmt
@@ -614,7 +616,7 @@ HangarProjectEntity, 0>
     HangarProjectEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { HangarProjectEntityBorrowed { slug: row.get(0),author: row.get(1),name: row.get(2),description: row.get(3),date_created: row.get(4),date_updated: row.get(5),downloads: row.get(6),stars: row.get(7),watchers: row.get(8),visibility: row.get(9),avatar_url: row.get(10),version_name: row.get(11),source_url: row.get(12),source_repository_host: row.get(13),source_repository_owner: row.get(14),source_repository_name: row.get(15),} }, mapper: |it| { <HangarProjectEntity>::from(it) },
+        |row| { HangarProjectEntityBorrowed { slug: row.get(0),author: row.get(1),name: row.get(2),description: row.get(3),latest_minecraft_version: row.get(4),date_created: row.get(5),date_updated: row.get(6),downloads: row.get(7),stars: row.get(8),watchers: row.get(9),visibility: row.get(10),avatar_url: row.get(11),version_name: row.get(12),source_url: row.get(13),source_repository_host: row.get(14),source_repository_owner: row.get(15),source_repository_name: row.get(16),} }, mapper: |it| { <HangarProjectEntity>::from(it) },
     }
 } }pub fn get_latest_hangar_project_update_date() -> GetLatestHangarProjectUpdateDateStmt
 { GetLatestHangarProjectUpdateDateStmt(cornucopia_async::private::Stmt::new("SELECT max(date_updated) FROM hangar_project")) } pub struct

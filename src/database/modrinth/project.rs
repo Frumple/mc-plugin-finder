@@ -175,7 +175,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let _project = populate_test_modrinth_project(&context.pool);
+        let _project = populate_test_modrinth_project(&context.pool).await?;
 
         let updated_project = ModrinthProject {
             id: "aaaaaaaa".to_string(),

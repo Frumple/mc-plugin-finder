@@ -1,8 +1,8 @@
---: HangarProjectEntity(version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: HangarProjectEntity(latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_hangar_project (version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, downloads, stars, watchers, visibility, avatar_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:slug, :author, :name, :description, :date_created, :date_updated, :downloads, :stars, :watchers, :visibility, :avatar_url, :version_name, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_hangar_project (latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, latest_minecraft_version, downloads, stars, watchers, visibility, avatar_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:slug, :author, :name, :description, :date_created, :date_updated, :latest_minecraft_version, :downloads, :stars, :watchers, :visibility, :avatar_url, :version_name, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (slug)
   DO UPDATE SET
     author = EXCLUDED.author,
@@ -10,6 +10,7 @@ INSERT INTO hangar_project (slug, author, name, description, date_created, date_
     description = EXCLUDED.description,
     date_created = EXCLUDED.date_created,
     date_updated = EXCLUDED.date_updated,
+    latest_minecraft_version = EXCLUDED.latest_minecraft_version,
     downloads = EXCLUDED.downloads,
     stars = EXCLUDED.stars,
     watchers = EXCLUDED.watchers,

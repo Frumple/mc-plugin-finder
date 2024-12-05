@@ -15,6 +15,7 @@ pub struct HangarProject {
     pub description: String,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub latest_minecraft_version: Option<String>,
     pub downloads: i32,
     pub stars: i32,
     pub watchers: i32,
@@ -27,7 +28,7 @@ pub struct HangarProject {
     pub source_repository_name: Option<String>
 }
 
-impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, String, String, String, String, String, String, String, String> {
+impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: HangarProject) -> Self {
         UpsertHangarProjectParams {
             slug: project.slug,
@@ -36,6 +37,7 @@ impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, S
             description: project.description,
             date_created: project.date_created,
             date_updated: project.date_updated,
+            latest_minecraft_version: project.latest_minecraft_version,
             downloads: project.downloads,
             stars: project.stars,
             watchers: project.watchers,
@@ -59,6 +61,7 @@ impl From<HangarProjectEntity> for HangarProject {
             description: entity.description,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+            latest_minecraft_version: entity.latest_minecraft_version,
             downloads: entity.downloads,
             stars: entity.stars,
             watchers: entity.watchers,
@@ -169,7 +172,7 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let _project = populate_test_hangar_project(&context.pool);
+        let _project = populate_test_hangar_project(&context.pool).await?;
 
         let updated_project = HangarProject {
             slug: "foo".to_string(),
@@ -178,6 +181,7 @@ pub mod test {
             description: "foo-description-updated".to_string(),
             date_created: datetime!(2020-01-01 0:00 UTC),
             date_updated: datetime!(2021-07-01 0:00 UTC),
+            latest_minecraft_version: Some("1.22".to_string()),
             downloads: 100,
             stars: 200,
             watchers: 300,
@@ -253,6 +257,7 @@ pub mod test {
                 description: "foo-hangar-description".to_string(),
                 date_created: datetime!(2022-01-01 0:00 UTC),
                 date_updated: datetime!(2022-02-03 0:00 UTC),
+                latest_minecraft_version: Some("1.21".to_string()),
                 downloads: 100,
                 stars: 200,
                 watchers: 200,
@@ -271,6 +276,7 @@ pub mod test {
                 description: "bar-hangar-description".to_string(),
                 date_created: datetime!(2022-01-02 0:00 UTC),
                 date_updated: datetime!(2022-02-02 0:00 UTC),
+                latest_minecraft_version: Some("1.8".to_string()),
                 downloads: 300,
                 stars: 100,
                 watchers: 300,
@@ -289,6 +295,7 @@ pub mod test {
                 description: "baz-hangar-description".to_string(),
                 date_created: datetime!(2022-01-03 0:00 UTC),
                 date_updated: datetime!(2022-02-01 0:00 UTC),
+                latest_minecraft_version: Some("1.16".to_string()),
                 downloads: 200,
                 stars: 300,
                 watchers: 100,
