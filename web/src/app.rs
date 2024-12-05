@@ -19,6 +19,7 @@ pub struct WebSearchResult {
     pub id: Option<i32>,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub latest_minecraft_version: Option<String>,
     pub downloads: i32,
     pub likes_and_stars: i32,
     pub follows_and_watchers: i32,
@@ -92,6 +93,7 @@ impl From<CommonProjectSearchResult> for WebSearchResult {
             id: search_result.project.id,
             date_created: search_result.date_created,
             date_updated: search_result.date_updated,
+            latest_minecraft_version: search_result.latest_minecraft_version,
             downloads: search_result.downloads,
             likes_and_stars: search_result.likes_and_stars,
             follows_and_watchers: search_result.follows_and_watchers,
@@ -525,6 +527,7 @@ fn SearchResults(
                             <div class="search-results__header-row">
                                 <span class="search-results__created-header">Created</span>
                                 <span class="search-results__updated-header">Updated</span>
+                                <span class="search-results__latest-minecraft-version-header">Latest MC Version</span>
                                 <span class="search-results__downloads-header">Downloads</span>
                                 <span class="search-results__likes-and-stars-header">Likes + Stars</span>
                                 <span class="search-results__follows-and-watchers-header">Follows + Watchers</span>
@@ -558,6 +561,8 @@ fn SearchRow(
     let date_updated = search_result.date_updated.format(&date_format);
     let time_updated = search_result.date_updated.format(&time_format);
 
+    let latest_minecraft_version = search_result.latest_minecraft_version.clone();
+
     let downloads = search_result.downloads_formatted();
     let likes_and_stars = search_result.likes_and_stars_formatted();
     let follows_and_watchers = search_result.follows_and_watchers_formatted();
@@ -584,6 +589,10 @@ fn SearchRow(
             <div class="search-row__updated-cell">
                 <div class="search-row__date">{date_updated}</div>
                 <div class="search-row__time">{time_updated}</div>
+            </div>
+
+            <div class="search-row__latest-minecraft-version-cell">
+                <span class="search-row__latest-minecraft-version">{latest_minecraft_version}</span>
             </div>
 
             <div class="search-row__downloads-cell">

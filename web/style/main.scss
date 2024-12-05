@@ -141,6 +141,10 @@ body {
 	@extend .search-results__stat-header;
 }
 
+.search-results__latest-minecraft-version-header {
+	@extend .search-results__stat-header;
+}
+
 .search-results__downloads-header {
 	@extend .search-results__stat-header;
 }
@@ -227,6 +231,10 @@ body {
 	@extend .search-row__stat-cell;
 }
 
+.search-row__latest-minecraft-version-cell {
+	@extend .search-row__stat-cell;
+}
+
 .search-row__downloads-cell {
 	@extend .search-row__stat-cell;
 }
@@ -260,6 +268,10 @@ body {
 }
 
 .search-row__time {
+
+}
+
+.search-row__latest-minecraft_version {
 
 }
 

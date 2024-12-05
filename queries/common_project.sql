@@ -1,5 +1,5 @@
 --: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?)
---: CommonProjectSearchResultEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: CommonProjectSearchResultEntity(id?, latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
@@ -124,6 +124,17 @@ SELECT
        ELSE timestamptz '-infinity'
   END
   AS date_updated,
+
+  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version, h.latest_minecraft_version)
+       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(s.latest_minecraft_version, h.latest_minecraft_version)
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(m.latest_minecraft_version, h.latest_minecraft_version)
+       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN s.latest_minecraft_version
+       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN m.latest_minecraft_version
+       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN h.latest_minecraft_version
+       ELSE NULL
+  END
+  AS latest_minecraft_version,
 
   CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
        WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)

@@ -180,6 +180,7 @@ pub struct CommonProjectSearchResult {
 
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
+    pub latest_minecraft_version: Option<String>,
     pub downloads: i32,
     pub likes_and_stars: i32,
     pub follows_and_watchers: i32,
@@ -198,6 +199,7 @@ impl From<CommonProjectSearchResultEntity> for CommonProjectSearchResult {
 
             date_created: entity.date_created,
             date_updated: entity.date_updated,
+            latest_minecraft_version: entity.latest_minecraft_version,
             downloads: entity.downloads,
             likes_and_stars: entity.likes_and_stars,
             follows_and_watchers: entity.follows_and_watchers,
