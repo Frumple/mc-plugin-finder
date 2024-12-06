@@ -70,16 +70,29 @@ impl WebSearchResult {
         Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
     }
 
-    fn spigot_icon_data_url(&self) -> Option<String> {
-        Some(format!("data:image/png;base64,{}", self.spigot_icon_data.clone()?))
+    fn spigot_icon_display_url(&self) -> String {
+        // Fallback to a "no-icon" placeholder image if the incoming icon data is None or an empty string.
+        if self.spigot_icon_data.is_none() || self.spigot_icon_data.as_ref().is_some_and(|x| x.is_empty()) {
+            return "images/no-icon.svg".to_string()
+        }
+
+        format!("data:image/png;base64,{}", self.spigot_icon_data.clone().unwrap())
     }
 
     fn modrinth_url(&self) -> Option<String> {
         Some(format!("https://modrinth.com/plugin/{}", self.modrinth_slug.clone()?))
     }
 
+    fn modrinth_icon_display_url(&self) -> String {
+        Self::fallback_if_no_icon(&self.modrinth_icon_url)
+    }
+
     fn hangar_url(&self) -> Option<String> {
         Some(format!("https://hangar.papermc.io/{}/{}", self.hangar_author.clone()?, self.hangar_slug.clone()?))
+    }
+
+    fn hangar_avatar_display_url(&self) -> String {
+        Self::fallback_if_no_icon(&self.hangar_avatar_url)
     }
 
     fn source_repository_url(&self) -> Option<String> {
@@ -88,6 +101,15 @@ impl WebSearchResult {
 
     fn source_repository_url_wbr(&self) -> Option<String> {
         Some(format!("https://{}/<wbr>{}/<wbr>{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
+    }
+
+    fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
+        // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
+        if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
+            return "images/no-icon.svg".to_string()
+        }
+
+        icon_url.clone().unwrap()
     }
 }
 
@@ -587,12 +609,12 @@ fn SearchRow(
     let hangar_name = search_result.hangar_name.clone();
 
     let spigot_url = search_result.spigot_url();
-    let spigot_icon_data_url = search_result.spigot_icon_data_url();
     let modrinth_url = search_result.modrinth_url();
     let hangar_url = search_result.hangar_url();
 
-    let modrinth_icon_url = search_result.modrinth_icon_url.clone();
-    let hangar_avatar_url = search_result.hangar_avatar_url.clone();
+    let spigot_icon_display_url = search_result.spigot_icon_display_url();
+    let modrinth_icon_display_url = search_result.modrinth_icon_display_url();
+    let hangar_avatar_display_url = search_result.hangar_avatar_display_url();
 
     let source_repository_url = search_result.source_repository_url();
     let source_repository_url_wbr = search_result.source_repository_url_wbr();
@@ -630,7 +652,7 @@ fn SearchRow(
             <div class="search-row__spigot-cell">
                 <Show when=move || { has_spigot }>
                     <a href=spigot_url.clone() target="_blank">
-                        <img class="search-row__image" src=spigot_icon_data_url.clone() title=spigot_name.clone() loading="lazy" />
+                        <img class="search-row__image" src=spigot_icon_display_url.clone() title=spigot_name.clone() loading="lazy" />
                     </a>
                     <div class="search-row__title-and-description">
                         <div class="search-row__cell-title">
@@ -659,7 +681,7 @@ fn SearchRow(
             <div class="search-row__modrinth-cell">
                 <Show when=move || { has_modrinth }>
                     <a href=modrinth_url.clone() target="_blank">
-                        <img class="search-row__image" src=modrinth_icon_url.clone() title=modrinth_name.clone() loading="lazy" />
+                        <img class="search-row__image" src=modrinth_icon_display_url.clone() title=modrinth_name.clone() loading="lazy" />
                     </a>
                     <div class="search-row__title-and-description">
                         <div class="search-row__cell-title">
@@ -681,7 +703,7 @@ fn SearchRow(
             <div class="search-row__hangar-cell">
                 <Show when=move || { has_hangar }>
                     <a href=hangar_url.clone() target="_blank">
-                        <img class="search-row__image" src=hangar_avatar_url.clone() title=hangar_name.clone() loading="lazy" />
+                        <img class="search-row__image" src=hangar_avatar_display_url.clone() title=hangar_name.clone() loading="lazy" />
                     </a>
                     <div class="search-row__title-and-description">
                         <div class="search-row__cell-title">
