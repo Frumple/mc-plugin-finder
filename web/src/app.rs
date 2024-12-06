@@ -31,6 +31,7 @@ pub struct WebSearchResult {
     pub spigot_author: Option<String>,
     pub spigot_version: Option<String>,
     pub spigot_premium: Option<bool>,
+    pub spigot_icon_data: Option<String>,
 
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
@@ -67,6 +68,10 @@ impl WebSearchResult {
 
     fn spigot_url(&self) -> Option<String> {
         Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
+    }
+
+    fn spigot_icon_data_url(&self) -> Option<String> {
+        Some(format!("data:image/png;base64,{}", self.spigot_icon_data.clone()?))
     }
 
     fn modrinth_url(&self) -> Option<String> {
@@ -107,6 +112,7 @@ impl From<CommonProjectSearchResult> for WebSearchResult {
             spigot_author: search_result.project.spigot_author,
             spigot_version: search_result.project.spigot_version,
             spigot_premium: search_result.project.spigot_premium,
+            spigot_icon_data: search_result.project.spigot_icon_data,
 
             modrinth_id: search_result.project.modrinth_id,
             modrinth_slug: search_result.project.modrinth_slug,
@@ -576,10 +582,12 @@ fn SearchRow(
     let has_modrinth = search_result.modrinth_name.is_some();
     let has_hangar = search_result.hangar_name.is_some();
 
+    let spigot_name = search_result.spigot_name.clone();
     let modrinth_name = search_result.modrinth_name.clone();
     let hangar_name = search_result.hangar_name.clone();
 
     let spigot_url = search_result.spigot_url();
+    let spigot_icon_data_url = search_result.spigot_icon_data_url();
     let modrinth_url = search_result.modrinth_url();
     let hangar_url = search_result.hangar_url();
 
@@ -620,31 +628,32 @@ fn SearchRow(
             </div>
 
             <div class="search-row__spigot-cell">
-                <div class="search-row__title-and-description">
-                    <div class="search-row__cell-title">
-                        <Show when=move || { is_spigot_premium }>
-                            <span class="search-row__plugin-premium">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
-                                    <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
-                                </svg>
+                <Show when=move || { has_spigot }>
+                    <a href=spigot_url.clone() target="_blank">
+                        <img class="search-row__image" src=spigot_icon_data_url.clone() title=spigot_name.clone() loading="lazy" />
+                    </a>
+                    <div class="search-row__title-and-description">
+                        <div class="search-row__cell-title">
+                            <Show when=move || { is_spigot_premium }>
+                                <span class="search-row__plugin-premium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
+                                        <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
+                                    </svg>
+                                </span>
+                            </Show>
+                            <span class="search-row__plugin-name">
+                                <a href=spigot_url.clone() target="_blank">{spigot_name.clone()}</a>
                             </span>
-                        </Show>
-                        <span class="search-row__plugin-name">
-                            <a href=spigot_url target="_blank">{search_result.spigot_name}</a>
-                        </span>
-                        <Show when=move || { has_spigot }>
                             <span>"  "</span>
-                        </Show>
-                        <span class="search-row__plugin-version">{search_result.spigot_version}</span>
-                        <Show when=move || { has_spigot }>
+                            <span class="search-row__plugin-version">{search_result.spigot_version.clone()}</span>
                             <span>" by "</span>
-                        </Show>
-                        <span class="search-row__plugin-author">{search_result.spigot_author}</span>
+                            <span class="search-row__plugin-author">{search_result.spigot_author.clone()}</span>
+                        </div>
+                        <div class="search-row__cell-description">
+                            {search_result.spigot_description.clone()}
+                        </div>
                     </div>
-                    <div class="search-row__cell-description">
-                        {search_result.spigot_description}
-                    </div>
-                </div>
+                </Show>
             </div>
 
             <div class="search-row__modrinth-cell">

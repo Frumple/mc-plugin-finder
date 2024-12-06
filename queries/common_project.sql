@@ -1,5 +1,5 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?)
---: CommonProjectSearchResultEntity(id?, latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?)
+--: CommonProjectSearchResultEntity(id?, latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
@@ -12,6 +12,7 @@ SELECT
   a.name AS spigot_author,
   s.version_name AS spigot_version,
   s.premium AS spigot_premium,
+  s.icon_data AS spigot_icon_data,
 
   m.id AS modrinth_id,
   m.slug AS modrinth_slug,
@@ -85,6 +86,7 @@ SELECT
   spigot_author,
   NULL AS spigot_version,
   FALSE AS spigot_premium,
+  NULL AS spigot_icon_data,
 
   modrinth_id,
   NULL AS modrinth_slug,
@@ -180,6 +182,7 @@ SELECT
   (CASE WHEN :spigot IS TRUE THEN c.spigot_author ELSE NULL END) AS spigot_author,
   (CASE WHEN :spigot IS TRUE THEN s.version_name ELSE NULL END) AS spigot_version,
   (CASE WHEN :spigot IS TRUE THEN s.premium ELSE NULL END) AS spigot_premium,
+  (CASE WHEN :spigot IS TRUE THEN s.icon_data ELSE NULL END) AS spigot_icon_data,
 
   (CASE WHEN :modrinth IS TRUE THEN c.modrinth_id ELSE NULL END) AS modrinth_id,
   (CASE WHEN :modrinth IS TRUE THEN m.slug ELSE NULL END) AS modrinth_slug,

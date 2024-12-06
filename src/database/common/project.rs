@@ -20,6 +20,7 @@ pub struct CommonProject {
     pub spigot_author: Option<String>,
     pub spigot_version: Option<String>,
     pub spigot_premium: Option<bool>,
+    pub spigot_icon_data: Option<String>,
 
     pub modrinth_id: Option<String>,
     pub modrinth_slug: Option<String>,
@@ -72,6 +73,7 @@ impl From<CommonProjectEntity> for CommonProject {
             spigot_author: entity.spigot_author,
             spigot_version: entity.spigot_version,
             spigot_premium: entity.spigot_premium,
+            spigot_icon_data: entity.spigot_icon_data,
 
             modrinth_id: entity.modrinth_id,
             modrinth_slug: entity.modrinth_slug,
@@ -221,6 +223,7 @@ impl From<CommonProjectSearchResultEntity> for CommonProjectSearchResult {
                 spigot_author: entity.spigot_author,
                 spigot_version: entity.spigot_version,
                 spigot_premium: entity.spigot_premium,
+                spigot_icon_data: entity.spigot_icon_data,
 
                 modrinth_id: entity.modrinth_id,
                 modrinth_slug: entity.modrinth_slug,
