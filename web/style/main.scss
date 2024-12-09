@@ -1,5 +1,7 @@
 body {
 	font-family: sans-serif;
+	background: #181818;
+	color: #e0e6f0;
 }
 
 .home-page__title {
@@ -115,24 +117,23 @@ body {
   display: flex;
 	flex-wrap: nowrap;
 	gap: 5px;
-	padding: 5px;
 }
 
-.search_results__stat-column {
+.search-results__stat-column {
 	flex: 0 0 6em;
 }
 
-.search_results__main-column {
+.search-results__main-column {
 	flex: 0 1 25%;
 }
 
 .search-results__stat-header {
-	@extend .search_results__stat-column;
+	@extend .search-results__stat-column;
 	font-weight: bold;
 }
 
 .search-results__main-header {
-	@extend .search_results__main-column;
+	@extend .search-results__main-column;
 	font-weight: bold;
 }
 
@@ -209,22 +210,31 @@ body {
 	align-items: center;
 	gap: 5px;
 	list-style-type: none;
-	border: 1px lightgray solid;
-	padding: 5px;
 }
 
 .search-row__stat-cell {
-	@extend .search_results__stat-column;
+	@extend .search-results__stat-column;
+	align-self: center;
 	display: flex;
 	flex-direction: column;
-	align-self: center;
 }
 
 .search-row__main-cell {
-	@extend .search_results__main-column;
+	@extend .search-results__main-column;
+	align-self: stretch;
 	display: flex;
-	align-self: flex-start;
+	flex-direction: column;
+}
+
+.search-row__main-link {
+  display: flex;
 	gap: 5px;
+	margin: 5px;
+	padding: 5px;
+	border-radius: 10px;
+	color: #e0e6f0;
+	text-decoration: none;
+	height: 100%;
 }
 
 .search-row__created-cell {
@@ -255,12 +265,39 @@ body {
 	@extend .search-row__main-cell;
 }
 
+.search-row__spigot-link {
+  @extend .search-row__main-link;
+	background: #3D250D;
+}
+
+.search-row__spigot-link:hover {
+	background: #B76E27;
+}
+
 .search-row__modrinth-cell {
 	@extend .search-row__main-cell;
 }
 
+.search-row__modrinth-link {
+	@extend .search-row__main-link;
+	background: #162F24;
+}
+
+.search-row__modrinth-link:hover {
+	background: #1E8749;
+}
+
 .search-row__hangar-cell {
 	@extend .search-row__main-cell;
+}
+
+.search-row__hangar-link {
+	@extend .search-row__main-link;
+	background: #2D3A4C;
+}
+
+.search-row__hangar-link:hover {
+  background: #0D4BC9;
 }
 
 .search-row__source-cell {
@@ -316,7 +353,9 @@ body {
 }
 
 .search-row__plugin-name {
+	display: inline;
 	font-weight: bold;
+	margin: 0;
 }
 
 .search-row__plugin-version {
@@ -325,4 +364,8 @@ body {
 
 .search-row__plugin-author {
 	font-style: italic;
+}
+
+.search-row__source-link {
+	color: cyan;
 }
