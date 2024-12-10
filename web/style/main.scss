@@ -304,16 +304,30 @@ body {
 	@extend .search-row__main-cell;
 }
 
+.search-row__source-link {
+	@extend .search-row__main-link;
+	background: #2B2B2B;
+}
+
+.search-row__source-link:hover {
+  background: #555555;
+}
+
 .search-row__image {
 	align-self: center;
 	width: 75px;
 	height: 75px;
 }
 
-.search-row__title-and-description {
+.search-row__text-contents {
 	display: flex;
 	flex-direction: column;
 	align-self: flex-start;
+}
+
+.search-row__source-text-contents {
+	display: flex;
+	align-self: center;
 }
 
 .search-row__date {
@@ -364,8 +378,4 @@ body {
 
 .search-row__plugin-author {
 	font-style: italic;
-}
-
-.search-row__source-link {
-	color: cyan;
 }

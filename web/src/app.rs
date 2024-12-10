@@ -12,6 +12,8 @@ use time::{OffsetDateTime, format_description};
 #[cfg(feature = "ssr")]
 use mc_plugin_finder::database::common::project::{CommonProjectSearchResult, SearchParams, SearchParamsSort};
 
+const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
     pub full_count: i64,
@@ -66,6 +68,10 @@ impl WebSearchResult {
         format_number(&self.follows_and_watchers)
     }
 
+    fn project_name(&self) -> Option<String> {
+        self.spigot_name.clone().or(self.modrinth_name.clone()).or(self.hangar_name.clone())
+    }
+
     fn spigot_url(&self) -> Option<String> {
         Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
     }
@@ -80,7 +86,7 @@ impl WebSearchResult {
     }
 
     fn spigot_icon_alt_text(&self) -> Option<String> {
-        Some(Self::alt_text(&self.spigot_name)?)
+        Self::alt_text(&self.spigot_name, &Some("Spigot".to_string()))
     }
 
     fn modrinth_url(&self) -> Option<String> {
@@ -92,7 +98,7 @@ impl WebSearchResult {
     }
 
     fn modrinth_icon_alt_text(&self) -> Option<String> {
-        Some(Self::alt_text(&self.modrinth_name)?)
+        Self::alt_text(&self.modrinth_name, &Some("Modrinth".to_string()))
     }
 
     fn hangar_url(&self) -> Option<String> {
@@ -104,9 +110,8 @@ impl WebSearchResult {
     }
 
     fn hangar_icon_alt_text(&self) -> Option<String> {
-        Some(Self::alt_text(&self.hangar_name)?)
+        Self::alt_text(&self.hangar_name, &Some("Hangar".to_string()))
     }
-
 
     fn source_repository_url(&self) -> Option<String> {
         Some(format!("https://{}/{}/{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
@@ -116,17 +121,54 @@ impl WebSearchResult {
         Some(format!("https://{}/<wbr>{}/<wbr>{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
     }
 
+    fn source_img_attributes(&self) -> ImgAttributes {
+        if let Some(host) = &self.source_repository_host {
+            return match host.as_str() {
+                "github.com" => ImgAttributes {
+                    src: Some("images/github-logo.svg".to_string()),
+                    title: Some("GitHub".to_string()),
+                    alt: Self::alt_text(&self.project_name(), &Some("GitHub".to_string()))
+                },
+                "gitlab.com" => ImgAttributes {
+                    src: Some("images/gitlab-logo.svg".to_string()),
+                    title: Some("GitLab".to_string()),
+                    alt: Self::alt_text(&self.project_name(), &Some("GitLab".to_string()))
+                },
+                "bitbucket.org" => ImgAttributes {
+                    src: Some("images/bitbucket-logo.svg".to_string()),
+                    title: Some("Bitbucket".to_string()),
+                    alt: Self::alt_text(&self.project_name(), &Some("Bitbucket".to_string()))
+                },
+                "codeberg.org" => ImgAttributes {
+                    src: Some("images/codeberg-logo.svg".to_string()),
+                    title: Some("Codeberg".to_string()),
+                    alt: Self::alt_text(&self.project_name(), &Some("Codeberg".to_string()))
+                },
+                _ => ImgAttributes {
+                    src: Some(NO_ICON_IMAGE_URL.to_string()),
+                    title: Some("Unknown Repository".to_string()),
+                    alt: Some("Unknown Repository".to_string())
+                }
+            }
+        }
+        ImgAttributes {
+            src: Some(NO_ICON_IMAGE_URL.to_string()),
+            title: Some("No Repository".to_string()),
+            alt: Some("No Repository".to_string())
+        }
+    }
+
     fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
         // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
         if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
-            return "images/no-icon.svg".to_string()
+            return NO_ICON_IMAGE_URL.to_string()
         }
 
         icon_url.clone().unwrap()
     }
 
-    fn alt_text(name: &Option<String>) -> Option<String> {
-        Some(format!("Icon for {}", name.clone()?))
+    fn alt_text(project_name: &Option<String>, repository_name: &Option<String>) -> Option<String> {
+        Some(format!("Icon for {} on {}", project_name.clone()?, repository_name.clone()?))
     }
 }
 
@@ -273,6 +315,12 @@ impl From<WebSearchParams> for SearchParams {
             offset: offset.unwrap_or_default().into()
         }
     }
+}
+
+struct ImgAttributes {
+    src: Option<String>,
+    title: Option<String>,
+    alt: Option<String>
 }
 
 #[cfg(feature = "ssr")]
@@ -618,27 +666,27 @@ fn SearchRow(
     let follows_and_watchers = search_result.follows_and_watchers_formatted();
 
     let has_spigot = search_result.spigot_name.is_some();
-    let has_modrinth = search_result.modrinth_name.is_some();
-    let has_hangar = search_result.hangar_name.is_some();
-
     let spigot_name = search_result.spigot_name.clone();
-    let modrinth_name = search_result.modrinth_name.clone();
-    let hangar_name = search_result.hangar_name.clone();
-
     let spigot_url = search_result.spigot_url();
-    let modrinth_url = search_result.modrinth_url();
-    let hangar_url = search_result.hangar_url();
-
     let spigot_icon_img_url = search_result.spigot_icon_img_url();
-    let modrinth_icon_img_url = search_result.modrinth_icon_img_url();
-    let hangar_avatar_img_url = search_result.hangar_avatar_img_url();
-
     let spigot_icon_alt_text = search_result.spigot_icon_alt_text();
+
+    let has_modrinth = search_result.modrinth_name.is_some();
+    let modrinth_name = search_result.modrinth_name.clone();
+    let modrinth_url = search_result.modrinth_url();
+    let modrinth_icon_img_url = search_result.modrinth_icon_img_url();
     let modrinth_icon_alt_text = search_result.modrinth_icon_alt_text();
+
+    let has_hangar = search_result.hangar_name.is_some();
+    let hangar_name = search_result.hangar_name.clone();
+    let hangar_url = search_result.hangar_url();
+    let hangar_avatar_img_url = search_result.hangar_avatar_img_url();
     let hangar_icon_alt_text = search_result.hangar_icon_alt_text();
 
+    let has_source = search_result.source_repository_name.is_some();
     let source_repository_url = search_result.source_repository_url();
     let source_repository_url_wbr = search_result.source_repository_url_wbr();
+    let source_img_attributes = search_result.source_img_attributes();
 
     let is_spigot_premium = search_result.spigot_premium.unwrap_or_default();
 
@@ -674,7 +722,7 @@ fn SearchRow(
                 <Show when=move || { has_spigot }>
                     <a class="search-row__spigot-link" href=spigot_url.clone() target="_blank">
                         <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__title-and-description">
+                        <div class="search-row__text-contents">
                             <div class="search-row__cell-title">
                                 <Show when=move || { is_spigot_premium }>
                                     <span class="search-row__plugin-premium">
@@ -701,7 +749,7 @@ fn SearchRow(
                 <Show when=move || { has_modrinth }>
                     <a class="search-row__modrinth-link" href=modrinth_url.clone() target="_blank">
                         <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__title-and-description">
+                        <div class="search-row__text-contents">
                             <div class="search-row__cell-title">
                                 <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
                                 <span>" "</span>
@@ -721,7 +769,7 @@ fn SearchRow(
                 <Show when=move || { has_hangar }>
                     <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
                         <img class="search-row__image" src=hangar_avatar_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__title-and-description">
+                        <div class="search-row__text-contents">
                             <div class="search-row__cell-title">
                                 <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
                                 <span>" "</span>
@@ -738,9 +786,15 @@ fn SearchRow(
             </div>
 
             <div class="search-row__source-cell">
-                <div class="search-row__cell-title">
-                    <a class="search-row__source-link" href=source_repository_url target="_blank" inner_html=source_repository_url_wbr></a>
-                </div>
+                <Show when=move || { has_source }>
+                    <a class="search-row__source-link" href=source_repository_url.clone() target="_blank">
+                        <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() loading="lazy" />
+                        <div class="search-row__source-text-contents">
+                            <div class="search-row__cell-title" inner_html=source_repository_url_wbr.clone()>
+                            </div>
+                        </div>
+                    </a>
+                </Show>
             </div>
         </li>
     }
