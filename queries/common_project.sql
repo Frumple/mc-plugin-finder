@@ -1,33 +1,24 @@
---: CommonProjectEntity(id?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?)
---: CommonProjectSearchResultEntity(id?, latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: CommonProjectEntity(id?, spigot_id?, spigot_name?, spigot_description?, spigot_author?, modrinth_id?, modrinth_name?, modrinth_description?, modrinth_author?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?)
+--: CommonProjectSearchResultEntity(id, latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! get_merged_common_projects : CommonProjectEntity
 SELECT
   COALESCE(cs.id, cm.id, ch.id) AS id,
 
   s.id AS spigot_id,
-  s.slug AS spigot_slug,
   s.parsed_name AS spigot_name,
   s.description AS spigot_description,
   a.name AS spigot_author,
-  s.version_name AS spigot_version,
-  s.premium AS spigot_premium,
-  s.icon_data AS spigot_icon_data,
 
   m.id AS modrinth_id,
-  m.slug AS modrinth_slug,
   m.name AS modrinth_name,
   m.description AS modrinth_description,
   m.author AS modrinth_author,
-  m.version_name AS modrinth_version,
-  m.icon_url AS modrinth_icon_url,
 
   h.slug AS hangar_slug,
   h.name AS hangar_name,
   h.description AS hangar_description,
-  h.author AS hangar_author,
-  h.version_name AS hangar_version,
-  h.avatar_url AS hangar_avatar_url
+  h.author AS hangar_author
 FROM
   spigot_resource s
   INNER JOIN spigot_author a
@@ -80,28 +71,19 @@ SELECT
   id,
 
   spigot_id,
-  NULL AS spigot_slug,
   spigot_name,
   spigot_description,
   spigot_author,
-  NULL AS spigot_version,
-  FALSE AS spigot_premium,
-  NULL AS spigot_icon_data,
 
   modrinth_id,
-  NULL AS modrinth_slug,
   modrinth_name,
   modrinth_description,
   modrinth_author,
-  NULL AS modrinth_version,
-  NULL AS modrinth_icon_url,
 
   hangar_slug,
   hangar_name,
   hangar_description,
-  hangar_author,
-  NULL AS hangar_version,
-  NULL AS hangar_avatar_url
+  hangar_author
 FROM
   common_project;
 

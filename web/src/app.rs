@@ -18,7 +18,7 @@ const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
 pub struct WebSearchResult {
     pub full_count: i64,
 
-    pub id: Option<i32>,
+    pub id: i32,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
     pub latest_minecraft_version: Option<String>,
@@ -26,29 +26,9 @@ pub struct WebSearchResult {
     pub likes_and_stars: i32,
     pub follows_and_watchers: i32,
 
-    pub spigot_id: Option<i32>,
-    pub spigot_slug: Option<String>,
-    pub spigot_name: Option<String>,
-    pub spigot_description: Option<String>,
-    pub spigot_author: Option<String>,
-    pub spigot_version: Option<String>,
-    pub spigot_premium: Option<bool>,
-    pub spigot_icon_data: Option<String>,
-
-    pub modrinth_id: Option<String>,
-    pub modrinth_slug: Option<String>,
-    pub modrinth_name: Option<String>,
-    pub modrinth_description: Option<String>,
-    pub modrinth_author: Option<String>,
-    pub modrinth_version: Option<String>,
-    pub modrinth_icon_url: Option<String>,
-
-    pub hangar_slug: Option<String>,
-    pub hangar_name: Option<String>,
-    pub hangar_description: Option<String>,
-    pub hangar_author: Option<String>,
-    pub hangar_version: Option<String>,
-    pub hangar_avatar_url: Option<String>,
+    pub spigot: Option<WebSearchResultSpigot>,
+    pub modrinth: Option<WebSearchResultModrinth>,
+    pub hangar: Option<WebSearchResultHangar>,
 
     pub source_repository_host: Option<String>,
     pub source_repository_owner: Option<String>,
@@ -69,48 +49,18 @@ impl WebSearchResult {
     }
 
     fn project_name(&self) -> Option<String> {
-        self.spigot_name.clone().or(self.modrinth_name.clone()).or(self.hangar_name.clone())
-    }
-
-    fn spigot_url(&self) -> Option<String> {
-        Some(format!("https://spigotmc.org/resources/{}", self.spigot_slug.clone()?))
-    }
-
-    fn spigot_icon_img_url(&self) -> String {
-        // Fallback to a "no-icon" placeholder image if the incoming icon data is None or an empty string.
-        if self.spigot_icon_data.is_none() || self.spigot_icon_data.as_ref().is_some_and(|x| x.is_empty()) {
-            return "images/no-icon.svg".to_string()
+        if let Some(spigot) = &self.spigot {
+            return spigot.name.clone()
         }
 
-        format!("data:image/png;base64,{}", self.spigot_icon_data.clone().unwrap())
-    }
+        if let Some(modrinth) = &self.modrinth {
+            return Some(modrinth.name.clone())
+        }
 
-    fn spigot_icon_alt_text(&self) -> Option<String> {
-        Self::alt_text(&self.spigot_name, &Some("Spigot".to_string()))
-    }
-
-    fn modrinth_url(&self) -> Option<String> {
-        Some(format!("https://modrinth.com/plugin/{}", self.modrinth_slug.clone()?))
-    }
-
-    fn modrinth_icon_img_url(&self) -> String {
-        Self::fallback_if_no_icon(&self.modrinth_icon_url)
-    }
-
-    fn modrinth_icon_alt_text(&self) -> Option<String> {
-        Self::alt_text(&self.modrinth_name, &Some("Modrinth".to_string()))
-    }
-
-    fn hangar_url(&self) -> Option<String> {
-        Some(format!("https://hangar.papermc.io/{}/{}", self.hangar_author.clone()?, self.hangar_slug.clone()?))
-    }
-
-    fn hangar_avatar_img_url(&self) -> String {
-        Self::fallback_if_no_icon(&self.hangar_avatar_url)
-    }
-
-    fn hangar_icon_alt_text(&self) -> Option<String> {
-        Self::alt_text(&self.hangar_name, &Some("Hangar".to_string()))
+        if let Some(hangar) = &self.hangar {
+            return Some(hangar.name.clone())
+        }
+        None
     }
 
     fn source_repository_url(&self) -> Option<String> {
@@ -127,22 +77,22 @@ impl WebSearchResult {
                 "github.com" => ImgAttributes {
                     src: Some("images/github-logo.svg".to_string()),
                     title: Some("GitHub".to_string()),
-                    alt: Self::alt_text(&self.project_name(), &Some("GitHub".to_string()))
+                    alt: alt_text(&self.project_name(), "GitHub")
                 },
                 "gitlab.com" => ImgAttributes {
                     src: Some("images/gitlab-logo.svg".to_string()),
                     title: Some("GitLab".to_string()),
-                    alt: Self::alt_text(&self.project_name(), &Some("GitLab".to_string()))
+                    alt: alt_text(&self.project_name(), "GitLab")
                 },
                 "bitbucket.org" => ImgAttributes {
                     src: Some("images/bitbucket-logo.svg".to_string()),
                     title: Some("Bitbucket".to_string()),
-                    alt: Self::alt_text(&self.project_name(), &Some("Bitbucket".to_string()))
+                    alt: alt_text(&self.project_name(), "Bitbucket")
                 },
                 "codeberg.org" => ImgAttributes {
                     src: Some("images/codeberg-logo.svg".to_string()),
                     title: Some("Codeberg".to_string()),
-                    alt: Self::alt_text(&self.project_name(), &Some("Codeberg".to_string()))
+                    alt: alt_text(&self.project_name(), "Codeberg")
                 },
                 _ => ImgAttributes {
                     src: Some(NO_ICON_IMAGE_URL.to_string()),
@@ -158,27 +108,45 @@ impl WebSearchResult {
         }
     }
 
-    fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
-        // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
-        if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
-            return NO_ICON_IMAGE_URL.to_string()
-        }
-
-        icon_url.clone().unwrap()
-    }
-
-    fn alt_text(project_name: &Option<String>, repository_name: &Option<String>) -> Option<String> {
-        Some(format!("Icon for {} on {}", project_name.clone()?, repository_name.clone()?))
-    }
 }
 
 #[cfg(feature = "ssr")]
 impl From<CommonProjectSearchResult> for WebSearchResult {
     fn from(search_result: CommonProjectSearchResult) -> Self {
+        let spigot = search_result.spigot.map(|s| WebSearchResultSpigot {
+            id: s.id,
+            slug: s.slug,
+            name: s.name,
+            description: s.description,
+            author: s.author,
+            version: s.version,
+            premium: s.premium,
+            icon_data: s.icon_data,
+        });
+
+        let modrinth = search_result.modrinth.map(|m| WebSearchResultModrinth {
+            id: m.id,
+            slug: m.slug,
+            name: m.name,
+            description: m.description,
+            author: m.author,
+            version: m.version,
+            icon_url: m.icon_url,
+        });
+
+        let hangar = search_result.hangar.map(|h| WebSearchResultHangar {
+            slug: h.slug,
+            name: h.name,
+            description: h.description,
+            author: h.author,
+            version: h.version,
+            avatar_url: h.avatar_url,
+        });
+
         WebSearchResult {
             full_count: search_result.full_count,
 
-            id: search_result.project.id,
+            id: search_result.id,
             date_created: search_result.date_created,
             date_updated: search_result.date_updated,
             latest_minecraft_version: search_result.latest_minecraft_version,
@@ -186,35 +154,108 @@ impl From<CommonProjectSearchResult> for WebSearchResult {
             likes_and_stars: search_result.likes_and_stars,
             follows_and_watchers: search_result.follows_and_watchers,
 
-            spigot_id: search_result.project.spigot_id,
-            spigot_slug: search_result.project.spigot_slug,
-            spigot_name: search_result.project.spigot_name,
-            spigot_description: search_result.project.spigot_description,
-            spigot_author: search_result.project.spigot_author,
-            spigot_version: search_result.project.spigot_version,
-            spigot_premium: search_result.project.spigot_premium,
-            spigot_icon_data: search_result.project.spigot_icon_data,
-
-            modrinth_id: search_result.project.modrinth_id,
-            modrinth_slug: search_result.project.modrinth_slug,
-            modrinth_name: search_result.project.modrinth_name,
-            modrinth_description: search_result.project.modrinth_description,
-            modrinth_author: search_result.project.modrinth_author,
-            modrinth_version: search_result.project.modrinth_version,
-            modrinth_icon_url: search_result.project.modrinth_icon_url,
-
-            hangar_slug: search_result.project.hangar_slug,
-            hangar_name: search_result.project.hangar_name,
-            hangar_description: search_result.project.hangar_description,
-            hangar_author: search_result.project.hangar_author,
-            hangar_version: search_result.project.hangar_version,
-            hangar_avatar_url: search_result.project.hangar_avatar_url,
+            spigot,
+            modrinth,
+            hangar,
 
             source_repository_host: search_result.source_repository_host,
             source_repository_owner: search_result.source_repository_owner,
             source_repository_name: search_result.source_repository_name
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchResultSpigot {
+    pub id: i32,
+    pub slug: String,
+    pub name: Option<String>,
+    pub description: String,
+    pub author: String,
+    pub version: Option<String>,
+    pub premium: bool,
+    pub icon_data: Option<String>
+}
+
+impl WebSearchResultSpigot {
+    fn url(&self) -> Option<String> {
+        Some(format!("https://spigotmc.org/resources/{}", self.slug))
+    }
+
+    fn icon_img_url(&self) -> String {
+        // Fallback to a "no-icon" placeholder image if the incoming icon data is None or an empty string.
+        if self.icon_data.is_none() || self.icon_data.as_ref().is_some_and(|x| x.is_empty()) {
+            return NO_ICON_IMAGE_URL.to_string()
+        }
+
+        format!("data:image/png;base64,{}", self.icon_data.clone().unwrap())
+    }
+
+    fn icon_alt_text(&self) -> Option<String> {
+        alt_text(&self.name, "Spigot")
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchResultModrinth {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub author: String,
+    pub version: Option<String>,
+    pub icon_url: Option<String>
+}
+
+impl WebSearchResultModrinth {
+    fn url(&self) -> Option<String> {
+        Some(format!("https://modrinth.com/plugin/{}", self.slug))
+    }
+
+    fn icon_img_url(&self) -> String {
+        fallback_if_no_icon(&self.icon_url.clone())
+    }
+
+    fn icon_alt_text(&self) -> Option<String> {
+        alt_text(&Some(self.name.clone()), "Modrinth")
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchResultHangar {
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub author: String,
+    pub version: Option<String>,
+    pub avatar_url: String
+}
+
+impl WebSearchResultHangar {
+    fn url(&self) -> Option<String> {
+        Some(format!("https://hangar.papermc.io/{}/{}", self.author, self.slug))
+    }
+
+    fn avatar_img_url(&self) -> String {
+        fallback_if_no_icon(&Some(self.avatar_url.clone()))
+    }
+
+    fn icon_alt_text(&self) -> Option<String> {
+        alt_text(&Some(self.name.clone()), "Hangar")
+    }
+}
+
+fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
+    // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
+    if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
+        return NO_ICON_IMAGE_URL.to_string()
+    }
+
+    icon_url.clone().unwrap()
+}
+
+fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<String> {
+    Some(format!("Icon for {} on {}", project_name.clone()?, repository_name))
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
@@ -665,30 +706,44 @@ fn SearchRow(
     let likes_and_stars = search_result.likes_and_stars_formatted();
     let follows_and_watchers = search_result.follows_and_watchers_formatted();
 
-    let has_spigot = search_result.spigot_name.is_some();
-    let spigot_name = search_result.spigot_name.clone();
-    let spigot_url = search_result.spigot_url();
-    let spigot_icon_img_url = search_result.spigot_icon_img_url();
-    let spigot_icon_alt_text = search_result.spigot_icon_alt_text();
-
-    let has_modrinth = search_result.modrinth_name.is_some();
-    let modrinth_name = search_result.modrinth_name.clone();
-    let modrinth_url = search_result.modrinth_url();
-    let modrinth_icon_img_url = search_result.modrinth_icon_img_url();
-    let modrinth_icon_alt_text = search_result.modrinth_icon_alt_text();
-
-    let has_hangar = search_result.hangar_name.is_some();
-    let hangar_name = search_result.hangar_name.clone();
-    let hangar_url = search_result.hangar_url();
-    let hangar_avatar_img_url = search_result.hangar_avatar_img_url();
-    let hangar_icon_alt_text = search_result.hangar_icon_alt_text();
-
     let has_source = search_result.source_repository_name.is_some();
     let source_repository_url = search_result.source_repository_url();
     let source_repository_url_wbr = search_result.source_repository_url_wbr();
     let source_img_attributes = search_result.source_img_attributes();
 
-    let is_spigot_premium = search_result.spigot_premium.unwrap_or_default();
+    let spigot = search_result.spigot;
+    let modrinth = search_result.modrinth;
+    let hangar = search_result.hangar;
+
+    // TODO: Refactor this into separate components
+
+    let has_spigot = spigot.is_some();
+    let is_spigot_premium = spigot.as_ref().and_then(|s| Some(s.premium)).unwrap_or_default();
+    let spigot_name = spigot.as_ref().and_then(|s| s.name.clone());
+    let spigot_url = spigot.as_ref().and_then(|s| s.url());
+    let spigot_icon_img_url = spigot.as_ref().and_then(|s| Some(s.icon_img_url()));
+    let spigot_icon_alt_text = spigot.as_ref().and_then(|s| s.icon_alt_text());
+    let spigot_version = spigot.as_ref().and_then(|s| s.version.clone());
+    let spigot_author = spigot.as_ref().and_then(|s| Some(s.author.clone()));
+    let spigot_description = spigot.as_ref().and_then(|s| Some(s.description.clone()));
+
+    let has_modrinth = modrinth.is_some();
+    let modrinth_name = modrinth.as_ref().and_then(|m| Some(m.name.clone()));
+    let modrinth_url = modrinth.as_ref().and_then(|m| m.url());
+    let modrinth_icon_img_url = modrinth.as_ref().and_then(|m| Some(m.icon_img_url()));
+    let modrinth_icon_alt_text = modrinth.as_ref().and_then(|m| m.icon_alt_text());
+    let modrinth_version = modrinth.as_ref().and_then(|m| m.version.clone());
+    let modrinth_author = modrinth.as_ref().and_then(|m| Some(m.author.clone()));
+    let modrinth_description = modrinth.as_ref().and_then(|m| Some(m.description.clone()));
+
+    let has_hangar = hangar.is_some();
+    let hangar_name = hangar.as_ref().and_then(|h| Some(h.name.clone()));
+    let hangar_url = hangar.as_ref().and_then(|h| h.url());
+    let hangar_avatar_img_url = hangar.as_ref().and_then(|h| Some(h.avatar_img_url()));
+    let hangar_icon_alt_text = hangar.as_ref().and_then(|h| h.icon_alt_text());
+    let hangar_version = hangar.as_ref().and_then(|h| h.version.clone());
+    let hangar_author = hangar.as_ref().and_then(|h| Some(h.author.clone()));
+    let hangar_description = hangar.as_ref().and_then(|h| Some(h.description.clone()));
 
     view! {
         <li class="search-row__list-item">
@@ -733,12 +788,12 @@ fn SearchRow(
                                 </Show>
                                 <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
                                 <span>"  "</span>
-                                <span class="search-row__plugin-version">{search_result.spigot_version.clone()}</span>
+                                <span class="search-row__plugin-version">{spigot_version.clone()}</span>
                                 <span>" by "</span>
-                                <span class="search-row__plugin-author">{search_result.spigot_author.clone()}</span>
+                                <span class="search-row__plugin-author">{spigot_author.clone()}</span>
                             </div>
                             <div class="search-row__cell-description">
-                                {search_result.spigot_description.clone()}
+                                {spigot_description.clone()}
                             </div>
                         </div>
                     </a>
@@ -753,12 +808,12 @@ fn SearchRow(
                             <div class="search-row__cell-title">
                                 <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
                                 <span>" "</span>
-                                <span class="search-row__plugin-version">{search_result.modrinth_version.clone()}</span>
+                                <span class="search-row__plugin-version">{modrinth_version.clone()}</span>
                                 <span>" by "</span>
-                                <span class="search-row__plugin-author">{search_result.modrinth_author.clone()}</span>
+                                <span class="search-row__plugin-author">{modrinth_author.clone()}</span>
                             </div>
                             <div class="search-row__cell-description">
-                                {search_result.modrinth_description.clone()}
+                                {modrinth_description.clone()}
                             </div>
                         </div>
                     </a>
@@ -773,12 +828,12 @@ fn SearchRow(
                             <div class="search-row__cell-title">
                                 <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
                                 <span>" "</span>
-                                <span class="search-row__plugin-version">{search_result.hangar_version.clone()}</span>
+                                <span class="search-row__plugin-version">{hangar_version.clone()}</span>
                                 <span>" by "</span>
-                                <span class="search-row__plugin-author">{search_result.hangar_author.clone()}</span>
+                                <span class="search-row__plugin-author">{hangar_author.clone()}</span>
                             </div>
                             <div class="search-row__cell-description">
-                                {search_result.hangar_description.clone()}
+                                {hangar_description.clone()}
                             </div>
                         </div>
                     </a>
