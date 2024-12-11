@@ -10,9 +10,109 @@ use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
 #[cfg(feature = "ssr")]
-use mc_plugin_finder::database::common::project::{CommonProjectSearchResult, SearchParams, SearchParamsSort};
+use mc_plugin_finder::database::common::search_result::{SearchParams, SearchParamsSort, SearchResult};
 
 const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
+pub struct WebSearchParams {
+    pub query: Option<String>,
+    pub spigot: Option<bool>,
+    pub modrinth: Option<bool>,
+    pub hangar: Option<bool>,
+    pub name: Option<bool>,
+    pub description: Option<bool>,
+    pub author: Option<bool>,
+    pub sort: Option<String>,
+    pub limit: Option<u32>,
+    pub page: Option<u32>
+}
+
+impl WebSearchParams {
+    fn offset(&self) -> Option<u32> {
+        if let Some(page) = self.page {
+            if let Some(limit) = self.limit {
+                return Some(page.saturating_sub(1).saturating_mul(limit))
+            }
+        }
+        None
+    }
+
+    // TODO: Handle number conversions properly
+    fn total_pages(&self, full_count: i64) -> Option<u32> {
+        if let Some(limit) = self.limit {
+            return Some((full_count as f64 / limit as f64).ceil() as u32)
+        }
+        None
+    }
+
+    fn form_url(&self) -> String {
+        "?".to_string() +
+        &serde_urlencoded::to_string(self).unwrap_or(
+            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&page=1".to_string())
+    }
+
+    fn first_url(&self) -> String {
+        let mut params = self.clone();
+        params.page = Some(1);
+        params.form_url()
+    }
+
+    fn previous_url(&self) -> String {
+        let mut params = self.clone();
+        params.page = Some(params.page.unwrap_or_default().saturating_sub(1));
+        params.form_url()
+    }
+
+    fn next_url(&self) -> String {
+        let mut params = self.clone();
+        params.page = Some(params.page.unwrap_or_default().saturating_add(1));
+        params.form_url()
+    }
+
+    fn last_url(&self, full_count: i64) -> String {
+        let mut params = self.clone();
+        params.page = Some(params.total_pages(full_count).unwrap_or(1));
+        params.form_url()
+    }
+}
+
+impl Default for WebSearchParams {
+    fn default() -> Self {
+        WebSearchParams {
+            query: Some("".to_string()),
+            spigot: Some(false),
+            modrinth: Some(false),
+            hangar: Some(false),
+            name: Some(false),
+            description: Some(false),
+            author: Some(false),
+            sort: Some("downloads".to_string()),
+            limit: Some(25),
+            page: Some(1)
+        }
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<WebSearchParams> for SearchParams {
+    fn from(params: WebSearchParams) -> Self {
+        let offset = params.offset();
+
+        SearchParams {
+            query: params.query.unwrap_or_default(),
+            spigot: params.spigot.unwrap_or_default(),
+            modrinth: params.modrinth.unwrap_or_default(),
+            hangar: params.hangar.unwrap_or_default(),
+            name: params.name.unwrap_or_default(),
+            description: params.description.unwrap_or_default(),
+            author: params.author.unwrap_or_default(),
+            sort: SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
+            limit: params.limit.unwrap_or(25).into(),
+            offset: offset.unwrap_or_default().into()
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResult {
@@ -111,8 +211,8 @@ impl WebSearchResult {
 }
 
 #[cfg(feature = "ssr")]
-impl From<CommonProjectSearchResult> for WebSearchResult {
-    fn from(search_result: CommonProjectSearchResult) -> Self {
+impl From<SearchResult> for WebSearchResult {
+    fn from(search_result: SearchResult) -> Self {
         let spigot = search_result.spigot.map(|s| WebSearchResultSpigot {
             id: s.id,
             slug: s.slug,
@@ -258,106 +358,6 @@ fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<Stri
     Some(format!("Icon for {} on {}", project_name.clone()?, repository_name))
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
-pub struct WebSearchParams {
-    pub query: Option<String>,
-    pub spigot: Option<bool>,
-    pub modrinth: Option<bool>,
-    pub hangar: Option<bool>,
-    pub name: Option<bool>,
-    pub description: Option<bool>,
-    pub author: Option<bool>,
-    pub sort: Option<String>,
-    pub limit: Option<u32>,
-    pub page: Option<u32>
-}
-
-impl WebSearchParams {
-    fn offset(&self) -> Option<u32> {
-        if let Some(page) = self.page {
-            if let Some(limit) = self.limit {
-                return Some(page.saturating_sub(1).saturating_mul(limit))
-            }
-        }
-        None
-    }
-
-    // TODO: Handle number conversions properly
-    fn total_pages(&self, full_count: i64) -> Option<u32> {
-        if let Some(limit) = self.limit {
-            return Some((full_count as f64 / limit as f64).ceil() as u32)
-        }
-        None
-    }
-
-    fn form_url(&self) -> String {
-        "?".to_string() +
-        &serde_urlencoded::to_string(self).unwrap_or(
-            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&page=1".to_string())
-    }
-
-    fn first_url(&self) -> String {
-        let mut params = self.clone();
-        params.page = Some(1);
-        params.form_url()
-    }
-
-    fn previous_url(&self) -> String {
-        let mut params = self.clone();
-        params.page = Some(params.page.unwrap_or_default().saturating_sub(1));
-        params.form_url()
-    }
-
-    fn next_url(&self) -> String {
-        let mut params = self.clone();
-        params.page = Some(params.page.unwrap_or_default().saturating_add(1));
-        params.form_url()
-    }
-
-    fn last_url(&self, full_count: i64) -> String {
-        let mut params = self.clone();
-        params.page = Some(params.total_pages(full_count).unwrap_or(1));
-        params.form_url()
-    }
-}
-
-impl Default for WebSearchParams {
-    fn default() -> Self {
-        WebSearchParams {
-            query: Some("".to_string()),
-            spigot: Some(false),
-            modrinth: Some(false),
-            hangar: Some(false),
-            name: Some(false),
-            description: Some(false),
-            author: Some(false),
-            sort: Some("downloads".to_string()),
-            limit: Some(25),
-            page: Some(1)
-        }
-    }
-}
-
-#[cfg(feature = "ssr")]
-impl From<WebSearchParams> for SearchParams {
-    fn from(params: WebSearchParams) -> Self {
-        let offset = params.offset();
-
-        SearchParams {
-            query: params.query.unwrap_or_default(),
-            spigot: params.spigot.unwrap_or_default(),
-            modrinth: params.modrinth.unwrap_or_default(),
-            hangar: params.hangar.unwrap_or_default(),
-            name: params.name.unwrap_or_default(),
-            description: params.description.unwrap_or_default(),
-            author: params.author.unwrap_or_default(),
-            sort: SearchParamsSort::from_str(&params.sort.unwrap_or_default()).unwrap_or_default(),
-            limit: params.limit.unwrap_or(25).into(),
-            offset: offset.unwrap_or_default().into()
-        }
-    }
-}
-
 struct ImgAttributes {
     src: Option<String>,
     title: Option<String>,
@@ -436,10 +436,10 @@ pub fn App() -> impl IntoView {
 #[server(SearchProjects)]
 pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchResult>, ServerFnError> {
     use self::ssr::*;
-    use mc_plugin_finder::database::common::project::search_common_projects;
+    use mc_plugin_finder::database::common::search_result::search_projects;
 
     let db_pool = db().await?;
-    let common_projects = search_common_projects(&db_pool, &params.into()).await;
+    let common_projects = search_projects(&db_pool, &params.into()).await;
 
     match common_projects {
         Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),
