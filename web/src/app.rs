@@ -715,35 +715,9 @@ fn SearchRow(
     let modrinth = search_result.modrinth;
     let hangar = search_result.hangar;
 
-    // TODO: Refactor this into separate components
-
     let has_spigot = spigot.is_some();
-    let is_spigot_premium = spigot.as_ref().and_then(|s| Some(s.premium)).unwrap_or_default();
-    let spigot_name = spigot.as_ref().and_then(|s| s.name.clone());
-    let spigot_url = spigot.as_ref().and_then(|s| s.url());
-    let spigot_icon_img_url = spigot.as_ref().and_then(|s| Some(s.icon_img_url()));
-    let spigot_icon_alt_text = spigot.as_ref().and_then(|s| s.icon_alt_text());
-    let spigot_version = spigot.as_ref().and_then(|s| s.version.clone());
-    let spigot_author = spigot.as_ref().and_then(|s| Some(s.author.clone()));
-    let spigot_description = spigot.as_ref().and_then(|s| Some(s.description.clone()));
-
     let has_modrinth = modrinth.is_some();
-    let modrinth_name = modrinth.as_ref().and_then(|m| Some(m.name.clone()));
-    let modrinth_url = modrinth.as_ref().and_then(|m| m.url());
-    let modrinth_icon_img_url = modrinth.as_ref().and_then(|m| Some(m.icon_img_url()));
-    let modrinth_icon_alt_text = modrinth.as_ref().and_then(|m| m.icon_alt_text());
-    let modrinth_version = modrinth.as_ref().and_then(|m| m.version.clone());
-    let modrinth_author = modrinth.as_ref().and_then(|m| Some(m.author.clone()));
-    let modrinth_description = modrinth.as_ref().and_then(|m| Some(m.description.clone()));
-
     let has_hangar = hangar.is_some();
-    let hangar_name = hangar.as_ref().and_then(|h| Some(h.name.clone()));
-    let hangar_url = hangar.as_ref().and_then(|h| h.url());
-    let hangar_avatar_img_url = hangar.as_ref().and_then(|h| Some(h.avatar_img_url()));
-    let hangar_icon_alt_text = hangar.as_ref().and_then(|h| h.icon_alt_text());
-    let hangar_version = hangar.as_ref().and_then(|h| h.version.clone());
-    let hangar_author = hangar.as_ref().and_then(|h| Some(h.author.clone()));
-    let hangar_description = hangar.as_ref().and_then(|h| Some(h.description.clone()));
 
     view! {
         <li class="search-row__list-item">
@@ -775,68 +749,19 @@ fn SearchRow(
 
             <div class="search-row__spigot-cell">
                 <Show when=move || { has_spigot }>
-                    <a class="search-row__spigot-link" href=spigot_url.clone() target="_blank">
-                        <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__text-contents">
-                            <div class="search-row__cell-title">
-                                <Show when=move || { is_spigot_premium }>
-                                    <span class="search-row__plugin-premium">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
-                                            <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
-                                        </svg>
-                                    </span>
-                                </Show>
-                                <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
-                                <span>"  "</span>
-                                <span class="search-row__plugin-version">{spigot_version.clone()}</span>
-                                <span>" by "</span>
-                                <span class="search-row__plugin-author">{spigot_author.clone()}</span>
-                            </div>
-                            <div class="search-row__cell-description">
-                                {spigot_description.clone()}
-                            </div>
-                        </div>
-                    </a>
+                    <SpigotResource spigot=spigot.clone().unwrap() />
                 </Show>
             </div>
 
             <div class="search-row__modrinth-cell">
                 <Show when=move || { has_modrinth }>
-                    <a class="search-row__modrinth-link" href=modrinth_url.clone() target="_blank">
-                        <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__text-contents">
-                            <div class="search-row__cell-title">
-                                <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
-                                <span>" "</span>
-                                <span class="search-row__plugin-version">{modrinth_version.clone()}</span>
-                                <span>" by "</span>
-                                <span class="search-row__plugin-author">{modrinth_author.clone()}</span>
-                            </div>
-                            <div class="search-row__cell-description">
-                                {modrinth_description.clone()}
-                            </div>
-                        </div>
-                    </a>
+                    <ModrinthProject modrinth=modrinth.clone().unwrap() />
                 </Show>
             </div>
 
             <div class="search-row__hangar-cell">
                 <Show when=move || { has_hangar }>
-                    <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
-                        <img class="search-row__image" src=hangar_avatar_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
-                        <div class="search-row__text-contents">
-                            <div class="search-row__cell-title">
-                                <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
-                                <span>" "</span>
-                                <span class="search-row__plugin-version">{hangar_version.clone()}</span>
-                                <span>" by "</span>
-                                <span class="search-row__plugin-author">{hangar_author.clone()}</span>
-                            </div>
-                            <div class="search-row__cell-description">
-                                {hangar_description.clone()}
-                            </div>
-                        </div>
-                    </a>
+                    <HangarProject hangar=hangar.clone().unwrap() />
                 </Show>
             </div>
 
@@ -852,5 +777,112 @@ fn SearchRow(
                 </Show>
             </div>
         </li>
+    }
+}
+
+/// A resource hosted on Spigot
+#[component]
+fn SpigotResource(
+    /// The Spigot portion of the search result
+    spigot: WebSearchResultSpigot
+) -> impl IntoView {
+    let is_spigot_premium = spigot.premium;
+    let spigot_name = spigot.name.clone();
+    let spigot_url = spigot.url();
+    let spigot_icon_img_url = spigot.icon_img_url();
+    let spigot_icon_alt_text = spigot.icon_alt_text();
+    let spigot_version = spigot.version;
+    let spigot_author = spigot.author;
+    let spigot_description = spigot.description;
+
+    view! {
+        <a class="search-row__spigot-link" href=spigot_url.clone() target="_blank">
+            <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() loading="lazy" />
+            <div class="search-row__text-contents">
+                <div class="search-row__cell-title">
+                    <Show when=move || { is_spigot_premium }>
+                        <span class="search-row__plugin-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#000000" style="vertical-align: bottom;">
+                                <path d="M446-216h67v-47q49-8 81-42t32-79q0-45-27.5-77T514-514q-61-22-80.5-37.5T414-592q0-20 17.5-33t45.5-13q28 0 49 13.5t28 36.5l59-25q-12-33-38.5-55.5T513-697v-47h-66v48q-45 10-72 38.5T348-591q0 45 30.5 76.5T475-460q45 16 65.5 34t20.5 42q0 26-21 43.5T488-323q-33 0-58.5-22T395-402l-62 26q12 42 42 71.5t71 40.5v48Zm34 120q-79 0-149-30t-122.5-82.5Q156-261 126-331T96-480q0-80 30-149.5t82.5-122Q261-804 331-834t149-30q80 0 149.5 30t122 82.5Q804-699 834-629.5T864-480q0 79-30 149t-82.5 122.5Q699-156 629.5-126T480-96Zm0-72q130 0 221-91t91-221q0-130-91-221t-221-91q-130 0-221 91t-91 221q0 130 91 221t221 91Zm0-312Z"/>
+                            </svg>
+                        </span>
+                    </Show>
+                    <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
+                    <span>"  "</span>
+                    <span class="search-row__plugin-version">{spigot_version.clone()}</span>
+                    <span>" by "</span>
+                    <span class="search-row__plugin-author">{spigot_author.clone()}</span>
+                </div>
+                <div class="search-row__cell-description">
+                    {spigot_description.clone()}
+                </div>
+            </div>
+        </a>
+    }
+}
+
+/// A project hosted on Modrinth
+#[component]
+fn ModrinthProject(
+    /// The Modrinth portion of the search result
+    modrinth: WebSearchResultModrinth
+) -> impl IntoView {
+    let modrinth_name = modrinth.name.clone();
+    let modrinth_url = modrinth.url();
+    let modrinth_icon_img_url = modrinth.icon_img_url();
+    let modrinth_icon_alt_text = modrinth.icon_alt_text();
+    let modrinth_version = modrinth.version;
+    let modrinth_author = modrinth.author;
+    let modrinth_description = modrinth.description;
+
+    view! {
+        <a class="search-row__modrinth-link" href=modrinth_url.clone() target="_blank">
+            <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() loading="lazy" />
+            <div class="search-row__text-contents">
+                <div class="search-row__cell-title">
+                    <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
+                    <span>" "</span>
+                    <span class="search-row__plugin-version">{modrinth_version.clone()}</span>
+                    <span>" by "</span>
+                    <span class="search-row__plugin-author">{modrinth_author.clone()}</span>
+                </div>
+                <div class="search-row__cell-description">
+                    {modrinth_description.clone()}
+                </div>
+            </div>
+        </a>
+    }
+}
+
+/// A project hosted on Hangar
+#[component]
+fn HangarProject(
+    /// The Hangar portion of the search result
+    hangar: WebSearchResultHangar
+) -> impl IntoView {
+    let hangar_name = hangar.name.clone();
+    let hangar_url = hangar.url();
+    let hangar_avatar_img_url = hangar.avatar_img_url();
+    let hangar_icon_alt_text = hangar.icon_alt_text();
+    let hangar_version = hangar.version;
+    let hangar_author = hangar.author;
+    let hangar_description = hangar.description;
+
+    view! {
+        <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
+            <img class="search-row__image" src=hangar_avatar_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
+            <div class="search-row__text-contents">
+                <div class="search-row__cell-title">
+                    <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
+                    <span>" "</span>
+                    <span class="search-row__plugin-version">{hangar_version.clone()}</span>
+                    <span>" by "</span>
+                    <span class="search-row__plugin-author">{hangar_author.clone()}</span>
+                </div>
+                <div class="search-row__cell-description">
+                    {hangar_description.clone()}
+                </div>
+            </div>
+        </a>
     }
 }
