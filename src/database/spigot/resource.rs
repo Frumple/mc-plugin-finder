@@ -1,4 +1,5 @@
-use crate::database::cornucopia::queries::spigot_resource::{self, UpsertSpigotResourceParams, SpigotResourceEntity};
+use crate::database::source_repository::SourceRepository;
+use crate::database::cornucopia::queries::spigot_resource::{self, SpigotResourceEntity, UpsertSpigotResourceParams};
 
 use anyhow::Result;
 use cornucopia_async::Params;
@@ -26,13 +27,21 @@ pub struct SpigotResource {
     pub icon_url: Option<String>,
     pub icon_data: Option<String>,
     pub source_url: Option<String>,
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub source_repository: Option<SourceRepository>
 }
 
 impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(resource: SpigotResource) -> Self {
+        let mut source_repository_host = None;
+        let mut source_repository_owner = None;
+        let mut source_repository_name = None;
+
+        if let Some(repo) = resource.source_repository {
+            source_repository_host = Some(repo.host);
+            source_repository_owner = Some(repo.owner);
+            source_repository_name = Some(repo.name);
+        }
+
         UpsertSpigotResourceParams {
             id: resource.id,
             name: resource.name,
@@ -51,15 +60,27 @@ impl From<SpigotResource> for UpsertSpigotResourceParams<String, String, String,
             version_name: resource.version_name,
             premium: resource.premium,
             source_url: resource.source_url,
-            source_repository_host: resource.source_repository_host,
-            source_repository_owner: resource.source_repository_owner,
-            source_repository_name: resource.source_repository_name
+            source_repository_host,
+            source_repository_owner,
+            source_repository_name
         }
     }
 }
 
 impl From<SpigotResourceEntity> for SpigotResource {
     fn from(entity: SpigotResourceEntity) -> Self {
+        let mut source_repository = None;
+
+        if entity.source_repository_host.is_some() &&
+           entity.source_repository_owner.is_some() &&
+           entity.source_repository_name.is_some() {
+            source_repository = Some(SourceRepository {
+                host: entity.source_repository_host.unwrap(),
+                owner: entity.source_repository_owner.unwrap(),
+                name: entity.source_repository_name.unwrap()
+            })
+        }
+
         SpigotResource {
             id: entity.id,
             name: entity.name,
@@ -78,9 +99,7 @@ impl From<SpigotResourceEntity> for SpigotResource {
             icon_url: entity.icon_url,
             icon_data: entity.icon_data,
             source_url: entity.source_url,
-            source_repository_host: entity.source_repository_host,
-            source_repository_owner: entity.source_repository_owner,
-            source_repository_name: entity.source_repository_name
+            source_repository
         }
     }
 }
@@ -207,10 +226,12 @@ pub mod test {
             premium: true,
             icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
             icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
-            source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("Frumple".to_string()),
-            source_repository_name: Some("foo-updated".to_string())
+            source_url: Some("https://github.com/alice/foo-updated".to_string()),
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo-updated".to_string()
+            })
         };
 
         // Act
@@ -324,9 +345,11 @@ pub mod test {
                 icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
                 icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("alice".to_string()),
-                source_repository_name: Some("foo".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "github.com".to_string(),
+                    owner: "alice".to_string(),
+                    name: "foo".to_string()
+                })
             },
             SpigotResource {
                 id: 2,
@@ -346,9 +369,11 @@ pub mod test {
                 icon_url: Some("data/resource_icons/2/2.jpg".to_string()),
                 icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
-                source_repository_host: Some("gitlab.com".to_string()),
-                source_repository_owner: Some("bob".to_string()),
-                source_repository_name: Some("bar".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "gitlab.com".to_string(),
+                    owner: "bob".to_string(),
+                    name: "bar".to_string()
+                })
             },
             SpigotResource {
                 id: 3,
@@ -368,9 +393,11 @@ pub mod test {
                 icon_url: Some("data/resource_icons/3/3.jpg".to_string()),
                 icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
-                source_repository_host: Some("bitbucket.org".to_string()),
-                source_repository_owner: Some("eve".to_string()),
-                source_repository_name: Some("baz".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "bitbucket.org".to_string(),
+                    owner: "eve".to_string(),
+                    name: "baz".to_string()
+                })
             }
         ]
     }

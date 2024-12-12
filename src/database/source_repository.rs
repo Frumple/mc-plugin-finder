@@ -1,6 +1,7 @@
+use serde::{Serialize, Deserialize};
 use url::Url;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceRepository {
     pub host: String,
     pub owner: String,

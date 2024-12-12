@@ -1,8 +1,8 @@
 use crate::HttpServer;
 use crate::hangar::HangarClient;
 use crate::hangar::version::{IncomingHangarVersion, apply_incoming_hangar_version_to_hangar_project};
-use crate::util::extract_source_repository_from_url;
 use mc_plugin_finder::database::hangar::project::{HangarProject, upsert_hangar_project};
+use mc_plugin_finder::database::source_repository::{SourceRepository, extract_source_repository_from_url};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -260,9 +260,7 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, incom
         avatar_url: incoming_project.avatar_url,
         version_name: None,
         source_url: source_code_link.clone(),
-        source_repository_host: None,
-        source_repository_owner: None,
-        source_repository_name: None
+        source_repository: None
     };
 
     if let Some(version) = incoming_version {
@@ -273,9 +271,11 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, incom
         let option_repo = extract_source_repository_from_url(url.as_str());
 
         if let Some(repo) = option_repo {
-            project.source_repository_host = Some(repo.host);
-            project.source_repository_owner = Some(repo.owner);
-            project.source_repository_name = Some(repo.name);
+            project.source_repository = Some(SourceRepository {
+                host: repo.host,
+                owner: repo.owner,
+                name: repo.name
+            });
         }
     }
 
@@ -299,7 +299,6 @@ mod test {
     use super::*;
     use crate::hangar::test::HangarTestServer;
     use crate::hangar::version::test::create_test_version;
-    use crate::util::SourceRepository;
 
     use speculoos::prelude::*;
     use time::macros::datetime;
@@ -370,9 +369,11 @@ mod test {
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some(version_name.to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("alice".to_string()),
-                source_repository_name: Some("foo".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "github.com".to_string(),
+                    owner: "alice".to_string(),
+                    name: "foo".to_string()
+                })
         };
 
         assert_that(&project).is_equal_to(expected_project);

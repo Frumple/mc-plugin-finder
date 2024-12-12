@@ -2,6 +2,7 @@ mod cornucopia;
 pub mod common;
 pub mod hangar;
 pub mod modrinth;
+pub mod source_repository;
 pub mod spigot;
 
 use anyhow::Result;

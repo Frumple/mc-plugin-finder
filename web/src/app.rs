@@ -10,7 +10,7 @@ use std::str::FromStr;
 use time::{OffsetDateTime, format_description};
 
 #[cfg(feature = "ssr")]
-use mc_plugin_finder::database::common::search_result::{SearchParams, SearchParamsSort, SearchResult};
+use mc_plugin_finder::database::common::search_result::{SearchParams, SearchParamsSort, SearchResult, SearchResultSpigot, SearchResultModrinth, SearchResultHangar};
 
 const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
 
@@ -129,10 +129,7 @@ pub struct WebSearchResult {
     pub spigot: Option<WebSearchResultSpigot>,
     pub modrinth: Option<WebSearchResultModrinth>,
     pub hangar: Option<WebSearchResultHangar>,
-
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub source_repository: Option<WebSearchResultSourceRepository>
 }
 
 impl WebSearchResult {
@@ -162,86 +159,15 @@ impl WebSearchResult {
         }
         None
     }
-
-    fn source_repository_url(&self) -> Option<String> {
-        Some(format!("https://{}/{}/{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
-    }
-
-    fn source_repository_url_wbr(&self) -> Option<String> {
-        Some(format!("https://{}/<wbr>{}/<wbr>{}", self.source_repository_host.clone()?, self.source_repository_owner.clone()?, self.source_repository_name.clone()?))
-    }
-
-    fn source_img_attributes(&self) -> ImgAttributes {
-        if let Some(host) = &self.source_repository_host {
-            return match host.as_str() {
-                "github.com" => ImgAttributes {
-                    src: Some("images/github-logo.svg".to_string()),
-                    title: Some("GitHub".to_string()),
-                    alt: alt_text(&self.project_name(), "GitHub")
-                },
-                "gitlab.com" => ImgAttributes {
-                    src: Some("images/gitlab-logo.svg".to_string()),
-                    title: Some("GitLab".to_string()),
-                    alt: alt_text(&self.project_name(), "GitLab")
-                },
-                "bitbucket.org" => ImgAttributes {
-                    src: Some("images/bitbucket-logo.svg".to_string()),
-                    title: Some("Bitbucket".to_string()),
-                    alt: alt_text(&self.project_name(), "Bitbucket")
-                },
-                "codeberg.org" => ImgAttributes {
-                    src: Some("images/codeberg-logo.svg".to_string()),
-                    title: Some("Codeberg".to_string()),
-                    alt: alt_text(&self.project_name(), "Codeberg")
-                },
-                _ => ImgAttributes {
-                    src: Some(NO_ICON_IMAGE_URL.to_string()),
-                    title: Some("Unknown Repository".to_string()),
-                    alt: Some("Unknown Repository".to_string())
-                }
-            }
-        }
-        ImgAttributes {
-            src: Some(NO_ICON_IMAGE_URL.to_string()),
-            title: Some("No Repository".to_string()),
-            alt: Some("No Repository".to_string())
-        }
-    }
-
 }
 
 #[cfg(feature = "ssr")]
 impl From<SearchResult> for WebSearchResult {
     fn from(search_result: SearchResult) -> Self {
-        let spigot = search_result.spigot.map(|s| WebSearchResultSpigot {
-            id: s.id,
-            slug: s.slug,
-            name: s.name,
-            description: s.description,
-            author: s.author,
-            version: s.version,
-            premium: s.premium,
-            icon_data: s.icon_data,
-        });
-
-        let modrinth = search_result.modrinth.map(|m| WebSearchResultModrinth {
-            id: m.id,
-            slug: m.slug,
-            name: m.name,
-            description: m.description,
-            author: m.author,
-            version: m.version,
-            icon_url: m.icon_url,
-        });
-
-        let hangar = search_result.hangar.map(|h| WebSearchResultHangar {
-            slug: h.slug,
-            name: h.name,
-            description: h.description,
-            author: h.author,
-            version: h.version,
-            avatar_url: h.avatar_url,
-        });
+        let spigot = search_result.spigot.map(|s| s.into());
+        let modrinth = search_result.modrinth.map(|m| m.into());
+        let hangar = search_result.hangar.map(|h| h.into());
+        let source_repository = search_result.source_repository.map(|r| r.into());
 
         WebSearchResult {
             full_count: search_result.full_count,
@@ -257,10 +183,7 @@ impl From<SearchResult> for WebSearchResult {
             spigot,
             modrinth,
             hangar,
-
-            source_repository_host: search_result.source_repository_host,
-            source_repository_owner: search_result.source_repository_owner,
-            source_repository_name: search_result.source_repository_name
+            source_repository
         }
     }
 }
@@ -296,6 +219,22 @@ impl WebSearchResultSpigot {
     }
 }
 
+#[cfg(feature = "ssr")]
+impl From<SearchResultSpigot> for WebSearchResultSpigot {
+    fn from(s: SearchResultSpigot) -> Self {
+        WebSearchResultSpigot {
+            id: s.id,
+            slug: s.slug,
+            name: s.name,
+            description: s.description,
+            author: s.author,
+            version: s.version,
+            premium: s.premium,
+            icon_data: s.icon_data,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSearchResultModrinth {
     pub id: String,
@@ -318,6 +257,21 @@ impl WebSearchResultModrinth {
 
     fn icon_alt_text(&self) -> Option<String> {
         alt_text(&Some(self.name.clone()), "Modrinth")
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<SearchResultModrinth> for WebSearchResultModrinth {
+    fn from(m: SearchResultModrinth) -> Self {
+        WebSearchResultModrinth {
+            id: m.id,
+            slug: m.slug,
+            name: m.name,
+            description: m.description,
+            author: m.author,
+            version: m.version,
+            icon_url: m.icon_url,
+        }
     }
 }
 
@@ -345,23 +299,76 @@ impl WebSearchResultHangar {
     }
 }
 
-fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
-    // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
-    if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
-        return NO_ICON_IMAGE_URL.to_string()
+#[cfg(feature = "ssr")]
+impl From<SearchResultHangar> for WebSearchResultHangar {
+    fn from(h: SearchResultHangar) -> Self {
+        WebSearchResultHangar {
+            slug: h.slug,
+            name: h.name,
+            description: h.description,
+            author: h.author,
+            version: h.version,
+            avatar_url: h.avatar_url,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchResultSourceRepository {
+    pub host: String,
+    pub owner: String,
+    pub name: String
+}
+
+impl WebSearchResultSourceRepository {
+    fn url(&self) -> String {
+        format!("https://{}/{}/{}", self.host, self.owner, self.name)
     }
 
-    icon_url.clone().unwrap()
+    fn url_wbr(&self) -> String {
+        format!("https://{}/<wbr>{}/<wbr>{}", self.host, self.owner, self.name)
+    }
+
+    fn source_img_attributes(&self, project_name: &Option<String>) -> ImgAttributes {
+        match self.host.as_str() {
+            "github.com" => ImgAttributes {
+                src: Some("images/github-logo.svg".to_string()),
+                title: Some("GitHub".to_string()),
+                alt: alt_text(project_name, "GitHub")
+            },
+            "gitlab.com" => ImgAttributes {
+                src: Some("images/gitlab-logo.svg".to_string()),
+                title: Some("GitLab".to_string()),
+                alt: alt_text(project_name, "GitLab")
+            },
+            "bitbucket.org" => ImgAttributes {
+                src: Some("images/bitbucket-logo.svg".to_string()),
+                title: Some("Bitbucket".to_string()),
+                alt: alt_text(project_name, "Bitbucket")
+            },
+            "codeberg.org" => ImgAttributes {
+                src: Some("images/codeberg-logo.svg".to_string()),
+                title: Some("Codeberg".to_string()),
+                alt: alt_text(project_name, "Codeberg")
+            },
+            _ => ImgAttributes {
+                src: Some(NO_ICON_IMAGE_URL.to_string()),
+                title: Some("Unknown Repository".to_string()),
+                alt: Some("Unknown Repository".to_string())
+            }
+        }
+    }
 }
 
-fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<String> {
-    Some(format!("Icon for {} on {}", project_name.clone()?, repository_name))
-}
-
-struct ImgAttributes {
-    src: Option<String>,
-    title: Option<String>,
-    alt: Option<String>
+#[cfg(feature = "ssr")]
+impl From<mc_plugin_finder::database::source_repository::SourceRepository> for WebSearchResultSourceRepository {
+    fn from(repo: mc_plugin_finder::database::source_repository::SourceRepository) -> Self {
+        WebSearchResultSourceRepository {
+            host: repo.host,
+            owner: repo.owner,
+            name: repo.name
+        }
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -706,18 +713,17 @@ fn SearchRow(
     let likes_and_stars = search_result.likes_and_stars_formatted();
     let follows_and_watchers = search_result.follows_and_watchers_formatted();
 
-    let has_source = search_result.source_repository_name.is_some();
-    let source_repository_url = search_result.source_repository_url();
-    let source_repository_url_wbr = search_result.source_repository_url_wbr();
-    let source_img_attributes = search_result.source_img_attributes();
+    let project_name = search_result.project_name();
 
     let spigot = search_result.spigot;
     let modrinth = search_result.modrinth;
     let hangar = search_result.hangar;
+    let source_repository = search_result.source_repository;
 
     let has_spigot = spigot.is_some();
     let has_modrinth = modrinth.is_some();
     let has_hangar = hangar.is_some();
+    let has_source = source_repository.is_some();
 
     view! {
         <li class="search-row__list-item">
@@ -767,13 +773,7 @@ fn SearchRow(
 
             <div class="search-row__source-cell">
                 <Show when=move || { has_source }>
-                    <a class="search-row__source-link" href=source_repository_url.clone() target="_blank">
-                        <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() loading="lazy" />
-                        <div class="search-row__source-text-contents">
-                            <div class="search-row__cell-title" inner_html=source_repository_url_wbr.clone()>
-                            </div>
-                        </div>
-                    </a>
+                    <SourceRepository repo=source_repository.clone().unwrap() project_name=project_name.clone() />
                 </Show>
             </div>
         </li>
@@ -885,4 +885,48 @@ fn HangarProject(
             </div>
         </a>
     }
+}
+
+/// The source code repository
+#[component]
+fn SourceRepository(
+    /// The source repository portion of the search result
+    repo: WebSearchResultSourceRepository,
+    /// The name of the project
+    project_name: Option<String>
+) -> impl IntoView {
+    let source_repository_url = repo.url();
+    let source_repository_url_wbr = repo.url_wbr();
+    let source_img_attributes = repo.source_img_attributes(&project_name);
+
+    view! {
+        <a class="search-row__source-link" href=source_repository_url.clone() target="_blank">
+            <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() loading="lazy" />
+            <div class="search-row__source-text-contents">
+                <div class="search-row__cell-title" inner_html=source_repository_url_wbr.clone()>
+                </div>
+            </div>
+        </a>
+    }
+}
+
+struct ImgAttributes {
+    src: Option<String>,
+    title: Option<String>,
+    alt: Option<String>
+}
+
+
+
+fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
+    // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
+    if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
+        return NO_ICON_IMAGE_URL.to_string()
+    }
+
+    icon_url.clone().unwrap()
+}
+
+fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<String> {
+    Some(format!("Icon for {} on {}", project_name.clone()?, repository_name))
 }

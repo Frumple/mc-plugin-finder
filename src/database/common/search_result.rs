@@ -1,4 +1,5 @@
 use crate::database::cornucopia::queries::search_result::{self, SearchResultEntity, SearchProjectsParams};
+use crate::database::source_repository::SourceRepository;
 
 use anyhow::Result;
 use cornucopia_async::Params;
@@ -112,10 +113,7 @@ pub struct SearchResult {
     pub spigot: Option<SearchResultSpigot>,
     pub modrinth: Option<SearchResultModrinth>,
     pub hangar: Option<SearchResultHangar>,
-
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub source_repository: Option<SourceRepository>
 }
 
 impl From<SearchResultEntity> for SearchResult {
@@ -150,6 +148,18 @@ impl From<SearchResultEntity> for SearchResult {
             avatar_url: entity.hangar_avatar_url.expect("Hangar avatar url should not be None")
         });
 
+        let mut source_repository = None;
+
+        if entity.source_repository_host.is_some() &&
+           entity.source_repository_owner.is_some() &&
+           entity.source_repository_name.is_some() {
+            source_repository = Some(SourceRepository {
+                host: entity.source_repository_host.unwrap(),
+                owner: entity.source_repository_owner.unwrap(),
+                name: entity.source_repository_name.unwrap()
+            })
+        }
+
         SearchResult {
             full_count: entity.full_count,
 
@@ -164,10 +174,7 @@ impl From<SearchResultEntity> for SearchResult {
             spigot,
             modrinth,
             hangar,
-
-            source_repository_host: entity.source_repository_host,
-            source_repository_owner: entity.source_repository_owner,
-            source_repository_name: entity.source_repository_name
+            source_repository
         }
     }
 }

@@ -219,6 +219,8 @@ mod test {
     use crate::database::hangar::project::{HangarProject, upsert_hangar_project};
     use crate::database::hangar::project::test::populate_test_hangar_project;
 
+    use crate::database::source_repository::SourceRepository;
+
     use crate::database::test::DatabaseTestContext;
 
     use ::function_name::named;
@@ -251,10 +253,12 @@ mod test {
             premium: false,
             icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
             icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
-            source_url: Some("https://gitlab.com/Frumple/bar".to_string()),
-            source_repository_host: Some("gitlab.com".to_string()),
-            source_repository_owner: Some("Frumple".to_string()),
-            source_repository_name: Some("bar".to_string())
+            source_url: Some("https://gitlab.com/bob/bar".to_string()),
+            source_repository: Some(SourceRepository {
+                host: "gitlab.com".to_string(),
+                owner: "bob".to_string(),
+                name: "bar".to_string()
+            })
         };
         upsert_spigot_resource(&context.pool, &spigot_resource2).await?;
 

@@ -1,3 +1,4 @@
+use crate::database::source_repository::SourceRepository;
 use crate::database::cornucopia::queries::modrinth_project::{self, ModrinthProjectEntity, UpsertModrinthProjectParams};
 
 use anyhow::Result;
@@ -24,13 +25,21 @@ pub struct ModrinthProject {
     pub icon_url: Option<String>,
     pub monetization_status: Option<String>,
     pub source_url: Option<String>,
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub source_repository: Option<SourceRepository>
 }
 
 impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: ModrinthProject) -> Self {
+        let mut source_repository_host = None;
+        let mut source_repository_owner = None;
+        let mut source_repository_name = None;
+
+        if let Some(repo) = project.source_repository {
+            source_repository_host = Some(repo.host);
+            source_repository_owner = Some(repo.owner);
+            source_repository_name = Some(repo.name);
+        }
+
         UpsertModrinthProjectParams {
             id: project.id,
             slug: project.slug,
@@ -47,15 +56,27 @@ impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, Strin
             icon_url: project.icon_url,
             monetization_status: project.monetization_status,
             source_url: project.source_url,
-            source_repository_host: project.source_repository_host,
-            source_repository_owner: project.source_repository_owner,
-            source_repository_name: project.source_repository_name
+            source_repository_host,
+            source_repository_owner,
+            source_repository_name
         }
     }
 }
 
 impl From<ModrinthProjectEntity> for ModrinthProject {
     fn from(entity: ModrinthProjectEntity) -> Self {
+        let mut source_repository = None;
+
+        if entity.source_repository_host.is_some() &&
+           entity.source_repository_owner.is_some() &&
+           entity.source_repository_name.is_some() {
+            source_repository = Some(SourceRepository {
+                host: entity.source_repository_host.unwrap(),
+                owner: entity.source_repository_owner.unwrap(),
+                name: entity.source_repository_name.unwrap()
+            })
+        }
+
         ModrinthProject {
             id: entity.id,
             slug: entity.slug,
@@ -72,9 +93,7 @@ impl From<ModrinthProjectEntity> for ModrinthProject {
             icon_url: entity.icon_url,
             monetization_status: entity.monetization_status,
             source_url: entity.source_url,
-            source_repository_host: entity.source_repository_host,
-            source_repository_owner: entity.source_repository_owner,
-            source_repository_name: entity.source_repository_name
+            source_repository
         }
     }
 }
@@ -192,10 +211,12 @@ pub mod test {
             version_name: Some("v2.3.4".to_string()),
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
             monetization_status: None,
-            source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("Frumple".to_string()),
-            source_repository_name: Some("foo-updated".to_string())
+            source_url: Some("https://github.com/alice/foo-updated".to_string()),
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo-updated".to_string()
+            })
         };
 
         // Act
@@ -270,9 +291,11 @@ pub mod test {
                 icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
                 monetization_status: None,
                 source_url: Some("https://github.com/alice/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("alice".to_string()),
-                source_repository_name: Some("foo".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "github.com".to_string(),
+                    owner: "alice".to_string(),
+                    name: "foo".to_string()
+                })
             },
             ModrinthProject {
                 id: "bbbbbbbb".to_string(),
@@ -290,9 +313,11 @@ pub mod test {
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
                 monetization_status: None,
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
-                source_repository_host: Some("gitlab.com".to_string()),
-                source_repository_owner: Some("bob".to_string()),
-                source_repository_name: Some("bar".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "gitlab.com".to_string(),
+                    owner: "bob".to_string(),
+                    name: "bar".to_string()
+                })
             },
             ModrinthProject {
                 id: "cccccccc".to_string(),
@@ -310,9 +335,11 @@ pub mod test {
                 icon_url: Some("https://cdn.modrinth.com/data/cccccccc/icon.png".to_string()),
                 monetization_status: None,
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
-                source_repository_host: Some("bitbucket.org".to_string()),
-                source_repository_owner: Some("eve".to_string()),
-                source_repository_name: Some("baz".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "bitbucket.org".to_string(),
+                    owner: "eve".to_string(),
+                    name: "baz".to_string()
+                })
             },
         ]
     }

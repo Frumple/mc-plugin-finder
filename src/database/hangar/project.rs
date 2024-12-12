@@ -1,3 +1,4 @@
+use crate::database::source_repository::SourceRepository;
 use crate::database::cornucopia::queries::hangar_project::{self, HangarProjectEntity, UpsertHangarProjectParams};
 
 use anyhow::Result;
@@ -23,13 +24,21 @@ pub struct HangarProject {
     pub avatar_url: String,
     pub version_name: Option<String>,
     pub source_url: Option<String>,
-    pub source_repository_host: Option<String>,
-    pub source_repository_owner: Option<String>,
-    pub source_repository_name: Option<String>
+    pub source_repository: Option<SourceRepository>
 }
 
 impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, String, String, String, String, String, String, String, String, String> {
     fn from(project: HangarProject) -> Self {
+        let mut source_repository_host = None;
+        let mut source_repository_owner = None;
+        let mut source_repository_name = None;
+
+        if let Some(repo) = project.source_repository {
+            source_repository_host = Some(repo.host);
+            source_repository_owner = Some(repo.owner);
+            source_repository_name = Some(repo.name);
+        }
+
         UpsertHangarProjectParams {
             slug: project.slug,
             author: project.author,
@@ -45,15 +54,27 @@ impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, S
             avatar_url: project.avatar_url,
             version_name: project.version_name,
             source_url: project.source_url,
-            source_repository_host: project.source_repository_host,
-            source_repository_owner: project.source_repository_owner,
-            source_repository_name: project.source_repository_name
+            source_repository_host,
+            source_repository_owner,
+            source_repository_name
         }
     }
 }
 
 impl From<HangarProjectEntity> for HangarProject {
     fn from(entity: HangarProjectEntity) -> Self {
+        let mut source_repository = None;
+
+        if entity.source_repository_host.is_some() &&
+           entity.source_repository_owner.is_some() &&
+           entity.source_repository_name.is_some() {
+            source_repository = Some(SourceRepository {
+                host: entity.source_repository_host.unwrap(),
+                owner: entity.source_repository_owner.unwrap(),
+                name: entity.source_repository_name.unwrap()
+            })
+        }
+
         HangarProject {
             slug: entity.slug,
             author: entity.author,
@@ -69,9 +90,7 @@ impl From<HangarProjectEntity> for HangarProject {
             avatar_url: entity.avatar_url,
             version_name: entity.version_name,
             source_url: entity.source_url,
-            source_repository_host: entity.source_repository_host,
-            source_repository_owner: entity.source_repository_owner,
-            source_repository_name: entity.source_repository_name
+            source_repository
         }
     }
 }
@@ -188,10 +207,12 @@ pub mod test {
             visibility: "public".to_string(),
             avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
             version_name: Some("v2.3.4".to_string()),
-            source_url: Some("https://github.com/Frumple/foo-updated".to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("Frumple".to_string()),
-            source_repository_name: Some("foo-updated".to_string())
+            source_url: Some("https://github.com/alice/foo-updated".to_string()),
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo-updated".to_string()
+            })
         };
 
         // Act
@@ -265,9 +286,11 @@ pub mod test {
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
-                source_repository_host: Some("github.com".to_string()),
-                source_repository_owner: Some("alice".to_string()),
-                source_repository_name: Some("foo".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "github.com".to_string(),
+                    owner: "alice".to_string(),
+                    name: "foo".to_string()
+                })
             },
             HangarProject {
                 slug: "bar".to_string(),
@@ -284,9 +307,11 @@ pub mod test {
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
-                source_repository_host: Some("gitlab.com".to_string()),
-                source_repository_owner: Some("bob".to_string()),
-                source_repository_name: Some("bar".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "gitlab.com".to_string(),
+                    owner: "bob".to_string(),
+                    name: "bar".to_string()
+                })
             },
             HangarProject {
                 slug: "baz".to_string(),
@@ -303,9 +328,11 @@ pub mod test {
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
-                source_repository_host: Some("bitbucket.org".to_string()),
-                source_repository_owner: Some("eve".to_string()),
-                source_repository_name: Some("baz".to_string())
+                source_repository: Some(SourceRepository {
+                    host: "bitbucket.org".to_string(),
+                    owner: "eve".to_string(),
+                    name: "baz".to_string()
+                })
             }
         ]
     }

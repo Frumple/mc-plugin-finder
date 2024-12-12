@@ -163,6 +163,7 @@ pub fn apply_incoming_hangar_version_to_hangar_project(project: &mut HangarProje
 pub mod test {
     use super::*;
     use crate::hangar::test::HangarTestServer;
+    use mc_plugin_finder::database::source_repository::SourceRepository;
 
     use speculoos::prelude::*;
     use time::macros::datetime;
@@ -317,9 +318,11 @@ pub mod test {
             avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
             version_name: None,
             source_url: Some("https://github.com/alice/foo".to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("alice".to_string()),
-            source_repository_name: Some("foo".to_string())
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo".to_string()
+            })
         }
     }
 

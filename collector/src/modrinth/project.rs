@@ -1,7 +1,7 @@
 use crate::HttpServer;
 use crate::modrinth::ModrinthClient;
-use crate::util::extract_source_repository_from_url;
 use mc_plugin_finder::database::modrinth::project::{ModrinthProject, upsert_modrinth_project};
+use mc_plugin_finder::database::source_repository::{SourceRepository, extract_source_repository_from_url};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -294,18 +294,18 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
         icon_url: incoming_project.icon_url,
         monetization_status: incoming_project.monetization_status,
         source_url: source_url.clone(),
-        source_repository_host: None,
-        source_repository_owner: None,
-        source_repository_name: None
+        source_repository: None
     };
 
     if let Some(url) = source_url {
         let option_repo = extract_source_repository_from_url(url.as_str());
 
         if let Some(repo) = option_repo {
-            project.source_repository_host = Some(repo.host);
-            project.source_repository_owner = Some(repo.owner);
-            project.source_repository_name = Some(repo.name);
+            project.source_repository = Some(SourceRepository {
+                host: repo.host,
+                owner: repo.owner,
+                name: repo.name
+            });
         }
     }
 
@@ -426,9 +426,11 @@ mod test {
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
             monetization_status: None,
             source_url: Some(source_url.to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("alice".to_string()),
-            source_repository_name: Some("foo".to_string())
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo".to_string()
+            })
         };
 
         assert_that(&project).is_equal_to(expected_project);

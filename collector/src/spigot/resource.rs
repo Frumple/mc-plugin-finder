@@ -1,7 +1,7 @@
 use crate::HttpServer;
 use crate::spigot::SpigotClient;
-use crate::util::extract_source_repository_from_url;
 use mc_plugin_finder::database::spigot::resource::{SpigotResource, upsert_spigot_resource};
+use mc_plugin_finder::database::source_repository::{SourceRepository, extract_source_repository_from_url};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -303,18 +303,18 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 icon_url: incoming_resource.icon.as_ref().map(|icon| icon.url.clone()),
                 icon_data: incoming_resource.icon.map(|icon| icon.data),
                 source_url: incoming_resource.source_code_link.clone(),
-                source_repository_host: None,
-                source_repository_owner: None,
-                source_repository_name: None
+                source_repository: None
             };
 
             if let Some(url) = incoming_resource.source_code_link {
                 let option_repo = extract_source_repository_from_url(url.as_str());
 
                 if let Some(repo) = option_repo {
-                    resource.source_repository_host = Some(repo.host);
-                    resource.source_repository_owner = Some(repo.owner);
-                    resource.source_repository_name = Some(repo.name);
+                    resource.source_repository = Some(SourceRepository {
+                        host: repo.host,
+                        owner: repo.owner,
+                        name: repo.name
+                    });
                 }
             }
 
@@ -585,9 +585,11 @@ mod test {
             icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
             icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
             source_url: Some("https://github.com/alice/foo".to_string()),
-            source_repository_host: Some("github.com".to_string()),
-            source_repository_owner: Some("alice".to_string()),
-            source_repository_name: Some("foo".to_string())
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo".to_string()
+            })
         };
 
         assert_that(&resource).is_equal_to(expected_resource);

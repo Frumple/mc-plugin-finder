@@ -18,7 +18,6 @@ use url::Url;
 pub mod hangar;
 pub mod modrinth;
 pub mod spigot;
-pub mod util;
 
 const LIVE_DB_NAME: &str = "mc_plugin_finder";
 
