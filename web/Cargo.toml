@@ -26,6 +26,7 @@ tower-http = { version = "0.5", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.93"
 thiserror = "1"
 tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3.18", optional = true }
 
 [features]
 default = ["ssr"]
@@ -40,6 +41,7 @@ ssr = [
     "leptos_meta/ssr",
     "leptos_router/ssr",
     "dep:tracing",
+    "dep:tracing-subscriber",
     "dep:mc-plugin-finder",
     "dep:deadpool-postgres"
 ]

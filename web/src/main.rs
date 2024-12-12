@@ -4,8 +4,16 @@ async fn main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
+    use tracing_subscriber::fmt::format::FmtSpan;
     use web::app::*;
     use web::fileserv::file_and_error_handler;
+
+    // Initialize tracing
+    let subscriber = tracing_subscriber::fmt()
+        // .with_max_level(tracing::Level::DEBUG)
+        .with_span_events(FmtSpan::CLOSE)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
     // For deployment these variables are:
