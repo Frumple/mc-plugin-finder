@@ -581,6 +581,38 @@ fn SearchResults(
         <Transition fallback=move || view! { <p>"Loading..."</p> }>
             <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
                 {move || {
+                    let headers = {
+                        move || {
+                            params_memo.get()
+                                .map(move |params| {
+                                    let show_spigot = params.spigot.unwrap_or(false);
+                                    let show_modrinth = params.modrinth.unwrap_or(false);
+                                    let show_hangar = params.hangar.unwrap_or(false);
+
+                                    view! {
+                                        <div class="search-results__header-row">
+                                            <span class="search-results__created-header">Created</span>
+                                            <span class="search-results__updated-header">Updated</span>
+                                            <span class="search-results__latest-minecraft-version-header">Latest MC Version</span>
+                                            <span class="search-results__downloads-header">Downloads</span>
+                                            <span class="search-results__likes-and-stars-header">Likes + Stars</span>
+                                            <span class="search-results__follows-and-watchers-header">Follows + Watchers</span>
+                                            <Show when=move || { show_spigot }>
+                                                <span class="search-results__spigot-header">Spigot</span>
+                                            </Show>
+                                            <Show when=move || { show_modrinth }>
+                                                <span class="search-results__modrinth-header">Modrinth</span>
+                                            </Show>
+                                            <Show when=move || { show_hangar }>
+                                                <span class="search-results__hangar-header">Hangar</span>
+                                            </Show>
+                                            <span class="search-results__source-header">Source Code</span>
+                                        </div>
+                                    }
+                                })
+                        }
+                    };
+
                     let results = {
                         move || {
                             resource.get()
@@ -598,7 +630,7 @@ fn SearchResults(
                                                 .into_iter()
                                                 .map(move |project| {
                                                     view! {
-                                                        <SearchRow search_result=project />
+                                                        <SearchRow params_memo search_result=project />
                                                     }
                                                 })
                                                 .collect_view();
@@ -670,18 +702,7 @@ fn SearchResults(
 
                     view! {
                         <div class="search-results__container">
-                            <div class="search-results__header-row">
-                                <span class="search-results__created-header">Created</span>
-                                <span class="search-results__updated-header">Updated</span>
-                                <span class="search-results__latest-minecraft-version-header">Latest MC Version</span>
-                                <span class="search-results__downloads-header">Downloads</span>
-                                <span class="search-results__likes-and-stars-header">Likes + Stars</span>
-                                <span class="search-results__follows-and-watchers-header">Follows + Watchers</span>
-                                <span class="search-results__spigot-header">Spigot</span>
-                                <span class="search-results__modrinth-header">Modrinth</span>
-                                <span class="search-results__hangar-header">Hangar</span>
-                                <span class="search-results__source-header">Source Code</span>
-                            </div>
+                            {headers}
                             {results}
                         </div>
                     }
@@ -695,9 +716,17 @@ fn SearchResults(
 /// A single row in the search results.
 #[component]
 fn SearchRow(
+    /// Memo that tracks the URL query parameters for the search.
+    params_memo: Memo<Result<WebSearchParams, ParamsError>>,
     /// The search result representing this row.
     search_result: WebSearchResult
 ) -> impl IntoView {
+    let params = params_memo.get();
+
+    let show_spigot = params.as_ref().map(|p| p.spigot.unwrap_or(false)).unwrap_or(false);
+    let show_modrinth = params.as_ref().map(|p| p.modrinth.unwrap_or(false)).unwrap_or(false);
+    let show_hangar = params.map(|p| p.hangar.unwrap_or(false)).unwrap_or(false);
+
     let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
     let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();
 
@@ -720,9 +749,6 @@ fn SearchRow(
     let hangar = search_result.hangar;
     let source_repository = search_result.source_repository;
 
-    let has_spigot = spigot.is_some();
-    let has_modrinth = modrinth.is_some();
-    let has_hangar = hangar.is_some();
     let has_source = source_repository.is_some();
 
     view! {
@@ -753,23 +779,23 @@ fn SearchRow(
                 <span class="search-row__follows-and-watchers">{follows_and_watchers}</span>
             </div>
 
-            <div class="search-row__spigot-cell">
-                <Show when=move || { has_spigot }>
-                    <SpigotResource spigot=spigot.clone().unwrap() />
-                </Show>
-            </div>
+            <Show when=move || { show_spigot }>
+                <div class="search-row__spigot-cell">
+                    <SpigotResourceOuter spigot=spigot.clone() />
+                </div>
+            </Show>
 
-            <div class="search-row__modrinth-cell">
-                <Show when=move || { has_modrinth }>
-                    <ModrinthProject modrinth=modrinth.clone().unwrap() />
-                </Show>
-            </div>
+            <Show when=move || { show_modrinth }>
+                <div class="search-row__modrinth-cell">
+                    <ModrinthProjectOuter modrinth=modrinth.clone() />
+                </div>
+            </Show>
 
-            <div class="search-row__hangar-cell">
-                <Show when=move || { has_hangar }>
-                    <HangarProject hangar=hangar.clone().unwrap() />
-                </Show>
-            </div>
+            <Show when=move || { show_hangar }>
+                <div class="search-row__hangar-cell">
+                    <HangarProjectOuter hangar=hangar.clone() />
+                </div>
+            </Show>
 
             <div class="search-row__source-cell">
                 <Show when=move || { has_source }>
@@ -780,10 +806,50 @@ fn SearchRow(
     }
 }
 
-/// A resource hosted on Spigot
+// These outer components are necessary to ensure that the Spigot/Modrinth/Hangar objects are not moved out of their environment when using nested <Show>s.
+// TODO: Find a way to do this without needing outer components.
+
 #[component]
-fn SpigotResource(
-    /// The Spigot portion of the search result
+fn SpigotResourceOuter(
+    spigot: Option<WebSearchResultSpigot>
+) -> impl IntoView {
+    let has_spigot = spigot.is_some();
+
+    view! {
+        <Show when=move || { has_spigot }>
+            <SpigotResourceInner spigot=spigot.clone().unwrap() />
+        </Show>
+    }
+}
+
+#[component]
+fn ModrinthProjectOuter(
+    modrinth: Option<WebSearchResultModrinth>
+) -> impl IntoView {
+    let has_modrinth = modrinth.is_some();
+
+    view! {
+        <Show when=move || { has_modrinth }>
+            <ModrinthProjectInner modrinth=modrinth.clone().unwrap() />
+        </Show>
+    }
+}
+
+#[component]
+fn HangarProjectOuter(
+    hangar: Option<WebSearchResultHangar>
+) -> impl IntoView {
+    let has_hangar = hangar.is_some();
+
+    view! {
+        <Show when=move || { has_hangar }>
+            <HangarProjectInner hangar=hangar.clone().unwrap() />
+        </Show>
+    }
+}
+
+#[component]
+fn SpigotResourceInner(
     spigot: WebSearchResultSpigot
 ) -> impl IntoView {
     let is_spigot_premium = spigot.premium;
@@ -823,7 +889,7 @@ fn SpigotResource(
 
 /// A project hosted on Modrinth
 #[component]
-fn ModrinthProject(
+fn ModrinthProjectInner(
     /// The Modrinth portion of the search result
     modrinth: WebSearchResultModrinth
 ) -> impl IntoView {
@@ -856,7 +922,7 @@ fn ModrinthProject(
 
 /// A project hosted on Hangar
 #[component]
-fn HangarProject(
+fn HangarProjectInner(
     /// The Hangar portion of the search result
     hangar: WebSearchResultHangar
 ) -> impl IntoView {
@@ -915,8 +981,6 @@ struct ImgAttributes {
     title: Option<String>,
     alt: Option<String>
 }
-
-
 
 fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
     // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
