@@ -206,13 +206,25 @@ body {
 
 .search-results__pagination-link {
 	@extend .search-results__pagination-item;
-	border: 1px solid black;
+	border-radius: 5px;
+	background: #2B2B2B;
+	color: #e0e6f0;
 	text-decoration: none;
+}
+
+.search-results__pagination-link:hover {
+	background: #555555;
 }
 
 .search-results__pagination-link_current {
 	@extend .search-results__pagination-link;
+	background: #e0e6f0;
+	color: #2B2B2B;
 	font-weight: bold;
+}
+
+.search-results__pagination-link_current:hover {
+	background: #e0e6f0;
 }
 
 .search-row__list-item {
