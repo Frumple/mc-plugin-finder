@@ -102,7 +102,6 @@ impl FromStr for SearchParamsSort {
 pub struct SearchResult {
     pub full_count: i64,
 
-    pub id: i32,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
     pub latest_minecraft_version: Option<String>,
@@ -163,7 +162,6 @@ impl From<SearchResultEntity> for SearchResult {
         SearchResult {
             full_count: entity.full_count,
 
-            id: entity.id,
             date_created: entity.date_created,
             date_updated: entity.date_updated,
             latest_minecraft_version: entity.latest_minecraft_version,
@@ -243,7 +241,7 @@ mod test {
     use crate::database::hangar::project::HangarProject;
     use crate::database::hangar::project::test::populate_test_hangar_projects;
 
-    use crate::database::common::project::{get_merged_common_projects, upsert_common_project};
+    use crate::database::common::project::refresh_common_projects;
 
     use crate::database::test::DatabaseTestContext;
 
@@ -262,10 +260,7 @@ mod test {
         let _modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -329,10 +324,7 @@ mod test {
         let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -396,10 +388,7 @@ mod test {
         let _modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -463,10 +452,7 @@ mod test {
         let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -536,10 +522,7 @@ mod test {
         let _modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -609,10 +592,7 @@ mod test {
         let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -682,10 +662,7 @@ mod test {
         let modrinth_projects = populate_test_modrinth_projects(&context.pool).await?;
         let hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Search by name
         let params = SearchParams {
@@ -759,10 +736,7 @@ mod test {
         // Arrange
         let _hangar_projects = populate_test_hangar_projects(&context.pool).await?;
 
-        let merged_projects = get_merged_common_projects(&context.pool, None).await?;
-        for merged_project in merged_projects {
-            upsert_common_project(&context.pool, &merged_project).await?;
-        }
+        refresh_common_projects(&context.pool).await?;
 
         // Act 1 - Sort by date_created order
         let params = SearchParams {

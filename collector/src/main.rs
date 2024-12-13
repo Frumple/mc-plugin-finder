@@ -3,7 +3,7 @@ use crate::modrinth::{ModrinthClient, ModrinthServer};
 use crate::spigot::{SpigotClient, SpigotServer};
 
 use mc_plugin_finder::database::get_db;
-use mc_plugin_finder::database::common::project::{get_merged_common_projects, upsert_common_projects};
+use mc_plugin_finder::database::common::project::refresh_common_projects;
 use mc_plugin_finder::database::hangar::project::get_latest_hangar_project_update_date;
 use mc_plugin_finder::database::modrinth::project::get_latest_modrinth_project_update_date;
 use mc_plugin_finder::database::spigot::author::get_highest_spigot_author_id;
@@ -36,18 +36,18 @@ struct CommandLineArguments {
 
 #[derive(Subcommand)]
 enum ActionSubcommand {
-    /// Get all items: Use this initially to populate an empty database
+    /// Get all items: Run this initially to populate an empty database
     Populate {
         #[command(subcommand)]
         repository: PopulateRepositorySubcommand
     },
-    /// Get only items since the last populate/update: Use this periodically to keep the database up-to-date
+    /// Get only items since the last populate/update: Run this periodically to keep the database up-to-date
     Update {
         #[command(subcommand)]
         repository: UpdateRepositorySubcommand
     },
-    /// Merge repository projects into common projects
-    Merge
+    /// Refresh common projects: Run this after populating/updating all repositories
+    Refresh
 }
 
 #[derive(Subcommand)]
@@ -239,10 +239,9 @@ async fn main() -> Result<()> {
             }
 
         },
-        ActionSubcommand::Merge => {
-            info!("Merging projects...");
-            let common_projects = get_merged_common_projects(&db_pool, None).await?;
-            upsert_common_projects(&db_pool, &common_projects).await?;
+        ActionSubcommand::Refresh => {
+            info!("Refreshing common projects...");
+            refresh_common_projects(&db_pool).await?;
         }
     }
 

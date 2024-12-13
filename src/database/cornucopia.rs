@@ -4,12 +4,12 @@
 #[allow(unused_imports)] #[allow(dead_code)] pub mod types { }#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertCommonProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,> { pub id: Option<i64>,pub spigot_id: Option<i32>,pub spigot_name: Option<T1>,pub spigot_description: Option<T2>,pub spigot_author: Option<T3>,pub modrinth_id: Option<T4>,pub modrinth_name: Option<T5>,pub modrinth_description: Option<T6>,pub modrinth_author: Option<T7>,pub hangar_slug: Option<T8>,pub hangar_name: Option<T9>,pub hangar_description: Option<T10>,pub hangar_author: Option<T11>,}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
-{ pub id : Option<i32>,pub spigot_id : Option<i32>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub modrinth_id : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub id : Option<i32>,pub spigot_id : Option<i32>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,}
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
+{ pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<String>,pub spigot_date_created : Option<time::OffsetDateTime>,pub spigot_date_updated : Option<time::OffsetDateTime>,pub spigot_latest_minecraft_version : Option<String>,pub spigot_downloads : Option<i32>,pub spigot_likes : Option<i32>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub modrinth_icon_url : Option<String>,pub modrinth_date_created : Option<time::OffsetDateTime>,pub modrinth_date_updated : Option<time::OffsetDateTime>,pub modrinth_latest_minecraft_version : Option<String>,pub modrinth_downloads : Option<i32>,pub modrinth_follows : Option<i32>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,pub hangar_avatar_url : Option<String>,pub hangar_date_created : Option<time::OffsetDateTime>,pub hangar_date_updated : Option<time::OffsetDateTime>,pub hangar_latest_minecraft_version : Option<String>,pub hangar_downloads : Option<i32>,pub hangar_stars : Option<i32>,pub hangar_watchers : Option<i32>,pub source_repository_host : Option<String>,pub source_repository_name : Option<String>,pub source_repository_owner : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<&'a str>,pub spigot_date_created : Option<time::OffsetDateTime>,pub spigot_date_updated : Option<time::OffsetDateTime>,pub spigot_latest_minecraft_version : Option<&'a str>,pub spigot_downloads : Option<i32>,pub spigot_likes : Option<i32>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub modrinth_icon_url : Option<&'a str>,pub modrinth_date_created : Option<time::OffsetDateTime>,pub modrinth_date_updated : Option<time::OffsetDateTime>,pub modrinth_latest_minecraft_version : Option<&'a str>,pub modrinth_downloads : Option<i32>,pub modrinth_follows : Option<i32>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,pub hangar_avatar_url : Option<&'a str>,pub hangar_date_created : Option<time::OffsetDateTime>,pub hangar_date_updated : Option<time::OffsetDateTime>,pub hangar_latest_minecraft_version : Option<&'a str>,pub hangar_downloads : Option<i32>,pub hangar_stars : Option<i32>,pub hangar_watchers : Option<i32>,pub source_repository_host : Option<&'a str>,pub source_repository_name : Option<&'a str>,pub source_repository_owner : Option<&'a str>,}
 impl<'a> From<CommonProjectEntityBorrowed<'a>> for CommonProjectEntity
 {
-    fn from(CommonProjectEntityBorrowed { id,spigot_id,spigot_name,spigot_description,spigot_author,modrinth_id,modrinth_name,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_author,}: CommonProjectEntityBorrowed<'a>) ->
-    Self { Self { id,spigot_id,spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),} }
+    fn from(CommonProjectEntityBorrowed { spigot_id,spigot_slug,spigot_name,spigot_description,spigot_author,spigot_version,spigot_premium,spigot_icon_data,spigot_date_created,spigot_date_updated,spigot_latest_minecraft_version,spigot_downloads,spigot_likes,modrinth_id,modrinth_slug,modrinth_name,modrinth_description,modrinth_author,modrinth_version,modrinth_icon_url,modrinth_date_created,modrinth_date_updated,modrinth_latest_minecraft_version,modrinth_downloads,modrinth_follows,hangar_slug,hangar_name,hangar_description,hangar_author,hangar_version,hangar_avatar_url,hangar_date_created,hangar_date_updated,hangar_latest_minecraft_version,hangar_downloads,hangar_stars,hangar_watchers,source_repository_host,source_repository_name,source_repository_owner,}: CommonProjectEntityBorrowed<'a>) ->
+    Self { Self { spigot_id,spigot_slug: spigot_slug.map(|v| v.into()),spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),spigot_version: spigot_version.map(|v| v.into()),spigot_premium,spigot_icon_data: spigot_icon_data.map(|v| v.into()),spigot_date_created,spigot_date_updated,spigot_latest_minecraft_version: spigot_latest_minecraft_version.map(|v| v.into()),spigot_downloads,spigot_likes,modrinth_id: modrinth_id.map(|v| v.into()),modrinth_slug: modrinth_slug.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),modrinth_version: modrinth_version.map(|v| v.into()),modrinth_icon_url: modrinth_icon_url.map(|v| v.into()),modrinth_date_created,modrinth_date_updated,modrinth_latest_minecraft_version: modrinth_latest_minecraft_version.map(|v| v.into()),modrinth_downloads,modrinth_follows,hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),hangar_version: hangar_version.map(|v| v.into()),hangar_avatar_url: hangar_avatar_url.map(|v| v.into()),hangar_date_created,hangar_date_updated,hangar_latest_minecraft_version: hangar_latest_minecraft_version.map(|v| v.into()),hangar_downloads,hangar_stars,hangar_watchers,source_repository_host: source_repository_host.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),} }
 }pub struct CommonProjectEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -49,125 +49,60 @@ GenericClient
         res.map(|row| (self.mapper)((self.extractor)(&row)))) .into_stream();
         Ok(it)
     }
-}pub fn get_merged_common_projects() -> GetMergedCommonProjectsStmt
-{ GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
-  COALESCE(cs.id, cm.id, ch.id) AS id,
-
-  s.id AS spigot_id,
-  s.parsed_name AS spigot_name,
-  s.description AS spigot_description,
-  a.name AS spigot_author,
-
-  m.id AS modrinth_id,
-  m.name AS modrinth_name,
-  m.description AS modrinth_description,
-  m.author AS modrinth_author,
-
-  h.slug AS hangar_slug,
-  h.name AS hangar_name,
-  h.description AS hangar_description,
-  h.author AS hangar_author
-FROM
-  spigot_resource s
-  INNER JOIN spigot_author a
-  ON  s.author_id = a.id
-
-  FULL JOIN modrinth_project m
-  ON  s.source_repository_host = m.source_repository_host
-  AND s.source_repository_owner = m.source_repository_owner
-  AND s.source_repository_name = m.source_repository_name
-
-  FULL JOIN hangar_project h
-  ON  COALESCE(s.source_repository_host, m.source_repository_host) = h.source_repository_host
-  AND COALESCE(s.source_repository_owner, m.source_repository_owner) = h.source_repository_owner
-  AND COALESCE(s.source_repository_name, m.source_repository_name) = h.source_repository_name
-
-  LEFT JOIN common_project cs
-  ON  s.id = cs.spigot_id
-
-  LEFT JOIN common_project cm
-  ON  m.id = cm.modrinth_id
-
-  LEFT JOIN common_project ch
-  ON  h.slug = ch.hangar_slug
-
-WHERE
-  GREATEST(s.date_updated, m.date_updated, h.date_updated) > $1")) } pub struct
-GetMergedCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetMergedCommonProjectsStmt
-{ pub fn bind<'a, C:
-GenericClient,>(&'a mut self, client: &'a  C,
-date_updated: &'a time::OffsetDateTime,) -> CommonProjectEntityQuery<'a,C,
-CommonProjectEntity, 1>
-{
-    CommonProjectEntityQuery
-    {
-        client, params: [date_updated,], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),spigot_id: row.get(1),spigot_name: row.get(2),spigot_description: row.get(3),spigot_author: row.get(4),modrinth_id: row.get(5),modrinth_name: row.get(6),modrinth_description: row.get(7),modrinth_author: row.get(8),hangar_slug: row.get(9),hangar_name: row.get(10),hangar_description: row.get(11),hangar_author: row.get(12),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
-    }
-} }pub fn upsert_common_project() -> UpsertCommonProjectStmt
-{ UpsertCommonProjectStmt(cornucopia_async::private::Stmt::new("INSERT INTO common_project (id, spigot_id, spigot_name, spigot_description, spigot_author, modrinth_id, modrinth_name, modrinth_description, modrinth_author, hangar_slug, hangar_name, hangar_description, hangar_author)
-  VALUES (COALESCE($1, nextval('common_project_id_seq')), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-  ON CONFLICT (id)
-  DO UPDATE SET
-    spigot_id = EXCLUDED.spigot_id,
-    spigot_name = EXCLUDED.spigot_name,
-    spigot_description = EXCLUDED.spigot_description,
-    spigot_author = EXCLUDED.spigot_author,
-
-    modrinth_id = EXCLUDED.modrinth_id,
-    modrinth_name = EXCLUDED.modrinth_name,
-    modrinth_description = EXCLUDED.modrinth_description,
-    modrinth_author = EXCLUDED.modrinth_author,
-
-    hangar_slug = EXCLUDED.hangar_slug,
-    hangar_name = EXCLUDED.hangar_name,
-    hangar_description = EXCLUDED.hangar_description,
-    hangar_author = EXCLUDED.hangar_author")) } pub struct
-UpsertCommonProjectStmt(cornucopia_async::private::Stmt); impl UpsertCommonProjectStmt
+}pub fn refresh_common_projects() -> RefreshCommonProjectsStmt
+{ RefreshCommonProjectsStmt(cornucopia_async::private::Stmt::new("REFRESH MATERIALIZED VIEW common_project")) } pub struct
+RefreshCommonProjectsStmt(cornucopia_async::private::Stmt); impl RefreshCommonProjectsStmt
 { pub async fn bind<'a, C:
-GenericClient,T1:
-cornucopia_async::StringSql,T2:
-cornucopia_async::StringSql,T3:
-cornucopia_async::StringSql,T4:
-cornucopia_async::StringSql,T5:
-cornucopia_async::StringSql,T6:
-cornucopia_async::StringSql,T7:
-cornucopia_async::StringSql,T8:
-cornucopia_async::StringSql,T9:
-cornucopia_async::StringSql,T10:
-cornucopia_async::StringSql,T11:
-cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-id: &'a Option<i64>,spigot_id: &'a Option<i32>,spigot_name: &'a Option<T1>,spigot_description: &'a Option<T2>,spigot_author: &'a Option<T3>,modrinth_id: &'a Option<T4>,modrinth_name: &'a Option<T5>,modrinth_description: &'a Option<T6>,modrinth_author: &'a Option<T7>,hangar_slug: &'a Option<T8>,hangar_name: &'a Option<T9>,hangar_description: &'a Option<T10>,hangar_author: &'a Option<T11>,) -> Result<u64, tokio_postgres::Error>
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> Result<u64, tokio_postgres::Error>
 {
     let stmt = self.0.prepare(client).await?;
-    client.execute(stmt, &[id,spigot_id,spigot_name,spigot_description,spigot_author,modrinth_id,modrinth_name,modrinth_description,modrinth_author,hangar_slug,hangar_name,hangar_description,hangar_author,]).await
-} }impl <'a, C: GenericClient + Send + Sync, T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,>
-cornucopia_async::Params<'a, UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
-tokio_postgres::Error>> + Send + 'a>>, C> for UpsertCommonProjectStmt
-{
-    fn
-    params(&'a mut self, client: &'a  C, params: &'a
-    UpsertCommonProjectParams<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
-    tokio_postgres::Error>> + Send + 'a>>
-    { Box::pin(self.bind(client, &params.id,&params.spigot_id,&params.spigot_name,&params.spigot_description,&params.spigot_author,&params.modrinth_id,&params.modrinth_name,&params.modrinth_description,&params.modrinth_author,&params.hangar_slug,&params.hangar_name,&params.hangar_description,&params.hangar_author,)) }
-}pub fn get_common_projects() -> GetCommonProjectsStmt
+    client.execute(stmt, &[]).await
+} }pub fn get_common_projects() -> GetCommonProjectsStmt
 { GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
-  id,
-
   spigot_id,
+  spigot_slug,
   spigot_name,
   spigot_description,
   spigot_author,
+  spigot_version,
+  spigot_premium,
+  spigot_icon_data,
+  spigot_date_created,
+  spigot_date_updated,
+  spigot_latest_minecraft_version,
+  spigot_downloads,
+  spigot_likes,
 
   modrinth_id,
+  modrinth_slug,
   modrinth_name,
   modrinth_description,
   modrinth_author,
+  modrinth_version,
+  modrinth_icon_url,
+  modrinth_date_created,
+  modrinth_date_updated,
+  modrinth_latest_minecraft_version,
+  modrinth_downloads,
+  modrinth_follows,
 
   hangar_slug,
   hangar_name,
   hangar_description,
-  hangar_author
+  hangar_author,
+  hangar_version,
+  hangar_avatar_url,
+  hangar_date_created,
+  hangar_date_updated,
+  hangar_latest_minecraft_version,
+  hangar_downloads,
+  hangar_stars,
+  hangar_watchers,
+
+  source_repository_host,
+  source_repository_name,
+  source_repository_owner
 FROM
   common_project")) } pub struct
 GetCommonProjectsStmt(cornucopia_async::private::Stmt); impl GetCommonProjectsStmt
@@ -179,7 +114,7 @@ CommonProjectEntity, 0>
     CommonProjectEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { CommonProjectEntityBorrowed { id: row.get(0),spigot_id: row.get(1),spigot_name: row.get(2),spigot_description: row.get(3),spigot_author: row.get(4),modrinth_id: row.get(5),modrinth_name: row.get(6),modrinth_description: row.get(7),modrinth_author: row.get(8),hangar_slug: row.get(9),hangar_name: row.get(10),hangar_description: row.get(11),hangar_author: row.get(12),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
+        |row| { CommonProjectEntityBorrowed { spigot_id: row.get(0),spigot_slug: row.get(1),spigot_name: row.get(2),spigot_description: row.get(3),spigot_author: row.get(4),spigot_version: row.get(5),spigot_premium: row.get(6),spigot_icon_data: row.get(7),spigot_date_created: row.get(8),spigot_date_updated: row.get(9),spigot_latest_minecraft_version: row.get(10),spigot_downloads: row.get(11),spigot_likes: row.get(12),modrinth_id: row.get(13),modrinth_slug: row.get(14),modrinth_name: row.get(15),modrinth_description: row.get(16),modrinth_author: row.get(17),modrinth_version: row.get(18),modrinth_icon_url: row.get(19),modrinth_date_created: row.get(20),modrinth_date_updated: row.get(21),modrinth_latest_minecraft_version: row.get(22),modrinth_downloads: row.get(23),modrinth_follows: row.get(24),hangar_slug: row.get(25),hangar_name: row.get(26),hangar_description: row.get(27),hangar_author: row.get(28),hangar_version: row.get(29),hangar_avatar_url: row.get(30),hangar_date_created: row.get(31),hangar_date_updated: row.get(32),hangar_latest_minecraft_version: row.get(33),hangar_downloads: row.get(34),hangar_stars: row.get(35),hangar_watchers: row.get(36),source_repository_host: row.get(37),source_repository_name: row.get(38),source_repository_owner: row.get(39),} }, mapper: |it| { <CommonProjectEntity>::from(it) },
     }
 } }}pub mod hangar_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertHangarProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,> { pub slug: T1,pub author: T2,pub name: T3,pub description: T4,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub latest_minecraft_version: Option<T5>,pub downloads: i32,pub stars: i32,pub watchers: i32,pub visibility: T6,pub avatar_url: T7,pub version_name: Option<T8>,pub source_url: Option<T9>,pub source_repository_host: Option<T10>,pub source_repository_owner: Option<T11>,pub source_repository_name: Option<T12>,}#[derive( Debug, Clone, PartialEq,)] pub struct HangarProjectEntity
@@ -507,11 +442,11 @@ time::OffsetDateTime, 0>
     }
 } }}pub mod search_result
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct SearchProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub modrinth: bool,pub hangar: bool,pub name: bool,pub query: T1,pub description: bool,pub author: bool,pub sort: T2,pub limit: i64,pub offset: i64,}#[derive( Debug, Clone, PartialEq,)] pub struct SearchResultEntity
-{ pub full_count : i64,pub id : i32,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<String>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<String>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub modrinth_icon_url : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,pub hangar_avatar_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct SearchResultEntityBorrowed<'a> { pub full_count : i64,pub id : i32,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<&'a str>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub modrinth_icon_url : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,pub hangar_avatar_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
+{ pub full_count : i64,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<String>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<String>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub modrinth_icon_url : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,pub hangar_avatar_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct SearchResultEntityBorrowed<'a> { pub full_count : i64,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<&'a str>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub spigot_icon_data : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub modrinth_icon_url : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,pub hangar_avatar_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
 impl<'a> From<SearchResultEntityBorrowed<'a>> for SearchResultEntity
 {
-    fn from(SearchResultEntityBorrowed { full_count,id,date_created,date_updated,latest_minecraft_version,downloads,likes_and_stars,follows_and_watchers,spigot_id,spigot_slug,spigot_name,spigot_description,spigot_author,spigot_version,spigot_premium,spigot_icon_data,modrinth_id,modrinth_slug,modrinth_name,modrinth_description,modrinth_author,modrinth_version,modrinth_icon_url,hangar_slug,hangar_name,hangar_description,hangar_author,hangar_version,hangar_avatar_url,source_repository_host,source_repository_owner,source_repository_name,}: SearchResultEntityBorrowed<'a>) ->
-    Self { Self { full_count,id,date_created,date_updated,latest_minecraft_version: latest_minecraft_version.map(|v| v.into()),downloads,likes_and_stars,follows_and_watchers,spigot_id,spigot_slug: spigot_slug.map(|v| v.into()),spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),spigot_version: spigot_version.map(|v| v.into()),spigot_premium,spigot_icon_data: spigot_icon_data.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_slug: modrinth_slug.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),modrinth_version: modrinth_version.map(|v| v.into()),modrinth_icon_url: modrinth_icon_url.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),hangar_version: hangar_version.map(|v| v.into()),hangar_avatar_url: hangar_avatar_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
+    fn from(SearchResultEntityBorrowed { full_count,date_created,date_updated,latest_minecraft_version,downloads,likes_and_stars,follows_and_watchers,spigot_id,spigot_slug,spigot_name,spigot_description,spigot_author,spigot_version,spigot_premium,spigot_icon_data,modrinth_id,modrinth_slug,modrinth_name,modrinth_description,modrinth_author,modrinth_version,modrinth_icon_url,hangar_slug,hangar_name,hangar_description,hangar_author,hangar_version,hangar_avatar_url,source_repository_host,source_repository_owner,source_repository_name,}: SearchResultEntityBorrowed<'a>) ->
+    Self { Self { full_count,date_created,date_updated,latest_minecraft_version: latest_minecraft_version.map(|v| v.into()),downloads,likes_and_stars,follows_and_watchers,spigot_id,spigot_slug: spigot_slug.map(|v| v.into()),spigot_name: spigot_name.map(|v| v.into()),spigot_description: spigot_description.map(|v| v.into()),spigot_author: spigot_author.map(|v| v.into()),spigot_version: spigot_version.map(|v| v.into()),spigot_premium,spigot_icon_data: spigot_icon_data.map(|v| v.into()),modrinth_id: modrinth_id.map(|v| v.into()),modrinth_slug: modrinth_slug.map(|v| v.into()),modrinth_name: modrinth_name.map(|v| v.into()),modrinth_description: modrinth_description.map(|v| v.into()),modrinth_author: modrinth_author.map(|v| v.into()),modrinth_version: modrinth_version.map(|v| v.into()),modrinth_icon_url: modrinth_icon_url.map(|v| v.into()),hangar_slug: hangar_slug.map(|v| v.into()),hangar_name: hangar_name.map(|v| v.into()),hangar_description: hangar_description.map(|v| v.into()),hangar_author: hangar_author.map(|v| v.into()),hangar_version: hangar_version.map(|v| v.into()),hangar_avatar_url: hangar_avatar_url.map(|v| v.into()),source_repository_host: source_repository_host.map(|v| v.into()),source_repository_owner: source_repository_owner.map(|v| v.into()),source_repository_name: source_repository_name.map(|v| v.into()),} }
 }pub struct SearchResultEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
@@ -554,110 +489,101 @@ GenericClient
 }pub fn search_projects() -> SearchProjectsStmt
 { SearchProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
   COUNT(*) OVER() AS full_count,
-  c.id,
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.date_created, m.date_created)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.date_created, h.date_created)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.date_created, h.date_created)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.date_created
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.date_created
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.date_created
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_created
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_created
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_created
        ELSE timestamptz '-infinity'
   END
   AS date_created,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.date_updated, m.date_updated, h.date_updated)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.date_updated, m.date_updated)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.date_updated, h.date_updated)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.date_updated, h.date_updated)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.date_updated
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.date_updated
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.date_updated
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_updated
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_updated
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_updated
        ELSE timestamptz '-infinity'
   END
   AS date_updated,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version, h.latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, h.latest_minecraft_version)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.latest_minecraft_version, h.latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.latest_minecraft_version
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.latest_minecraft_version
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.latest_minecraft_version
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_latest_minecraft_version
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_latest_minecraft_version
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_latest_minecraft_version
        ELSE NULL
   END
   AS latest_minecraft_version,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(h.downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(s.downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.downloads, 0)
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_downloads, 0)
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_downloads, 0)
        ELSE 0
   END
   AS downloads,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(s.likes, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(h.stars, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(s.likes, 0)
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
        WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN 0
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.stars, 0)
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
        ELSE 0
   END
   AS likes_and_stars,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
+       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
+       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
        WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN 0
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
+       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
+       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
        ELSE 0
   END
   AS follows_and_watchers,
 
-  (CASE WHEN $1 IS TRUE THEN c.spigot_id ELSE NULL END) AS spigot_id,
-  (CASE WHEN $1 IS TRUE THEN s.slug ELSE NULL END) AS spigot_slug,
-  (CASE WHEN $1 IS TRUE THEN c.spigot_name ELSE NULL END) AS spigot_name,
-  (CASE WHEN $1 IS TRUE THEN c.spigot_description ELSE NULL END) AS spigot_description,
-  (CASE WHEN $1 IS TRUE THEN c.spigot_author ELSE NULL END) AS spigot_author,
-  (CASE WHEN $1 IS TRUE THEN s.version_name ELSE NULL END) AS spigot_version,
-  (CASE WHEN $1 IS TRUE THEN s.premium ELSE NULL END) AS spigot_premium,
-  (CASE WHEN $1 IS TRUE THEN s.icon_data ELSE NULL END) AS spigot_icon_data,
+  (CASE WHEN $1 IS TRUE THEN spigot_id ELSE NULL END) AS spigot_id,
+  (CASE WHEN $1 IS TRUE THEN spigot_slug ELSE NULL END) AS spigot_slug,
+  (CASE WHEN $1 IS TRUE THEN spigot_name ELSE NULL END) AS spigot_name,
+  (CASE WHEN $1 IS TRUE THEN spigot_description ELSE NULL END) AS spigot_description,
+  (CASE WHEN $1 IS TRUE THEN spigot_author ELSE NULL END) AS spigot_author,
+  (CASE WHEN $1 IS TRUE THEN spigot_version ELSE NULL END) AS spigot_version,
+  (CASE WHEN $1 IS TRUE THEN spigot_premium ELSE NULL END) AS spigot_premium,
+  (CASE WHEN $1 IS TRUE THEN spigot_icon_data ELSE NULL END) AS spigot_icon_data,
 
-  (CASE WHEN $2 IS TRUE THEN c.modrinth_id ELSE NULL END) AS modrinth_id,
-  (CASE WHEN $2 IS TRUE THEN m.slug ELSE NULL END) AS modrinth_slug,
-  (CASE WHEN $2 IS TRUE THEN c.modrinth_name ELSE NULL END) AS modrinth_name,
-  (CASE WHEN $2 IS TRUE THEN c.modrinth_description ELSE NULL END) AS modrinth_description,
-  (CASE WHEN $2 IS TRUE THEN c.modrinth_author ELSE NULL END) AS modrinth_author,
-  (CASE WHEN $2 IS TRUE THEN m.version_name ELSE NULL END) AS modrinth_version,
-  (CASE WHEN $2 IS TRUE THEN m.icon_url ELSE NULL END) AS modrinth_icon_url,
+  (CASE WHEN $2 IS TRUE THEN modrinth_id ELSE NULL END) AS modrinth_id,
+  (CASE WHEN $2 IS TRUE THEN modrinth_slug ELSE NULL END) AS modrinth_slug,
+  (CASE WHEN $2 IS TRUE THEN modrinth_name ELSE NULL END) AS modrinth_name,
+  (CASE WHEN $2 IS TRUE THEN modrinth_description ELSE NULL END) AS modrinth_description,
+  (CASE WHEN $2 IS TRUE THEN modrinth_author ELSE NULL END) AS modrinth_author,
+  (CASE WHEN $2 IS TRUE THEN modrinth_version ELSE NULL END) AS modrinth_version,
+  (CASE WHEN $2 IS TRUE THEN modrinth_icon_url ELSE NULL END) AS modrinth_icon_url,
 
-  (CASE WHEN $3 IS TRUE THEN c.hangar_slug ELSE NULL END) AS hangar_slug,
-  (CASE WHEN $3 IS TRUE THEN c.hangar_name ELSE NULL END) AS hangar_name,
-  (CASE WHEN $3 IS TRUE THEN c.hangar_description ELSE NULL END) AS hangar_description,
-  (CASE WHEN $3 IS TRUE THEN c.hangar_author ELSE NULL END) AS hangar_author,
-  (CASE WHEN $3 IS TRUE THEN h.version_name ELSE NULL END) AS hangar_version,
-  (CASE WHEN $3 IS TRUE THEN h.avatar_url ELSE NULL END) AS hangar_avatar_url,
+  (CASE WHEN $3 IS TRUE THEN hangar_slug ELSE NULL END) AS hangar_slug,
+  (CASE WHEN $3 IS TRUE THEN hangar_name ELSE NULL END) AS hangar_name,
+  (CASE WHEN $3 IS TRUE THEN hangar_description ELSE NULL END) AS hangar_description,
+  (CASE WHEN $3 IS TRUE THEN hangar_author ELSE NULL END) AS hangar_author,
+  (CASE WHEN $3 IS TRUE THEN hangar_version ELSE NULL END) AS hangar_version,
+  (CASE WHEN $3 IS TRUE THEN hangar_avatar_url ELSE NULL END) AS hangar_avatar_url,
 
-  COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
-  COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
-  COALESCE(s.source_repository_name, m.source_repository_name, h.source_repository_name) AS source_repository_name
+  source_repository_host,
+  source_repository_owner,
+  source_repository_name
 FROM
-  common_project c
-  LEFT JOIN spigot_resource s
-  ON c.spigot_id = s.id
-
-  LEFT JOIN modrinth_project m
-  ON c.modrinth_id = m.id
-
-  LEFT JOIN hangar_project h
-  ON c.hangar_slug = h.slug
+  common_project
 WHERE
   CASE $1 IS TRUE AND $4 IS TRUE
     WHEN TRUE THEN spigot_name ILIKE $5
@@ -723,72 +649,71 @@ WHERE
   ORDER BY
     CASE
       WHEN $8 = 'date_created' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.date_created, m.date_created, h.date_created)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.date_created, m.date_created)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.date_created, h.date_created)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.date_created, h.date_created)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.date_created
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.date_created
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.date_created
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_created
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_created
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_created
         END
 
       WHEN $8 = 'date_updated' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.date_updated, m.date_updated, h.date_updated)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.date_updated, m.date_updated)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.date_updated, h.date_updated)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.date_updated, h.date_updated)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.date_updated
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.date_updated
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.date_updated
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_updated
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_updated
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_updated
         END
     END DESC,
 
     CASE
       WHEN $8 = 'latest_minecraft_version' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version, h.latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(s.latest_minecraft_version, m.latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(s.latest_minecraft_version, h.latest_minecraft_version)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(m.latest_minecraft_version, h.latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN s.latest_minecraft_version
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN m.latest_minecraft_version
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN h.latest_minecraft_version
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_latest_minecraft_version
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_latest_minecraft_version
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_latest_minecraft_version
         END
     END DESC NULLS LAST,
 
     CASE
       WHEN $8 = 'downloads' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(s.downloads, 0) + COALESCE(m.downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(s.downloads, 0) + COALESCE(h.downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.downloads, 0) + COALESCE(h.downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(s.downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.downloads, 0)
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_downloads, 0)
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_downloads, 0)
         END
 
       WHEN $8 = 'likes_and_stars' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(s.likes, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(s.likes, 0) + COALESCE(h.stars, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(h.stars, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(s.likes, 0)
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN 0
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.stars, 0)
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
         END
 
       WHEN $8 = 'follows_and_watchers' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(m.follows, 0) + COALESCE(h.watchers, 0)
+        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
+             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
+             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
              WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN 0
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(m.follows, 0)
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(h.watchers, 0)
+             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
+             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
         END
     END DESC
 
 LIMIT $9
-
 OFFSET $10")) } pub struct
 SearchProjectsStmt(cornucopia_async::private::Stmt); impl SearchProjectsStmt
 { pub fn bind<'a, C:
@@ -801,7 +726,7 @@ SearchResultEntity, 10>
     SearchResultEntityQuery
     {
         client, params: [spigot,modrinth,hangar,name,query,description,author,sort,limit,offset,], stmt: &mut self.0, extractor:
-        |row| { SearchResultEntityBorrowed { full_count: row.get(0),id: row.get(1),date_created: row.get(2),date_updated: row.get(3),latest_minecraft_version: row.get(4),downloads: row.get(5),likes_and_stars: row.get(6),follows_and_watchers: row.get(7),spigot_id: row.get(8),spigot_slug: row.get(9),spigot_name: row.get(10),spigot_description: row.get(11),spigot_author: row.get(12),spigot_version: row.get(13),spigot_premium: row.get(14),spigot_icon_data: row.get(15),modrinth_id: row.get(16),modrinth_slug: row.get(17),modrinth_name: row.get(18),modrinth_description: row.get(19),modrinth_author: row.get(20),modrinth_version: row.get(21),modrinth_icon_url: row.get(22),hangar_slug: row.get(23),hangar_name: row.get(24),hangar_description: row.get(25),hangar_author: row.get(26),hangar_version: row.get(27),hangar_avatar_url: row.get(28),source_repository_host: row.get(29),source_repository_owner: row.get(30),source_repository_name: row.get(31),} }, mapper: |it| { <SearchResultEntity>::from(it) },
+        |row| { SearchResultEntityBorrowed { full_count: row.get(0),date_created: row.get(1),date_updated: row.get(2),latest_minecraft_version: row.get(3),downloads: row.get(4),likes_and_stars: row.get(5),follows_and_watchers: row.get(6),spigot_id: row.get(7),spigot_slug: row.get(8),spigot_name: row.get(9),spigot_description: row.get(10),spigot_author: row.get(11),spigot_version: row.get(12),spigot_premium: row.get(13),spigot_icon_data: row.get(14),modrinth_id: row.get(15),modrinth_slug: row.get(16),modrinth_name: row.get(17),modrinth_description: row.get(18),modrinth_author: row.get(19),modrinth_version: row.get(20),modrinth_icon_url: row.get(21),hangar_slug: row.get(22),hangar_name: row.get(23),hangar_description: row.get(24),hangar_author: row.get(25),hangar_version: row.get(26),hangar_avatar_url: row.get(27),source_repository_host: row.get(28),source_repository_owner: row.get(29),source_repository_name: row.get(30),} }, mapper: |it| { <SearchResultEntity>::from(it) },
     }
 } }impl <'a, C: GenericClient,T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> cornucopia_async::Params<'a,
 SearchProjectsParams<T1,T2,>, SearchResultEntityQuery<'a, C,

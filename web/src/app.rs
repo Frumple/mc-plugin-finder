@@ -119,7 +119,6 @@ impl From<WebSearchParams> for SearchParams {
 pub struct WebSearchResult {
     pub full_count: i64,
 
-    pub id: i32,
     pub date_created: OffsetDateTime,
     pub date_updated: OffsetDateTime,
     pub latest_minecraft_version: Option<String>,
@@ -173,7 +172,6 @@ impl From<SearchResult> for WebSearchResult {
         WebSearchResult {
             full_count: search_result.full_count,
 
-            id: search_result.id,
             date_created: search_result.date_created,
             date_updated: search_result.date_updated,
             latest_minecraft_version: search_result.latest_minecraft_version,

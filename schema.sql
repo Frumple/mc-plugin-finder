@@ -82,33 +82,67 @@ CREATE TABLE IF NOT EXISTS hangar_project (
 );
 
 -- Common
-CREATE TABLE IF NOT EXISTS common_project (
-  id SERIAL PRIMARY KEY,
-  spigot_id integer REFERENCES spigot_resource,
-  spigot_name text,
-  spigot_description text,
-  spigot_author text,
-  modrinth_id text REFERENCES modrinth_project,
-  modrinth_name text,
-  modrinth_description text,
-  modrinth_author text,
-  hangar_slug text REFERENCES hangar_project,
-  hangar_name text,
-  hangar_description text,
-  hangar_author text
-);
+CREATE MATERIALIZED VIEW common_project AS
+SELECT
+  s.id AS spigot_id,
+  s.slug AS spigot_slug,
+  s.parsed_name AS spigot_name,
+  s.description AS spigot_description,
+  a.name AS spigot_author,
+  s.version_name AS spigot_version,
+  s.premium AS spigot_premium,
+  s.icon_data AS spigot_icon_data,
+  s.date_created AS spigot_date_created,
+  s.date_updated AS spigot_date_updated,
+  s.latest_minecraft_version AS spigot_latest_minecraft_version,
+  s.downloads AS spigot_downloads,
+  s.likes AS spigot_likes,
+
+  m.id AS modrinth_id,
+  m.slug AS modrinth_slug,
+  m.name AS modrinth_name,
+  m.description AS modrinth_description,
+  m.author AS modrinth_author,
+  m.version_name AS modrinth_version,
+  m.icon_url AS modrinth_icon_url,
+  m.date_created AS modrinth_date_created,
+  m.date_updated AS modrinth_date_updated,
+  m.latest_minecraft_version AS modrinth_latest_minecraft_version,
+  m.downloads AS modrinth_downloads,
+  m.follows AS modrinth_follows,
+
+  h.slug AS hangar_slug,
+  h.name AS hangar_name,
+  h.description AS hangar_description,
+  h.author AS hangar_author,
+  h.version_name AS hangar_version,
+  h.avatar_url AS hangar_avatar_url,
+  h.date_created AS hangar_date_created,
+  h.date_updated AS hangar_date_updated,
+  h.latest_minecraft_version AS hangar_latest_minecraft_version,
+  h.downloads AS hangar_downloads,
+  h.stars AS hangar_stars,
+  h.watchers AS hangar_watchers,
+
+  COALESCE(s.source_repository_host, m.source_repository_host, h.source_repository_host) AS source_repository_host,
+  COALESCE(s.source_repository_owner, m.source_repository_owner, h.source_repository_owner) AS source_repository_owner,
+  COALESCE(s.source_repository_name, m.source_repository_name, h.source_repository_name) AS source_repository_name
+FROM
+  spigot_resource s
+  INNER JOIN spigot_author a
+  ON  s.author_id = a.id
+
+  FULL JOIN modrinth_project m
+  ON  s.source_repository_host = m.source_repository_host
+  AND s.source_repository_owner = m.source_repository_owner
+  AND s.source_repository_name = m.source_repository_name
+
+  FULL JOIN hangar_project h
+  ON  COALESCE(s.source_repository_host, m.source_repository_host) = h.source_repository_host
+  AND COALESCE(s.source_repository_owner, m.source_repository_owner) = h.source_repository_owner
+  AND COALESCE(s.source_repository_name, m.source_repository_name) = h.source_repository_name;
 
 -- Indexes
-
--- B-tree indexes for joining on spigot_id, modrinth_id, and hangar_slug
-CREATE INDEX IF NOT EXISTS common_project_spigot_id_index
-ON common_project (spigot_id);
-
-CREATE INDEX IF NOT EXISTS common_project_modrinth_id_index
-ON common_project (modrinth_id);
-
-CREATE INDEX IF NOT EXISTS common_project_hangar_slug_index
-ON common_project (hangar_slug);
 
 -- Trigram indexes for text search on name, description, and author
 CREATE INDEX IF NOT EXISTS common_project_name_index
