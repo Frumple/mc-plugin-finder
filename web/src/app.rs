@@ -12,6 +12,13 @@ use time::{OffsetDateTime, format_description};
 #[cfg(feature = "ssr")]
 use mc_plugin_finder::database::common::search_result::{SearchParams, SearchParamsSort, SearchResult, SearchResultSpigot, SearchResultModrinth, SearchResultHangar};
 
+// For Modrinth and Hangar project icons, attempt to retrieve a cached version from the image proxy first.
+// This reduces unnecessary load on the Modrinth and Hangar CDNs.
+
+// Set this to false to retrieve icons directly from the Modrinth and Hangar CDNs.
+const USE_IMAGEPROXY: bool = true;
+const IMAGEPROXY_URL_PREFIX: &str = "https://img.mcpluginfinder.com/75,fit";
+
 const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
 const PREMIUM_IMAGE_URL: &str = "images/premium.svg";
 
@@ -205,12 +212,12 @@ impl WebSearchResultSpigot {
     }
 
     fn icon_img_url(&self) -> String {
-        // Fallback to a "no-icon" placeholder image if the incoming icon data is None or an empty string.
-        if self.icon_data.is_none() || self.icon_data.as_ref().is_some_and(|x| x.is_empty()) {
-            return NO_ICON_IMAGE_URL.to_string()
+        let data = fallback_if_no_icon(&self.icon_data.clone());
+        if data == NO_ICON_IMAGE_URL {
+            return data;
         }
 
-        format!("data:image/png;base64,{}", self.icon_data.clone().unwrap())
+        format!("data:image/png;base64,{}", data)
     }
 
     fn icon_alt_text(&self) -> Option<String> {
@@ -251,7 +258,13 @@ impl WebSearchResultModrinth {
     }
 
     fn icon_img_url(&self) -> String {
-        fallback_if_no_icon(&self.icon_url.clone())
+        let url = fallback_if_no_icon(&self.icon_url.clone());
+
+        if USE_IMAGEPROXY {
+            return format!("{}/{}", IMAGEPROXY_URL_PREFIX, url);
+        }
+
+        url
     }
 
     fn icon_alt_text(&self) -> Option<String> {
@@ -290,7 +303,13 @@ impl WebSearchResultHangar {
     }
 
     fn avatar_img_url(&self) -> String {
-        fallback_if_no_icon(&Some(self.avatar_url.clone()))
+        let url = fallback_if_no_icon(&Some(self.avatar_url.clone()));
+
+        if USE_IMAGEPROXY {
+            return format!("{}/{}", IMAGEPROXY_URL_PREFIX, url);
+        }
+
+        url
     }
 
     fn icon_alt_text(&self) -> Option<String> {
@@ -977,13 +996,13 @@ struct ImgAttributes {
     alt: Option<String>
 }
 
-fn fallback_if_no_icon(icon_url: &Option<String>) -> String {
+fn fallback_if_no_icon(icon_url_or_data: &Option<String>) -> String {
     // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
-    if icon_url.is_none() || icon_url.as_ref().is_some_and(|x| x.is_empty()) {
+    if icon_url_or_data.is_none() || icon_url_or_data.as_ref().is_some_and(|x| x.is_empty()) {
         return NO_ICON_IMAGE_URL.to_string()
     }
 
-    icon_url.clone().unwrap()
+    icon_url_or_data.clone().unwrap()
 }
 
 fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<String> {
