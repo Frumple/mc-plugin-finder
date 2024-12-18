@@ -521,11 +521,13 @@ fn HomePage() -> impl IntoView {
 
     view! {
         <h1 class="home-page__title">"MC Plugin Finder"</h1>
+        <div class="home-page__subtitle">"Search for Minecraft: Java Edition plugins on Spigot, Modrinth, and Hangar."</div>
 
         <div class="home-page__container">
             <SearchForm params_memo />
             <SearchResults params_memo resource />
         </div>
+        <div class="home-page__disclaimer">"MC Plugin Finder is not an official Minecraft service, and is not approved or associated with Mojang or Microsoft."</div>
     }
 }
 
