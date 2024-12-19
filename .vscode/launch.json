@@ -7,14 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'collector'",
+      "name": "Debug executable 'ingest'",
       "cargo": {
         "args": [
           "build",
-          "--package=collector"
+          "--package=ingest"
         ],
         "filter": {
-          "name": "collector",
+          "name": "ingest",
           "kind": "bin"
         }
       },
