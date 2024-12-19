@@ -12,6 +12,9 @@ use mc_plugin_finder::database::spigot::resource::get_latest_spigot_resource_upd
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 use tracing::info;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::fmt::Layer;
 use tracing_subscriber::fmt::format::FmtSpan;
 use url::Url;
 
@@ -129,10 +132,22 @@ async fn main() -> Result<()> {
     let cli = CommandLineArguments::parse();
 
     // Initialize tracing
-    let subscriber = tracing_subscriber::fmt()
-        // .with_max_level(tracing::Level::DEBUG)
+    let appender = tracing_appender::rolling::daily("logs/ingest", "ingest.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(appender);
+
+    let file_layer = Layer::new()
+        .with_writer(non_blocking)
         .with_span_events(FmtSpan::CLOSE)
-        .finish();
+        .with_ansi(false);
+
+    let console_layer = Layer::new()
+        .with_writer(std::io::stdout)
+        .with_span_events(FmtSpan::CLOSE);
+
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with(file_layer)
+        .with(console_layer);
     tracing::subscriber::set_global_default(subscriber)?;
 
     // Initialize database client

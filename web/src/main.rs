@@ -4,15 +4,30 @@ async fn main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
+    use tracing_subscriber::prelude::*;
+    use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use web::app::*;
     use web::fileserv::file_and_error_handler;
 
     // Initialize tracing
-    let subscriber = tracing_subscriber::fmt()
-        // .with_max_level(tracing::Level::DEBUG)
+    let appender = tracing_appender::rolling::daily("logs/web", "web.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(appender);
+
+    let file_layer = Layer::new()
+        .with_writer(non_blocking)
         .with_span_events(FmtSpan::CLOSE)
-        .finish();
+        .with_ansi(false);
+
+    let console_layer = Layer::new()
+        .with_writer(std::io::stdout)
+        .with_span_events(FmtSpan::CLOSE);
+
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with(file_layer)
+        .with(console_layer);
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
