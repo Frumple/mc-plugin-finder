@@ -212,12 +212,13 @@ impl WebSearchResultSpigot {
     }
 
     fn icon_img_url(&self) -> String {
-        let data = fallback_if_no_icon(&self.icon_data.clone());
-        if data == NO_ICON_IMAGE_URL {
-            return data;
+        let data = self.icon_data.clone();
+
+        if data.as_ref().map_or(true, String::is_empty) {
+            return NO_ICON_IMAGE_URL.to_string();
         }
 
-        format!("data:image/png;base64,{}", data)
+        format!("data:image/png;base64,{}", data.unwrap())
     }
 
     fn icon_alt_text(&self) -> Option<String> {
@@ -258,13 +259,17 @@ impl WebSearchResultModrinth {
     }
 
     fn icon_img_url(&self) -> String {
-        let url = fallback_if_no_icon(&self.icon_url.clone());
+        let url = self.icon_url.clone();
 
-        if USE_IMAGEPROXY {
-            return format!("{}/{}", IMAGEPROXY_URL_PREFIX, url);
+        if url.as_ref().map_or(true, String::is_empty) {
+            return NO_ICON_IMAGE_URL.to_string();
         }
 
-        url
+        if USE_IMAGEPROXY {
+            return format!("{}/{}", IMAGEPROXY_URL_PREFIX, url.unwrap());
+        }
+
+        url.unwrap()
     }
 
     fn icon_alt_text(&self) -> Option<String> {
@@ -303,7 +308,11 @@ impl WebSearchResultHangar {
     }
 
     fn avatar_img_url(&self) -> String {
-        let url = fallback_if_no_icon(&Some(self.avatar_url.clone()));
+        let url = self.avatar_url.clone();
+
+        if url.is_empty() {
+            return NO_ICON_IMAGE_URL.to_string();
+        }
 
         if USE_IMAGEPROXY {
             return format!("{}/{}", IMAGEPROXY_URL_PREFIX, url);
@@ -996,15 +1005,6 @@ struct ImgAttributes {
     src: Option<String>,
     title: Option<String>,
     alt: Option<String>
-}
-
-fn fallback_if_no_icon(icon_url_or_data: &Option<String>) -> String {
-    // Fallback to a "no-icon" placeholder image if the incoming icon URL is None or an empty string.
-    if icon_url_or_data.is_none() || icon_url_or_data.as_ref().is_some_and(|x| x.is_empty()) {
-        return NO_ICON_IMAGE_URL.to_string()
-    }
-
-    icon_url_or_data.clone().unwrap()
 }
 
 fn alt_text(project_name: &Option<String>, repository_name: &str) -> Option<String> {
