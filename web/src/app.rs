@@ -484,7 +484,7 @@ fn HomePage() -> impl IntoView {
     let params_memo_original = use_query::<WebSearchParams>();
 
     let params_memo = create_memo(move |_| {
-        params_memo_original().map( |params| {
+        params_memo_original.get().map( |params| {
             // When first loading the home page with no query paramemters,
             // perform a default search on all repositories using the name field only.
             if params.query.is_none() &&
@@ -515,7 +515,7 @@ fn HomePage() -> impl IntoView {
     });
 
     let resource = create_resource(
-        params_memo,
+        move || params_memo.get(),
         fetch_projects
     );
 

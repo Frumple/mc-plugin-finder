@@ -11,10 +11,10 @@ axum = { version = "0.7", optional = true }
 console_error_panic_hook = "0.1"
 deadpool-postgres = { version = "0.12.1", optional = true }
 http = "1"
-leptos = { version = "0.6", features = ["nightly"] }
+leptos = { version = "0.6" }
 leptos_axum = { version = "0.6", optional = true }
-leptos_meta = { version = "0.6", features = ["nightly"] }
-leptos_router = { version = "0.6", features = ["nightly"] }
+leptos_meta = { version = "0.6" }
+leptos_router = { version = "0.6" }
 mc-plugin-finder = { path = "..", optional = true }
 num-format = "0.4.4"
 serde = { version = "1.0.195", features = ["derive"] }
