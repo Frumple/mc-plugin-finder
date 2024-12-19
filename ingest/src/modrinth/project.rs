@@ -19,7 +19,7 @@ use thiserror::Error;
 use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
 
-const MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD: usize = 2;
+const MODRINTH_PROJECTS_REQUESTS_AHEAD: usize = 2;
 
 static MINECRAFT_VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+(\.\d)?(-pre\d+|-rc\d+)?$").unwrap());
 
@@ -121,7 +121,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
-            .pages_ahead(MODRINTH_POPULATE_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
+            .pages_ahead(MODRINTH_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, false))
             .await;
@@ -141,10 +141,10 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
-            .pages(request)
+            .pages_ahead(MODRINTH_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.date_modified.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each(|incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
+            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();

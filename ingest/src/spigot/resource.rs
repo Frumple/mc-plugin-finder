@@ -20,7 +20,7 @@ use tracing::{info, warn, instrument};
 use unicode_segmentation::UnicodeSegmentation;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,testedVersions,downloads,likes,file,author,version,premium,sourceCodeLink";
-const SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
 static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
@@ -156,7 +156,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
-            .pages_ahead(SPIGOT_POPULATE_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
+            .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_for_each_concurrent(None, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, false))
             .await;
@@ -176,10 +176,10 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let count_cell: Cell<u32> = Cell::new(0);
 
         let result = self
-            .pages(request)
+            .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each(|incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
+            .try_for_each_concurrent(None, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();
