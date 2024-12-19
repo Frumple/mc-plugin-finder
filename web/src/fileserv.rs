@@ -4,10 +4,10 @@ use axum::{
     body::Body,
     extract::State,
     http::{Request, Response, StatusCode},
-    response::IntoResponse,
+    response::IntoResponse
 };
 use leptos::*;
-use tower::ServiceExt;
+use tower::util::ServiceExt;
 use tower_http::services::ServeDir;
 
 pub async fn file_and_error_handler(
