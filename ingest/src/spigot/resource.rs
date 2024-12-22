@@ -23,7 +23,7 @@ const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,upda
 const SPIGOT_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
 static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
-static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*").unwrap());
+static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}]+[\p{L}_-]*[\p{L}]+[\p{L}&'’\s]*[\p{L}]+\+*").unwrap());
 static DISCOUNT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"SALE|OFF").unwrap());
 static SLUG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
 
@@ -379,24 +379,22 @@ fn remove_discount_text(input: &str) -> String {
 /*
     Breakdown of this regex:
 
-    `\p{letter}\p{mark}`
-        - Matches international characters such as `é` or `ü`. It is preferred over [A-Za-z].
+    `\p{L}`
+        - Matches any kind of letter in any language, even `é` or `ü`.
 
-    `[\p{letter}\p{mark}]+[\p{letter}\p{mark}&-_'’]*[\p{letter}\p{mark}]+`
+    `[\p{L}]+[\p{L}_-]*[\p{L}]+`
         - Includes first words that begin and end with letters/marks, and may contain dashes/underscores.
         - This allows us to include resources that have dashes/underscores within their name, but not dashes/underscores that are intended to be used as separators from other text.
-        - Examples that are included:
-            - "Anti-Xray-Webhook"
-            - "T-ExplosiveSheep"
-            - "QuickShop-Hikari"
-            - "Admin_Panel"
-            - "IP_Checker"
-        - Examples that are excluded:
-            - "ZMusic - 1.20 Ready - Powerful Music System"
-            - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin"
-            - "BackupSystem by ShadowX__"
+        - Examples:
+            - "Multiverse-Core"                                                             => "Multiverse-Core"
+            - "Anti-Xray-Webhook"                                                           => "Anti-Xray-Webhook"
+            - "Admin_Panel"                                                                 => "Admin_Panel"
+            - "IP_Checker"                                                                  => "IP_Checker"
+            - "ZMusic - 1.20 Ready - Powerful Music System"                                 => "ZMusic"
+            - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin" => "QuickShop-Hikari"
+            - "BackupSystem by ShadowX__"                                                   => "BackupSystem by ShadowX"
 
-    `...[\p{letter}\p{mark}&'’\s]*[\p{letter}\p{mark}]+\+*`
+    `...[\p{L}&'’\s]*[\p{L}]+\+*`
         - Includes resource names with multiple words.
         - Examples:
             - "HeadDatabase"
