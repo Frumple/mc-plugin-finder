@@ -348,11 +348,12 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
     3. Replace `-` dashes or  `_` underscores that are adjacent to whitespace with `|` separator characters.
       Examples:
       - "Foo - Bar" => "Foo | Bar"
-      - "Foo- Bar" => "Foo| Bar"
-      - "Foo _Bar" => "Foo |Bar"
+      - "Foo- Bar"  => "Foo| Bar"
+      - "Foo _Bar"  => "Foo |Bar"
       - "Foo-Bar" or "Foo_Bar" will remain unchanged.
     4. Remove discount text such as "SALE" and "OFF" so that it does not get matched in the regex.
 
+    Name extraction step:
     A regex will then find the first alphabetical word(s) (that may be in between `|`, `-`, `_`, or other separators), and assume that is the actual name.
       - Allows names with any number of internal `-` dashes and `_` underscores, provided that they are not adjacent to whitespace from pre-processing step #3 above.
         Examples:
@@ -371,15 +372,20 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
         - "Economy++"
 
     Post-processing steps:
-    1. TODO
+    1. If the name ends with whitespace followed by a single "v" or "V" character, remove both the whitespace and character.
+      Examples (original => name extraction => post-processing):
+      - "PlotSquared v4"   => "PlotSquared v" => "PlotSquared"
+      - "FactionMenu V1.2" => "FactionMenu V" => "FactionMenu"
  */
 fn parse_resource_name(name: &str) -> Option<String> {
-    let mut text = replace_emoji_with_separators(name);
-    text = replace_brackets_and_bracket_contents_with_separators(&text);
-    text = replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(&text);
-    text = remove_discount_text(&text);
+    let mut preprocessed_text = replace_emoji_with_separators(name);
+    preprocessed_text = replace_brackets_and_bracket_contents_with_separators(&preprocessed_text);
+    preprocessed_text = replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(&preprocessed_text);
+    preprocessed_text = remove_discount_text(&preprocessed_text);
 
-    extract_resource_name(&text)
+    let parsed_name = extract_resource_name(&preprocessed_text);
+
+    remove_trailing_whitespace_and_single_v_character(&parsed_name)
 }
 
 fn replace_emoji_with_separators(input: &str) -> String {
@@ -420,6 +426,17 @@ fn extract_resource_name(input: &str) -> Option<String> {
     let re = &*RESOURCE_NAME_REGEX;
     let mat = re.find(input)?;
     Some(mat.as_str().to_string())
+}
+
+static TRAILING_WHITESPACE_V_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+[vV]$").unwrap());
+
+fn remove_trailing_whitespace_and_single_v_character(input: &Option<String>) -> Option<String> {
+    if let Some(name) = input {
+        let re = &*TRAILING_WHITESPACE_V_REGEX;
+        return Some(re.replace_all(name, "").into_owned());
+    }
+
+    None
 }
 
 static SLUG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
@@ -499,6 +516,11 @@ mod test {
 
     #[case::word_with_accent("Café", "Café")]
     #[case::word_with_umlaut("Über", "Über")]
+
+    #[case::trailing_lowercase_version("Foo v1.2.3", "Foo")]
+    #[case::trailing_uppercase_version("Foo V1.2.3", "Foo")]
+    #[case::ends_with_lowercase_v_no_whitespace("BetterNav", "BetterNav")]
+    #[case::ends_with_uppercase_v_no_whitespace("DiscordSRV", "DiscordSRV")]
 
     #[case::everything("SALE 30% ⚡ [1.15.1-1.20.4+] ⛏️ Foo-Bar Baz++ - Best Moderation Plugin | ✅ Database Support!", "Foo-Bar Baz++")]
     fn should_parse_resource_name(#[case] input: &str, #[case] expected_name: &str) {
