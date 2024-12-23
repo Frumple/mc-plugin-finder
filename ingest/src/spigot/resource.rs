@@ -22,11 +22,6 @@ use unicode_segmentation::UnicodeSegmentation;
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,testedVersions,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_RESOURCES_REQUESTS_AHEAD: usize = 2;
 
-static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
-static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}]+[\p{L}_-]*[\p{L}]+[\p{L}&'’\s]*[\p{L}]+\+*").unwrap());
-static DISCOUNT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"SALE|OFF").unwrap());
-static SLUG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
-
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
     size: u32,
@@ -337,19 +332,51 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
 }
 
 /*
-    Attempts to find the actual Spigot resource name amidst the mess of emojis, special characters, and irrelevant text that are so common in the name field.
+    Attempts to find the actual Spigot resource name amidst the hideous mess of emojis, special characters, and irrelevant text that are so common in the name field.
 
-    This function performs the following preparatory steps before running a regex to get the name:
+    This function performs several pre-processing steps, followed by finding the resource name itself, and then some post-processing steps.
+
+    Pre-processing steps:
     1. Replace emoji with `|` separator characters.
     2. Replace `[]` or `()` brackets and their contents with `|` separator characters.
-      - Unfortunately, there are a few resources that put their resource name in brackets. We won't attempt to try parsing the name from these resources.
-    3. Remove discount text such as "SALE" and "OFF" so that it does not get matched in the regex.
+      - Unfortunately, there are a few resources that put their resource name in brackets.
+        We ignore any text within brackets, so these resource names will not be parsed.
+        Examples:
+        - "[RealisticMC] • 1.8 - 1.12 • No Lag • Epic Effects • Configurable • Multi-World • (Inactive)"
+        - "[ Better Invisibility ] - 1.8 ~ 1.19 (isnt a Vanish Plugin)""
+        - "[PowerBoard] Scoreboard + Tablist + Prefix + Chat | Animated"
+    3. Replace `-` dashes or  `_` underscores that are adjacent to whitespace with `|` separator characters.
+      Examples:
+      - "Foo - Bar" => "Foo | Bar"
+      - "Foo- Bar" => "Foo| Bar"
+      - "Foo _Bar" => "Foo |Bar"
+      - "Foo-Bar" or "Foo_Bar" will remain unchanged.
+    4. Remove discount text such as "SALE" and "OFF" so that it does not get matched in the regex.
 
-    The regex will then find the first alphabetical word(s) (that may be in between `|` separators), and assume that is the actual name.
+    A regex will then find the first alphabetical word(s) (that may be in between `|`, `-`, `_`, or other separators), and assume that is the actual name.
+      - Allows names with any number of internal `-` dashes and `_` underscores, provided that they are not adjacent to whitespace from pre-processing step #3 above.
+        Examples:
+        - "Quickshop-Hikari"
+        - "Phoenix Anti-Cheat"
+        - "Ultimate_Economy"
+        - "MegaFFA By ImRoyal_Raddar"
+      - Allows names with any number of internal `&` ampersands, `'` and `’` apostrophes.
+        Examples:
+        - "Minions & Hunger"
+        - "Lib's Disguises"
+        - "RS’s AntiCheat"
+      - Allows names with any number of trailing `+` characters.
+        Examples:
+        - "Disguise+"
+        - "Economy++"
+
+    Post-processing steps:
+    1. TODO
  */
 fn parse_resource_name(name: &str) -> Option<String> {
     let mut text = replace_emoji_with_separators(name);
     text = replace_brackets_and_bracket_contents_with_separators(&text);
+    text = replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(&text);
     text = remove_discount_text(&text);
 
     extract_resource_name(&text)
@@ -366,49 +393,36 @@ fn replace_emoji_with_separators(input: &str) -> String {
     }).collect()
 }
 
+static BRACKETS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\[\(].*?[\)\]]").unwrap());
+
 fn replace_brackets_and_bracket_contents_with_separators(input: &str) -> String {
     let re = &*BRACKETS_REGEX;
     re.replace_all(input, "|").into_owned()
 }
+
+static DASHES_AND_UNDERSCORES_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(\s+[-_])|([-_]\s+)").unwrap());
+
+fn replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(input: &str) -> String {
+    let re = &*DASHES_AND_UNDERSCORES_REGEX;
+    re.replace_all(input, "|").into_owned()
+}
+
+static DISCOUNT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"SALE|OFF").unwrap());
 
 fn remove_discount_text(input: &str) -> String {
     let re = &*DISCOUNT_REGEX;
     re.replace_all(input, "").into_owned()
 }
 
-/*
-    Breakdown of this regex:
+static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}]+[\p{L}\s&'’_-]*[\p{L}]+\+*").unwrap());
 
-    `\p{L}`
-        - Matches any kind of letter in any language, even `é` or `ü`.
-
-    `[\p{L}]+[\p{L}_-]*[\p{L}]+`
-        - Includes first words that begin and end with letters/marks, and may contain dashes/underscores.
-        - This allows us to include resources that have dashes/underscores within their name, but not dashes/underscores that are intended to be used as separators from other text.
-        - Examples:
-            - "Multiverse-Core"                                                             => "Multiverse-Core"
-            - "Anti-Xray-Webhook"                                                           => "Anti-Xray-Webhook"
-            - "Admin_Panel"                                                                 => "Admin_Panel"
-            - "IP_Checker"                                                                  => "IP_Checker"
-            - "ZMusic - 1.20 Ready - Powerful Music System"                                 => "ZMusic"
-            - "Quickshop-Hikari - A powerful, user-friendly and relieable ChestShop plugin" => "QuickShop-Hikari"
-            - "BackupSystem by ShadowX__"                                                   => "BackupSystem by ShadowX"
-
-    `...[\p{L}&'’\s]*[\p{L}]+\+*`
-        - Includes resource names with multiple words.
-        - Examples:
-            - "HeadDatabase"
-            - "AFK Rewards Premium"
-        - Also includes names with trailing `+` characters.
-        - Examples:
-            - "Disguise+"
-            - "Economy++"
- */
 fn extract_resource_name(input: &str) -> Option<String> {
     let re = &*RESOURCE_NAME_REGEX;
     let mat = re.find(input)?;
     Some(mat.as_str().to_string())
 }
+
+static SLUG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"resources/(\S+\.\d+)/download.*").unwrap());
 
 fn extract_slug_from_file_download_url(url: &str) -> Option<String> {
     let re = &*SLUG_REGEX;
@@ -430,6 +444,7 @@ mod test {
 
     #[rstest]
     #[case::word("Foo", "Foo")]
+    #[case::two_letter_word("Fo", "Fo")]
 
     #[case::number_word("2Foo", "Foo")]
     #[case::word_number("Foo2", "Foo")]
@@ -444,7 +459,7 @@ mod test {
     #[case::word_hyphen("Foo-", "Foo")]
     #[case::word_hyphen_word("Foo-Bar", "Foo-Bar")]
     #[case::word_hyphen_word_space_word("Foo-Bar Baz", "Foo-Bar Baz")]
-    #[case::word_space_word_hyphen_word("Foo Bar-Baz", "Foo Bar")]
+    #[case::word_space_word_hyphen_word("Foo Bar-Baz", "Foo Bar-Baz")]
     #[case::word_hyphen_space_word("Foo- Bar", "Foo")]
     #[case::word_space_hyphen_word("Foo -Bar", "Foo")]
     #[case::word_space_hyphen_space_word("Foo - Bar", "Foo")]
@@ -453,7 +468,7 @@ mod test {
     #[case::word_underscore("Foo_", "Foo")]
     #[case::word_underscore_word("Foo_Bar", "Foo_Bar")]
     #[case::word_underscore_word_space_word("Foo_Bar Baz", "Foo_Bar Baz")]
-    #[case::word_space_word_underscore_word("Foo Bar_Baz", "Foo Bar")]
+    #[case::word_space_word_underscore_word("Foo Bar_Baz", "Foo Bar_Baz")]
     #[case::word_underscore_space_word("Foo_ Bar", "Foo")]
     #[case::word_space_underscore_word("Foo _Bar", "Foo")]
     #[case::word_space_underscore_space_word("Foo _ Bar", "Foo")]
@@ -493,7 +508,6 @@ mod test {
 
     #[rstest]
     #[case::one_letter_word("F")]
-    #[case::two_letter_word("Fo")]
     fn should_not_parse_resource_name(#[case] input: &str) {
         let parsed_name = parse_resource_name(input);
         assert_that(&parsed_name).is_none();
