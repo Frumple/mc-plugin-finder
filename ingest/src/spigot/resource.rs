@@ -420,7 +420,7 @@ fn remove_discount_text(input: &str) -> String {
     re.replace_all(input, "").into_owned()
 }
 
-static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}]+[\p{L}\s&'’_-]*[\p{L}]+\+*").unwrap());
+static RESOURCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}]+[\p{L}\s\d&'’_-]*[\p{L}]+\+*").unwrap());
 
 fn extract_resource_name(input: &str) -> Option<String> {
     let re = &*RESOURCE_NAME_REGEX;
@@ -460,69 +460,127 @@ mod test {
     use wiremock::matchers::{method, path, query_param};
 
     #[rstest]
+
+    // Cases where the name is preserved:
+
+    // Single words are preserved
     #[case::word("Foo", "Foo")]
     #[case::two_letter_word("Fo", "Fo")]
 
-    #[case::number_word("2Foo", "Foo")]
-    #[case::word_number("Foo2", "Foo")]
-
+    // Trailing `+` characters are preserved
     #[case::word_plus("Foo+", "Foo+")]
     #[case::word_plus_plus("Foo++", "Foo++")]
 
+    // Multiple words are preserved
     #[case::word_space_word("Foo Bar", "Foo Bar")]
     #[case::word_space_word_space_word("Foo Bar Baz", "Foo Bar Baz")]
 
-    #[case::hyphen_word("-Foo", "Foo")]
-    #[case::word_hyphen("Foo-", "Foo")]
+    // Internal hyphens are preserved
     #[case::word_hyphen_word("Foo-Bar", "Foo-Bar")]
     #[case::word_hyphen_word_space_word("Foo-Bar Baz", "Foo-Bar Baz")]
     #[case::word_space_word_hyphen_word("Foo Bar-Baz", "Foo Bar-Baz")]
-    #[case::word_hyphen_space_word("Foo- Bar", "Foo")]
-    #[case::word_space_hyphen_word("Foo -Bar", "Foo")]
-    #[case::word_space_hyphen_space_word("Foo - Bar", "Foo")]
 
-    #[case::underscore_word("_Foo", "Foo")]
-    #[case::word_underscore("Foo_", "Foo")]
+    // Internal underscores are preserved
     #[case::word_underscore_word("Foo_Bar", "Foo_Bar")]
     #[case::word_underscore_word_space_word("Foo_Bar Baz", "Foo_Bar Baz")]
     #[case::word_space_word_underscore_word("Foo Bar_Baz", "Foo Bar_Baz")]
-    #[case::word_underscore_space_word("Foo_ Bar", "Foo")]
-    #[case::word_space_underscore_word("Foo _Bar", "Foo")]
-    #[case::word_space_underscore_space_word("Foo _ Bar", "Foo")]
 
+    // Internal digits are preserved
+    #[case::word_number_word("Foo2Bar", "Foo2Bar")]
+    #[case::word_space_number_word("Foo 2Bar", "Foo 2Bar")]
+    #[case::word_number_space_word("Foo2 Bar", "Foo2 Bar")]
+    #[case::word_space_number_space_word("Foo 2 Bar", "Foo 2 Bar")]
+
+    // Internal apostrophes are preserved
+    #[case::words_with_apostrophe("Frumple's Foobar", "Frumple's Foobar")]
+    #[case::words_with_right_single_quotation_mark("Frumple’s Foobar", "Frumple’s Foobar")]
+
+    // Internal ampersands are preserved
+    #[case::word_ampersand_word("Foo&Bar", "Foo&Bar")]
+    #[case::word_space_ampersand_space_word("Foo & Bar", "Foo & Bar")]
+
+    // International characters are preserved
+    #[case::word_with_accent("Café", "Café")]
+    #[case::word_with_umlaut("Über", "Über")]
+
+    // Names ending with `v` or `V` with no whitespace are preserved
+    #[case::ends_with_lowercase_v_no_whitespace("BetterNav", "BetterNav")]
+    #[case::ends_with_uppercase_v_no_whitespace("DiscordSRV", "DiscordSRV")]
+
+    // Cases where undesired elements are removed:
+
+    // Emojis are removed
     #[case::emoji_word("✨Foo", "Foo")]
     #[case::emoji_space_word("✨ Foo", "Foo")]
     #[case::word_emoji("Foo✨", "Foo")]
     #[case::word_space_emoji("Foo ✨", "Foo")]
 
+    // Leading and trailing dashes are removed
+    #[case::hyphen_word("-Foo", "Foo")]
+    #[case::word_hyphen("Foo-", "Foo")]
+
+    // Leading and trailing underscores are removed
+    #[case::underscore_word("_Foo", "Foo")]
+    #[case::word_underscore("Foo_", "Foo")]
+
+    // Internal dashes adjacent to whitespace are removed
+    #[case::word_hyphen_space_word("Foo- Bar", "Foo")]
+    #[case::word_space_hyphen_word("Foo -Bar", "Foo")]
+    #[case::word_space_hyphen_space_word("Foo - Bar", "Foo")]
+
+    // Internal underscores adjacent to whitespace are removed
+    #[case::word_underscore_space_word("Foo_ Bar", "Foo")]
+    #[case::word_space_underscore_word("Foo _Bar", "Foo")]
+    #[case::word_space_underscore_space_word("Foo _ Bar", "Foo")]
+
+    // Square brackets and their contents are removed
     #[case::square_brackets_word("[1.8.8 - 1.20.4]Foo", "Foo")]
     #[case::square_brackets_space_word("[1.8.8 - 1.20.4] Foo", "Foo")]
     #[case::word_square_brackets("Foo[1.8.8 - 1.20.4]", "Foo")]
     #[case::word_space_square_brackets("Foo [1.8.8 - 1.20.4]", "Foo")]
 
+    // Round brackets and their contents are removed
     #[case::round_brackets_word("(1.8.8 - 1.20.4)Foo", "Foo")]
     #[case::round_brackets_space_word("(1.8.8 - 1.20.4) Foo", "Foo")]
     #[case::word_round_brackets("Foo(1.8.8 - 1.20.4)", "Foo")]
     #[case::word_space_round_brackets("Foo (1.8.8 - 1.20.4)", "Foo")]
 
+    // Discount words are removed
     #[case::discount_sale_word("25% SALE Foo", "Foo")]
     #[case::discount_off_word("25% OFF Foo", "Foo")]
     #[case::word_discount_sale("Foo 25% SALE", "Foo")]
     #[case::word_discount_off("Foo 25% OFF", "Foo")]
 
-    #[case::words_with_apostrophe("Frumple's Foobar", "Frumple's Foobar")]
-    #[case::words_with_right_single_quotation_mark("Frumple’s Foobar", "Frumple’s Foobar")]
-    #[case::words_with_ampersand("Foo & Bar", "Foo & Bar")]
+    // Leading digits are removed
+    #[case::number_word("2Foo", "Foo")]
+    #[case::word_number("Foo2", "Foo")]
 
-    #[case::word_with_accent("Café", "Café")]
-    #[case::word_with_umlaut("Über", "Über")]
+    // Leading and trailing apostrophes are removed
+    #[case::apostrophe_word("'Foo", "Foo")]
+    #[case::word_apostrophe("Foo'", "Foo")]
 
-    #[case::trailing_lowercase_version("Foo v1.2.3", "Foo")]
-    #[case::trailing_uppercase_version("Foo V1.2.3", "Foo")]
-    #[case::ends_with_lowercase_v_no_whitespace("BetterNav", "BetterNav")]
-    #[case::ends_with_uppercase_v_no_whitespace("DiscordSRV", "DiscordSRV")]
+    // Leading and trailing right single quotation marks are removed
+    #[case::right_single_quotation_mark_word("’Foo", "Foo")]
+    #[case::word_right_single_quotation_mark("Foo’", "Foo")]
 
-    #[case::everything("SALE 30% ⚡ [1.15.1-1.20.4+] ⛏️ Foo-Bar Baz++ - Best Moderation Plugin | ✅ Database Support!", "Foo-Bar Baz++")]
+    // Leading and trailing ampersands are removed
+    #[case::ampersand_word("&Foo", "Foo")]
+    #[case::word_ampersand("Foo&", "Foo")]
+
+    // Leading and trailing version numbers are removed
+    #[case::no_v_version_word("1.2.3 Foo", "Foo")]
+    #[case::lowercase_v_version_word("v1.2.3 Foo", "Foo")]
+    #[case::uppercase_v_version_word("V1.2.3 Foo", "Foo")]
+    #[case::word_no_v_version("Foo 1.2.3", "Foo")]
+    #[case::word_lowercase_v_version("Foo v1.2.3", "Foo")]
+    #[case::word_uppercase_v_version("Foo V1.2.3", "Foo")]
+
+    // Internal version numbers are removed (in addition to later words)
+    #[case::word_no_v_version_word("Foo 1.2.3 Bar", "Foo")]
+    #[case::word_lowercase_v_version_word("Foo v1.2.3 Bar", "Foo")]
+    #[case::word_uppercase_v_version_word("Foo V1.2.3 Bar", "Foo")]
+
+    #[case::everything("SALE 30% ⚡ [1.15.1-1.20.4+] ⛏️ Foo's Bar Baz++ v2.0 - Best Moderation Plugin | ✅ Database Support!", "Foo's Bar Baz++")]
     fn should_parse_resource_name(#[case] input: &str, #[case] expected_name: &str) {
         let parsed_name = parse_resource_name(input);
         assert_that(&parsed_name).is_some().is_equal_to(expected_name.to_string());
