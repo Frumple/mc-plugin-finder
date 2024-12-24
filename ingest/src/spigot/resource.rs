@@ -8,7 +8,7 @@ use deadpool_postgres::Pool;
 use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
@@ -351,7 +351,8 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
       - "Foo- Bar"  => "Foo| Bar"
       - "Foo _Bar"  => "Foo |Bar"
       - "Foo-Bar" or "Foo_Bar" will remain unchanged.
-    4. Remove discount text such as "SALE" and "OFF" so that it does not get matched in the regex.
+    4. Remove abandonment text such as "abandoned", "discontinued", "deprecated", and "outdated" (lowercase or uppercase) so that it does not get included in the resource name.
+    5. Remove discount text such as "SALE" and "OFF" (uppercase only) so that it does get included in the resource name.
 
     Name extraction step:
     A regex will then find the first alphabetical word(s) (that may be in between `|`, `-`, `_`, or other separators), and assume that is the actual name.
@@ -381,6 +382,7 @@ fn parse_resource_name(name: &str) -> Option<String> {
     let mut preprocessed_text = replace_emoji_with_separators(name);
     preprocessed_text = replace_brackets_and_bracket_contents_with_separators(&preprocessed_text);
     preprocessed_text = replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(&preprocessed_text);
+    preprocessed_text = remove_abandonment_text(&preprocessed_text);
     preprocessed_text = remove_discount_text(&preprocessed_text);
 
     let parsed_name = extract_resource_name(&preprocessed_text);
@@ -411,6 +413,17 @@ static DASHES_AND_UNDERSCORES_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::n
 fn replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(input: &str) -> String {
     let re = &*DASHES_AND_UNDERSCORES_REGEX;
     re.replace_all(input, "|").into_owned()
+}
+
+static ABANDONMENT_REGEX: LazyLock<Regex> = LazyLock::new(||
+    RegexBuilder::new(r"abandoned|discontinued|deprecated|outdated")
+    .case_insensitive(true)
+    .build()
+    .unwrap());
+
+fn remove_abandonment_text(input: &str) -> String {
+    let re = &*ABANDONMENT_REGEX;
+    re.replace_all(input, "").into_owned()
 }
 
 static DISCOUNT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"SALE|OFF").unwrap());
@@ -544,6 +557,27 @@ mod test {
     #[case::round_brackets_space_word("(1.8.8 - 1.20.4) Foo", "Foo")]
     #[case::word_round_brackets("Foo(1.8.8 - 1.20.4)", "Foo")]
     #[case::word_space_round_brackets("Foo (1.8.8 - 1.20.4)", "Foo")]
+
+    // Abandonment words are removed
+    #[case::lowercase_abandoned_word("abandoned Foo", "Foo")]
+    #[case::uppercase_abandoned_word("ABANDONED Foo", "Foo")]
+    #[case::word_lowercase_abandoned("Foo abandoned", "Foo")]
+    #[case::word_uppercase_abandoned("Foo ABANDONED", "Foo")]
+
+    #[case::lowercase_discontinued_word("discontinued Foo", "Foo")]
+    #[case::uppercase_discontinued_word("DISCONTINUED Foo", "Foo")]
+    #[case::word_lowercase_discontinued("Foo discontinued", "Foo")]
+    #[case::word_uppercase_discontinued("Foo DISCONTINUED", "Foo")]
+
+    #[case::lowercase_deprecated_word("deprecated Foo", "Foo")]
+    #[case::uppercase_deprecated_word("DEPRECATED Foo", "Foo")]
+    #[case::word_lowercase_deprecated("Foo deprecated", "Foo")]
+    #[case::word_uppercase_deprecated("Foo DEPRECATED", "Foo")]
+
+    #[case::lowercase_outdated_word("outdated Foo", "Foo")]
+    #[case::uppercase_outdated_word("OUTDATED Foo", "Foo")]
+    #[case::word_lowercase_outdated("Foo outdated", "Foo")]
+    #[case::word_uppercase_outdated("Foo OUTDATED", "Foo")]
 
     // Discount words are removed
     #[case::discount_sale_word("25% SALE Foo", "Foo")]
