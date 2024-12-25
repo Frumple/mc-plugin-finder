@@ -1,4 +1,4 @@
---: SearchResultEntity(latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SearchResultEntity(latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_abandoned?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_avatar_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! search_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit, offset) : SearchResultEntity
 SELECT
@@ -76,6 +76,7 @@ SELECT
   (CASE WHEN :spigot IS TRUE THEN spigot_author ELSE NULL END) AS spigot_author,
   (CASE WHEN :spigot IS TRUE THEN spigot_version ELSE NULL END) AS spigot_version,
   (CASE WHEN :spigot IS TRUE THEN spigot_premium ELSE NULL END) AS spigot_premium,
+  (CASE WHEN :spigot IS TRUE THEN spigot_abandoned ELSE NULL END) AS spigot_abandoned,
   (CASE WHEN :spigot IS TRUE THEN spigot_icon_data ELSE NULL END) AS spigot_icon_data,
 
   (CASE WHEN :modrinth IS TRUE THEN modrinth_id ELSE NULL END) AS modrinth_id,

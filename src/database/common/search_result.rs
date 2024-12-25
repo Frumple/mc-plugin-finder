@@ -125,6 +125,7 @@ impl From<SearchResultEntity> for SearchResult {
             author: entity.spigot_author.expect("Spigot author should not be None"),
             version: entity.spigot_version,
             premium: entity.spigot_premium.expect("Spigot premium should not be None"),
+            abandoned: entity.spigot_abandoned.expect("Spigot abandoned should not be None"),
             icon_data: entity.spigot_icon_data
         });
 
@@ -186,6 +187,7 @@ pub struct SearchResultSpigot {
     pub author: String,
     pub version: Option<String>,
     pub premium: bool,
+    pub abandoned: bool,
     pub icon_data: Option<String>
 }
 

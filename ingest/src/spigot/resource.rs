@@ -98,6 +98,13 @@ pub struct IncomingSpigotResource {
     source_code_link: Option<String>,
 }
 
+impl IncomingSpigotResource {
+    fn is_abandoned(&self) -> bool {
+        let re = &*ABANDONMENT_REGEX;
+        re.is_match(&self.name)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct IncomingSpigotResourceNestedIcon {
     url: String,
@@ -271,9 +278,10 @@ impl<T> PageTurner<GetSpigotResourcesRequest> for SpigotClient<T> where T: HttpS
 async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, version_name: &Option<String>) -> Result<SpigotResource> {
     let resource_id = incoming_resource.id;
 
-    if let Some(file) = incoming_resource.file {
+    if let Some(ref file) = incoming_resource.file {
         if let Some(slug) = extract_slug_from_file_download_url(&file.url) {
             let parsed_name = parse_resource_name(&incoming_resource.name);
+            let abandoned = incoming_resource.is_abandoned();
 
             let mut resource = SpigotResource {
                 id: incoming_resource.id,
@@ -283,20 +291,29 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                 slug,
                 date_created: OffsetDateTime::from_unix_timestamp(incoming_resource.release_date)?,
                 date_updated: OffsetDateTime::from_unix_timestamp(incoming_resource.update_date)?,
+
                 // "testedVersions" may not exist in the API response, default to an empty vec if this is the case.
                 // Assume that the last entry in the given list of versions from the API is the latest version.
                 latest_minecraft_version: incoming_resource.tested_versions.unwrap_or_default().last().cloned(),
                 downloads: incoming_resource.downloads,
+
                 // "likes" may not exist in the API response, default to 0 if this is the case.
                 likes: incoming_resource.likes.unwrap_or_default(),
+
                 author_id: incoming_resource.author.id,
                 version_id: incoming_resource.version.id,
                 version_name: version_name.clone(),
+
                 // "premium" may not exist in the API response, default to false if this is the case.
                 premium: incoming_resource.premium.unwrap_or_default(),
+
+                // "abandoned" is true if the resource name contains a keyword that indicates abandonment.
+                abandoned,
+
                 // "icon" may not exist in the API response, set "icon_url" and "icon_data" to None if this is the case.
                 icon_url: incoming_resource.icon.as_ref().map(|icon| icon.url.clone()),
                 icon_data: incoming_resource.icon.map(|icon| icon.data),
+
                 source_url: incoming_resource.source_code_link.clone(),
                 source_repository: None
             };
@@ -318,7 +335,7 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
             Err(
                 ConvertIncomingSpigotResourceError::InvalidSlugFromURL {
                     resource_id,
-                    url: file.url
+                    url: file.url.clone()
                 }.into()
             )
         }
@@ -708,6 +725,7 @@ mod test {
             version_id: 1,
             version_name: Some(version_name.to_string()),
             premium: false,
+            abandoned: false,
             icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
             icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
             source_url: Some("https://github.com/alice/foo".to_string()),

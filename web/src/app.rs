@@ -20,6 +20,7 @@ const USE_IMAGEPROXY: bool = true;
 const IMAGEPROXY_URL_PREFIX: &str = "https://img.mcpluginfinder.com/75,fit";
 
 const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
+const ABANDONED_IMAGE_URL: &str = "images/abandoned.svg";
 const PREMIUM_IMAGE_URL: &str = "images/premium.svg";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
@@ -203,6 +204,7 @@ pub struct WebSearchResultSpigot {
     pub author: String,
     pub version: Option<String>,
     pub premium: bool,
+    pub abandoned: bool,
     pub icon_data: Option<String>
 }
 
@@ -237,6 +239,7 @@ impl From<SearchResultSpigot> for WebSearchResultSpigot {
             author: s.author,
             version: s.version,
             premium: s.premium,
+            abandoned: s.abandoned,
             icon_data: s.icon_data,
         }
     }
@@ -882,6 +885,8 @@ fn SpigotResourceInner(
     spigot: WebSearchResultSpigot
 ) -> impl IntoView {
     let is_spigot_premium = spigot.premium;
+    let is_spigot_abandoned = spigot.abandoned;
+
     let spigot_name = spigot.name.clone();
     let spigot_url = spigot.url();
     let spigot_icon_img_url = spigot.icon_img_url();
@@ -895,8 +900,11 @@ fn SpigotResourceInner(
             <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
+                    <Show when=move || { is_spigot_abandoned }>
+                        <img class="search-row__plugin-abandoned" src=ABANDONED_IMAGE_URL title="Abandoned Plugin" alt="Warning icon indicating that this plugin has been abandoned by the developer" loading="lazy" />
+                    </Show>
                     <Show when=move || { is_spigot_premium }>
-                        <img class="search-row__plugin-premium" src=PREMIUM_IMAGE_URL title="Premium Plugin (requires Spigot login)" alt="Dollar sign icon indicating this plugin is premium on Spigot" loading="lazy" />
+                        <img class="search-row__plugin-premium" src=PREMIUM_IMAGE_URL title="Premium Plugin (requires Spigot login)" alt="Dollar sign icon indicating this plugin requires payment to download" loading="lazy" />
                     </Show>
                     <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
                     <span>"  "</span>
