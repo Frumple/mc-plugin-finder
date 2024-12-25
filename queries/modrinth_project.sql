@@ -1,8 +1,8 @@
---: ModrinthProjectEntity(latest_minecraft_version?, version_id?, version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: ModrinthProjectEntity(latest_minecraft_version?, version_id?, version_name?, icon_url?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
---! upsert_modrinth_project (latest_minecraft_version?, version_id?, version_name?, icon_url?, monetization_status?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO modrinth_project (id, slug, name, description, author, date_created, date_updated, latest_minecraft_version, downloads, follows, version_id, version_name, icon_url, monetization_status, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:id, :slug, :name, :description, :author, :date_created, :date_updated, :latest_minecraft_version, :downloads, :follows, :version_id, :version_name, :icon_url, :monetization_status, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
+--! upsert_modrinth_project (latest_minecraft_version?, version_id?, version_name?, icon_url?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+INSERT INTO modrinth_project (id, slug, name, description, author, date_created, date_updated, latest_minecraft_version, downloads, follows, version_id, version_name, status, icon_url, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:id, :slug, :name, :description, :author, :date_created, :date_updated, :latest_minecraft_version, :downloads, :follows, :version_id, :version_name, :status, :icon_url, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT(id)
   DO UPDATE SET
     id = EXCLUDED.id,
@@ -17,8 +17,8 @@ INSERT INTO modrinth_project (id, slug, name, description, author, date_created,
     follows = EXCLUDED.follows,
     version_id = EXCLUDED.version_id,
     version_name = EXCLUDED.version_name,
+    status = EXCLUDED.status,
     icon_url = EXCLUDED.icon_url,
-    monetization_status = EXCLUDED.monetization_status,
     source_url = EXCLUDED.source_url,
     source_repository_host = EXCLUDED.source_repository_host,
     source_repository_owner = EXCLUDED.source_repository_owner,

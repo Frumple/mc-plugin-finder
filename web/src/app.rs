@@ -253,6 +253,7 @@ pub struct WebSearchResultModrinth {
     pub description: String,
     pub author: String,
     pub version: Option<String>,
+    pub status: String,
     pub icon_url: Option<String>
 }
 
@@ -278,6 +279,10 @@ impl WebSearchResultModrinth {
     fn icon_alt_text(&self) -> Option<String> {
         alt_text(&Some(self.name.clone()), "Modrinth")
     }
+
+    fn is_archived(&self) -> bool {
+        self.status == "archived"
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -290,6 +295,7 @@ impl From<SearchResultModrinth> for WebSearchResultModrinth {
             description: m.description,
             author: m.author,
             version: m.version,
+            status: m.status,
             icon_url: m.icon_url,
         }
     }
@@ -359,7 +365,7 @@ impl WebSearchResultSourceRepository {
         format!("https://{}/<wbr>{}/<wbr>{}", self.host, self.owner, self.name)
     }
 
-    fn source_img_attributes(&self, project_name: &Option<String>) -> ImgAttributes {
+    fn img_attributes(&self, project_name: &Option<String>) -> ImgAttributes {
         match self.host.as_str() {
             "github.com" => ImgAttributes {
                 src: Some("images/github-logo.svg".to_string()),
@@ -884,36 +890,36 @@ fn HangarProjectOuter(
 fn SpigotResourceInner(
     spigot: WebSearchResultSpigot
 ) -> impl IntoView {
-    let is_spigot_premium = spigot.premium;
-    let is_spigot_abandoned = spigot.abandoned;
+    let is_premium = spigot.premium;
+    let is_abandoned = spigot.abandoned;
 
-    let spigot_name = spigot.name.clone();
-    let spigot_url = spigot.url();
-    let spigot_icon_img_url = spigot.icon_img_url();
-    let spigot_icon_alt_text = spigot.icon_alt_text();
-    let spigot_version = spigot.version;
-    let spigot_author = spigot.author;
-    let spigot_description = spigot.description;
+    let name = spigot.name.clone();
+    let url = spigot.url();
+    let icon_img_url = spigot.icon_img_url();
+    let icon_alt_text = spigot.icon_alt_text();
+    let version = spigot.version;
+    let author = spigot.author;
+    let description = spigot.description;
 
     view! {
-        <a class="search-row__spigot-link" href=spigot_url.clone() target="_blank">
-            <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() width="75" height="75" loading="lazy" />
+        <a class="search-row__spigot-link" href=url.clone() target="_blank">
+            <img class="search-row__image" src=icon_img_url.clone() title=name.clone() alt=icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
-                    <Show when=move || { is_spigot_abandoned }>
+                    <Show when=move || { is_abandoned }>
                         <img class="search-row__plugin-abandoned" src=ABANDONED_IMAGE_URL title="Abandoned Plugin" alt="Warning icon indicating that this plugin has been abandoned by the developer" width="24" height="24" loading="lazy" />
                     </Show>
-                    <Show when=move || { is_spigot_premium }>
+                    <Show when=move || { is_premium }>
                         <img class="search-row__plugin-premium" src=PREMIUM_IMAGE_URL title="Premium Plugin (requires Spigot login)" alt="Dollar sign icon indicating this plugin requires payment to download" width="24" height="24" loading="lazy" />
                     </Show>
-                    <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
+                    <h3 class="search-row__plugin-name">{name.clone()}</h3>
                     <span>"  "</span>
-                    <span class="search-row__plugin-version">{spigot_version.clone()}</span>
+                    <span class="search-row__plugin-version">{version.clone()}</span>
                     <span>" by "</span>
-                    <span class="search-row__plugin-author">{spigot_author.clone()}</span>
+                    <span class="search-row__plugin-author">{author.clone()}</span>
                 </div>
                 <div class="search-row__cell-description">
-                    {spigot_description.clone()}
+                    {description.clone()}
                 </div>
             </div>
         </a>
@@ -926,27 +932,32 @@ fn ModrinthProjectInner(
     /// The Modrinth portion of the search result
     modrinth: WebSearchResultModrinth
 ) -> impl IntoView {
-    let modrinth_name = modrinth.name.clone();
-    let modrinth_url = modrinth.url();
-    let modrinth_icon_img_url = modrinth.icon_img_url();
-    let modrinth_icon_alt_text = modrinth.icon_alt_text();
-    let modrinth_version = modrinth.version;
-    let modrinth_author = modrinth.author;
-    let modrinth_description = modrinth.description;
+    let is_archived = modrinth.is_archived();
+
+    let name = modrinth.name.clone();
+    let url = modrinth.url();
+    let icon_img_url = modrinth.icon_img_url();
+    let icon_alt_text = modrinth.icon_alt_text();
+    let version = modrinth.version;
+    let author = modrinth.author;
+    let description = modrinth.description;
 
     view! {
-        <a class="search-row__modrinth-link" href=modrinth_url.clone() target="_blank">
-            <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() width="75" height="75" loading="lazy" />
+        <a class="search-row__modrinth-link" href=url.clone() target="_blank">
+            <img class="search-row__image" src=icon_img_url.clone() title=name.clone() alt=icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
-                    <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
+                    <Show when=move || { is_archived }>
+                        <img class="search-row__plugin-abandoned" src=ABANDONED_IMAGE_URL title="Archived Plugin" alt="Warning icon indicating that this plugin has been archived by the developer" width="24" height="24" loading="lazy" />
+                    </Show>
+                    <h3 class="search-row__plugin-name">{name.clone()}</h3>
                     <span>" "</span>
-                    <span class="search-row__plugin-version">{modrinth_version.clone()}</span>
+                    <span class="search-row__plugin-version">{version.clone()}</span>
                     <span>" by "</span>
-                    <span class="search-row__plugin-author">{modrinth_author.clone()}</span>
+                    <span class="search-row__plugin-author">{author.clone()}</span>
                 </div>
                 <div class="search-row__cell-description">
-                    {modrinth_description.clone()}
+                    {description.clone()}
                 </div>
             </div>
         </a>
@@ -959,27 +970,27 @@ fn HangarProjectInner(
     /// The Hangar portion of the search result
     hangar: WebSearchResultHangar
 ) -> impl IntoView {
-    let hangar_name = hangar.name.clone();
-    let hangar_url = hangar.url();
-    let hangar_icon_img_url = hangar.icon_img_url();
-    let hangar_icon_alt_text = hangar.icon_alt_text();
-    let hangar_version = hangar.version;
-    let hangar_author = hangar.author;
-    let hangar_description = hangar.description;
+    let name = hangar.name.clone();
+    let url = hangar.url();
+    let icon_img_url = hangar.icon_img_url();
+    let icon_alt_text = hangar.icon_alt_text();
+    let version = hangar.version;
+    let author = hangar.author;
+    let description = hangar.description;
 
     view! {
-        <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
-            <img class="search-row__image" src=hangar_icon_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() width="75" height="75" loading="lazy" />
+        <a class="search-row__hangar-link" href=url.clone() target="_blank">
+            <img class="search-row__image" src=icon_img_url.clone() title=name.clone() alt=icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
-                    <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
+                    <h3 class="search-row__plugin-name">{name.clone()}</h3>
                     <span>" "</span>
-                    <span class="search-row__plugin-version">{hangar_version.clone()}</span>
+                    <span class="search-row__plugin-version">{version.clone()}</span>
                     <span>" by "</span>
-                    <span class="search-row__plugin-author">{hangar_author.clone()}</span>
+                    <span class="search-row__plugin-author">{author.clone()}</span>
                 </div>
                 <div class="search-row__cell-description">
-                    {hangar_description.clone()}
+                    {description.clone()}
                 </div>
             </div>
         </a>
@@ -994,15 +1005,15 @@ fn SourceRepository(
     /// The name of the project
     project_name: Option<String>
 ) -> impl IntoView {
-    let source_repository_url = repo.url();
-    let source_repository_url_wbr = repo.url_wbr();
-    let source_img_attributes = repo.source_img_attributes(&project_name);
+    let url = repo.url();
+    let url_wbr = repo.url_wbr();
+    let img_attributes = repo.img_attributes(&project_name);
 
     view! {
-        <a class="search-row__source-link" href=source_repository_url.clone() target="_blank">
-            <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() width="75" height="75" loading="lazy" />
+        <a class="search-row__source-link" href=url.clone() target="_blank">
+            <img class="search-row__image" src=img_attributes.src.clone() title=img_attributes.title.clone() alt=img_attributes.alt.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__source-text-contents">
-                <div class="search-row__cell-title" inner_html=source_repository_url_wbr.clone()>
+                <div class="search-row__cell-title" inner_html=url_wbr.clone()>
                 </div>
             </div>
         </a>

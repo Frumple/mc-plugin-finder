@@ -86,6 +86,7 @@ pub struct IncomingModrinthProject {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GetModrinthProjectResponse {
+    status: String,
     source_url: Option<String>
 }
 
@@ -169,11 +170,11 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
             }
         }
 
-        let source_result = self.get_project_source_url_from_api(&project_id).await;
+        let project_result = self.get_project_from_api(&project_id).await;
 
-        match source_result {
-            Ok(source_url) => {
-                let convert_result = convert_incoming_project(incoming_project, &source_url, &version_name).await;
+        match project_result {
+            Ok(project_response) => {
+                let convert_result = convert_incoming_project(incoming_project, &project_response, &version_name).await;
 
                 match convert_result {
                     Ok(project) => {
@@ -223,7 +224,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         level = "debug",
         skip(self)
     )]
-    async fn get_project_source_url_from_api(&self, id: &str) -> Result<Option<String>> {
+    async fn get_project_from_api(&self, id: &str) -> Result<GetModrinthProjectResponse> {
         self.rate_limiter.until_ready().await;
 
         let path = &["project/", id].concat();
@@ -236,7 +237,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         match status {
             StatusCode::OK => {
                 let response: GetModrinthProjectResponse = raw_response.json().await?;
-                Ok(response.source_url)
+                Ok(response)
             }
             StatusCode::NOT_FOUND => {
                 Err(
@@ -273,7 +274,7 @@ impl<T> PageTurner<SearchModrinthProjectsRequest> for ModrinthClient<T> where T:
     }
 }
 
-async fn convert_incoming_project(incoming_project: IncomingModrinthProject, source_url: &Option<String>, version_name: &Option<String>) -> Result<ModrinthProject> {
+async fn convert_incoming_project(incoming_project: IncomingModrinthProject, project_response: &GetModrinthProjectResponse, version_name: &Option<String>) -> Result<ModrinthProject> {
     let project_id = incoming_project.project_id;
     let latest_minecraft_version = filter_mainline_minecraft_versions(incoming_project.versions.last().cloned());
 
@@ -291,13 +292,13 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, sou
         follows: incoming_project.follows,
         version_id: incoming_project.latest_version,
         version_name: version_name.clone(),
+        status: project_response.status.clone(),
         icon_url: incoming_project.icon_url,
-        monetization_status: incoming_project.monetization_status,
-        source_url: source_url.clone(),
+        source_url: project_response.source_url.clone(),
         source_repository: None
     };
 
-    if let Some(url) = source_url {
+    if let Some(url) = &project_response.source_url {
         let option_repo = extract_source_repository_from_url(url.as_str());
 
         if let Some(repo) = option_repo {
@@ -369,17 +370,17 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_get_project_source_url_from_api() -> Result<()> {
+    async fn should_get_project_from_api() -> Result<()> {
         // Arrange
         let modrinth_server = ModrinthTestServer::new().await;
 
-        let expected_source_url = "https://github.com/Frumple/foo";
         let expected_response = GetModrinthProjectResponse {
-            source_url: Some(expected_source_url.to_string())
+            status: "approved".to_string(),
+            source_url: Some("https://github.com/alice/foo".to_string())
         };
 
         let response_template = ResponseTemplate::new(200)
-            .set_body_json(expected_response);
+            .set_body_json(expected_response.clone());
 
         let project_id = "aaaaaaaa";
         let request_path = &["project/", project_id].concat();
@@ -391,10 +392,10 @@ mod test {
 
         // Act
         let modrinth_client = ModrinthClient::new(modrinth_server)?;
-        let source_url = modrinth_client.get_project_source_url_from_api(project_id).await;
+        let project_result = modrinth_client.get_project_from_api(project_id).await;
 
         // Assert
-        assert_that(&source_url).is_ok().is_some().is_equal_to(expected_source_url.to_string());
+        assert_that(&project_result).is_ok().is_equal_to(expected_response);
 
         Ok(())
     }
@@ -403,11 +404,14 @@ mod test {
     async fn should_process_incoming_project() -> Result<()> {
         // Arrange
         let incoming_project = create_test_modrinth_projects()[0].clone();
-        let source_url = "https://github.com/alice/foo";
+        let project_response = GetModrinthProjectResponse {
+            status: "approved".to_string(),
+            source_url: Some("https://github.com/alice/foo".to_string())
+        };
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
 
         // Assert
         let expected_project = ModrinthProject {
@@ -423,9 +427,9 @@ mod test {
             follows: 200,
             version_id: Some("aaaa1111".to_string()),
             version_name: Some(version_name.to_string()),
+            status: project_response.status,
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
-            monetization_status: None,
-            source_url: Some(source_url.to_string()),
+            source_url: project_response.source_url,
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
                 owner: "alice".to_string(),
@@ -443,11 +447,14 @@ mod test {
         // Arrange
         let mut incoming_project = create_test_modrinth_projects()[0].clone();
         incoming_project.versions = vec!["1.21.2".to_string(), "1.21.3".to_string(), "24w46a".to_string()];
-        let source_url = "https://github.com/alice/foo";
+        let project_response = GetModrinthProjectResponse {
+            status: "approved".to_string(),
+            source_url: Some("https://github.com/alice/foo".to_string())
+        };
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&project.latest_minecraft_version).is_none();
@@ -460,11 +467,14 @@ mod test {
         // Arrange
         let mut incoming_project = create_test_modrinth_projects()[0].clone();
         incoming_project.versions = vec!["b1.7.3".to_string()];
-        let source_url = "https://github.com/alice/foo";
+        let project_response = GetModrinthProjectResponse {
+            status: "approved".to_string(),
+            source_url: Some("https://github.com/alice/foo".to_string())
+        };
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &Some(source_url.to_string()), &Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&project.latest_minecraft_version).is_none();

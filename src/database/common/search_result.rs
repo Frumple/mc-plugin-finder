@@ -136,6 +136,7 @@ impl From<SearchResultEntity> for SearchResult {
             description: entity.modrinth_description.expect("Modrinth description should not be None"),
             author: entity.modrinth_author.expect("Modrinth author should not be None"),
             version: entity.modrinth_version,
+            status: entity.modrinth_status.expect("Modrinth status should not be None"),
             icon_url: entity.modrinth_icon_url
         });
 
@@ -199,6 +200,7 @@ pub struct SearchResultModrinth {
     pub description: String,
     pub author: String,
     pub version: Option<String>,
+    pub status: String,
     pub icon_url: Option<String>,
 }
 

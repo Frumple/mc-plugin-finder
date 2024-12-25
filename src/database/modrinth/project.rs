@@ -22,8 +22,8 @@ pub struct ModrinthProject {
     pub follows: i32,
     pub version_id: Option<String>,
     pub version_name: Option<String>,
+    pub status: String,
     pub icon_url: Option<String>,
-    pub monetization_status: Option<String>,
     pub source_url: Option<String>,
     pub source_repository: Option<SourceRepository>
 }
@@ -53,8 +53,8 @@ impl From<ModrinthProject> for UpsertModrinthProjectParams<String, String, Strin
             follows: project.follows,
             version_id: project.version_id,
             version_name: project.version_name,
+            status: project.status,
             icon_url: project.icon_url,
-            monetization_status: project.monetization_status,
             source_url: project.source_url,
             source_repository_host,
             source_repository_owner,
@@ -90,8 +90,8 @@ impl From<ModrinthProjectEntity> for ModrinthProject {
             follows: entity.follows,
             version_id: entity.version_id,
             version_name: entity.version_name,
+            status: entity.status,
             icon_url: entity.icon_url,
-            monetization_status: entity.monetization_status,
             source_url: entity.source_url,
             source_repository
         }
@@ -209,8 +209,8 @@ pub mod test {
             follows: 200,
             version_id: Some("aaaa2222".to_string()),
             version_name: Some("v2.3.4".to_string()),
+            status: "archived".to_string(),
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
-            monetization_status: None,
             source_url: Some("https://github.com/alice/foo-updated".to_string()),
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
@@ -288,8 +288,8 @@ pub mod test {
                 follows: 200,
                 version_id: Some("aaaa1111".to_string()),
                 version_name: Some("v1.2.3".to_string()),
+                status: "approved".to_string(),
                 icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
-                monetization_status: None,
                 source_url: Some("https://github.com/alice/foo".to_string()),
                 source_repository: Some(SourceRepository {
                     host: "github.com".to_string(),
@@ -310,8 +310,8 @@ pub mod test {
                 follows: 300,
                 version_id: Some("bbbb1111".to_string()),
                 version_name: Some("v1.2.3".to_string()),
+                status: "approved".to_string(),
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
-                monetization_status: None,
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
                 source_repository: Some(SourceRepository {
                     host: "gitlab.com".to_string(),
@@ -332,8 +332,8 @@ pub mod test {
                 follows: 100,
                 version_id: Some("cccc1111".to_string()),
                 version_name: Some("v1.2.3".to_string()),
+                status: "approved".to_string(),
                 icon_url: Some("https://cdn.modrinth.com/data/cccccccc/icon.png".to_string()),
-                monetization_status: None,
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
                 source_repository: Some(SourceRepository {
                     host: "bitbucket.org".to_string(),
