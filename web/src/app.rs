@@ -623,22 +623,22 @@ fn SearchResults(
 
                                     view! {
                                         <div class="search-results__header-row">
-                                            <h4 class="search-results__created-header">Created</h4>
-                                            <h4 class="search-results__updated-header">Updated</h4>
-                                            <h4 class="search-results__latest-minecraft-version-header">Latest MC Version</h4>
-                                            <h4 class="search-results__downloads-header">Downloads</h4>
-                                            <h4 class="search-results__likes-and-stars-header">Likes + Stars</h4>
-                                            <h4 class="search-results__follows-and-watchers-header">Follows + Watchers</h4>
+                                            <h2 class="search-results__created-header">Created</h2>
+                                            <h2 class="search-results__updated-header">Updated</h2>
+                                            <h2 class="search-results__latest-minecraft-version-header">Latest MC Version</h2>
+                                            <h2 class="search-results__downloads-header">Downloads</h2>
+                                            <h2 class="search-results__likes-and-stars-header">Likes + Stars</h2>
+                                            <h2 class="search-results__follows-and-watchers-header">Follows + Watchers</h2>
                                             <Show when=move || { show_spigot }>
-                                                <h3 class="search-results__spigot-header">Spigot</h3>
+                                                <h2 class="search-results__spigot-header">Spigot</h2>
                                             </Show>
                                             <Show when=move || { show_modrinth }>
-                                                <h3 class="search-results__modrinth-header">Modrinth</h3>
+                                                <h2 class="search-results__modrinth-header">Modrinth</h2>
                                             </Show>
                                             <Show when=move || { show_hangar }>
-                                                <h3 class="search-results__hangar-header">Hangar</h3>
+                                                <h2 class="search-results__hangar-header">Hangar</h2>
                                             </Show>
-                                            <h3 class="search-results__source-header">Source Code</h3>
+                                            <h2 class="search-results__source-header">Source Code</h2>
                                         </div>
                                     }
                                 })

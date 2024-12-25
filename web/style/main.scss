@@ -146,6 +146,7 @@ body {
 
 .search-results__stat-header {
 	@extend .search-results__stat-column;
+	font-size: medium;
 	display: flex;
 	align-items: center;
 	margin: 0;
@@ -153,6 +154,7 @@ body {
 
 .search-results__main-header {
 	@extend .search-results__main-column;
+	font-size: large;
 	display: flex;
 	justify-content: center;
 	align-items: center;
