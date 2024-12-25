@@ -768,7 +768,7 @@ fn SearchRow(
     let date_updated = search_result.date_updated.format(&date_format);
     let time_updated = search_result.date_updated.format(&time_format);
 
-    let latest_minecraft_version = search_result.latest_minecraft_version.clone();
+    let latest_minecraft_version = search_result.latest_minecraft_version.clone().unwrap_or("N/A".to_string());
 
     let downloads = search_result.downloads_formatted();
     let likes_and_stars = search_result.likes_and_stars_formatted();
