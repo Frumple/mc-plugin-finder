@@ -897,14 +897,14 @@ fn SpigotResourceInner(
 
     view! {
         <a class="search-row__spigot-link" href=spigot_url.clone() target="_blank">
-            <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() loading="lazy" />
+            <img class="search-row__image" src=spigot_icon_img_url.clone() title=spigot_name.clone() alt=spigot_icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
                     <Show when=move || { is_spigot_abandoned }>
-                        <img class="search-row__plugin-abandoned" src=ABANDONED_IMAGE_URL title="Abandoned Plugin" alt="Warning icon indicating that this plugin has been abandoned by the developer" loading="lazy" />
+                        <img class="search-row__plugin-abandoned" src=ABANDONED_IMAGE_URL title="Abandoned Plugin" alt="Warning icon indicating that this plugin has been abandoned by the developer" width="24" height="24" loading="lazy" />
                     </Show>
                     <Show when=move || { is_spigot_premium }>
-                        <img class="search-row__plugin-premium" src=PREMIUM_IMAGE_URL title="Premium Plugin (requires Spigot login)" alt="Dollar sign icon indicating this plugin requires payment to download" loading="lazy" />
+                        <img class="search-row__plugin-premium" src=PREMIUM_IMAGE_URL title="Premium Plugin (requires Spigot login)" alt="Dollar sign icon indicating this plugin requires payment to download" width="24" height="24" loading="lazy" />
                     </Show>
                     <h3 class="search-row__plugin-name">{spigot_name.clone()}</h3>
                     <span>"  "</span>
@@ -936,7 +936,7 @@ fn ModrinthProjectInner(
 
     view! {
         <a class="search-row__modrinth-link" href=modrinth_url.clone() target="_blank">
-            <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() loading="lazy" />
+            <img class="search-row__image" src=modrinth_icon_img_url.clone() title=modrinth_name.clone() alt=modrinth_icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
                     <h3 class="search-row__plugin-name">{modrinth_name.clone()}</h3>
@@ -969,7 +969,7 @@ fn HangarProjectInner(
 
     view! {
         <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
-            <img class="search-row__image" src=hangar_icon_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
+            <img class="search-row__image" src=hangar_icon_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
                     <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>
@@ -1000,7 +1000,7 @@ fn SourceRepository(
 
     view! {
         <a class="search-row__source-link" href=source_repository_url.clone() target="_blank">
-            <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() loading="lazy" />
+            <img class="search-row__image" src=source_img_attributes.src.clone() title=source_img_attributes.title.clone() alt=source_img_attributes.alt.clone() width="75" height="75" loading="lazy" />
             <div class="search-row__source-text-contents">
                 <div class="search-row__cell-title" inner_html=source_repository_url_wbr.clone()>
                 </div>
