@@ -21,8 +21,6 @@ use tracing::{info, warn, instrument};
 
 const MODRINTH_PROJECTS_REQUESTS_AHEAD: usize = 2;
 
-static MINECRAFT_VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+(\.\d)?(-pre\d+|-rc\d+)?$").unwrap());
-
 #[derive(Clone, Debug, Serialize)]
 struct SearchModrinthProjectsRequest {
     facets: String,
@@ -276,7 +274,7 @@ impl<T> PageTurner<SearchModrinthProjectsRequest> for ModrinthClient<T> where T:
 
 async fn convert_incoming_project(incoming_project: IncomingModrinthProject, project_response: &GetModrinthProjectResponse, version_name: &Option<String>) -> Result<ModrinthProject> {
     let project_id = incoming_project.project_id;
-    let latest_minecraft_version = filter_mainline_minecraft_versions(incoming_project.versions.last().cloned());
+    let latest_minecraft_version = filter_release_minecraft_versions(incoming_project.versions.last().cloned());
 
     let mut project = ModrinthProject {
         id: project_id,
@@ -313,8 +311,10 @@ async fn convert_incoming_project(incoming_project: IncomingModrinthProject, pro
     Ok(project)
 }
 
-// Ignore snapshots and other versions like "b1.7.3" that can mess up the ordering of versions.
-fn filter_mainline_minecraft_versions(latest_minecraft_version: Option<String>) -> Option<String> {
+static MINECRAFT_VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+(\.\d)?$").unwrap());
+
+// Ignore pre-releases, release candidates, snapshots, and other versions like "b1.7.3" that can mess up the ordering of versions.
+fn filter_release_minecraft_versions(latest_minecraft_version: Option<String>) -> Option<String> {
     if let Some(ref version) = latest_minecraft_version {
         if MINECRAFT_VERSION_REGEX.is_match(version) {
             return latest_minecraft_version;
@@ -328,6 +328,7 @@ mod test {
     use super::*;
     use crate::modrinth::test::ModrinthTestServer;
 
+    use rstest::*;
     use speculoos::prelude::*;
     use time::macros::datetime;
     use wiremock::{Mock, ResponseTemplate};
@@ -443,30 +444,15 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_process_incoming_project_where_latest_minecraft_version_is_a_snapshot() -> Result<()> {
+    #[rstest]
+    #[case::beta("b1.7.3")]
+    #[case::snapshot("24w46a")]
+    #[case::prerelease("1.21.4-pre3")]
+    #[case::release_candidate("1.21.4-rc3")]
+    async fn should_process_incoming_project_where_latest_minecraft_version_is_not_release_version(#[case] version: &str) -> Result<()> {
         // Arrange
         let mut incoming_project = create_test_modrinth_projects()[0].clone();
-        incoming_project.versions = vec!["1.21.2".to_string(), "1.21.3".to_string(), "24w46a".to_string()];
-        let project_response = GetModrinthProjectResponse {
-            status: "approved".to_string(),
-            source_url: Some("https://github.com/alice/foo".to_string())
-        };
-        let version_name = "v1.2.3";
-
-        // Act
-        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
-
-        // Assert
-        assert_that(&project.latest_minecraft_version).is_none();
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn should_process_incoming_project_where_latest_minecraft_version_is_beta() -> Result<()> {
-        // Arrange
-        let mut incoming_project = create_test_modrinth_projects()[0].clone();
-        incoming_project.versions = vec!["b1.7.3".to_string()];
+        incoming_project.versions = vec![version.to_string()];
         let project_response = GetModrinthProjectResponse {
             status: "approved".to_string(),
             source_url: Some("https://github.com/alice/foo".to_string())
