@@ -654,7 +654,7 @@ fn SearchResults(
                                     }
                                     Ok(projects) => {
                                         if projects.is_empty() {
-                                            view! { <p>"No projects were found."</p> }.into_view()
+                                            view! { <div class="search_results__no-projects-found">"No projects were found."</div> }.into_view()
                                         } else {
                                             let full_count = projects[0].full_count;
 

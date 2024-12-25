@@ -199,6 +199,13 @@ body {
 	@extend .search-results__main-header;
 }
 
+.search_results__no-projects-found {
+	font-size: x-large;
+	font-weight: bold;
+	text-align: center;
+	margin: 10px;
+}
+
 .search-results__list {
 	margin: 0;
 	padding: 0 5px;
