@@ -302,7 +302,7 @@ pub struct WebSearchResultHangar {
     pub description: String,
     pub author: String,
     pub version: Option<String>,
-    pub avatar_url: String
+    pub icon_url: String
 }
 
 impl WebSearchResultHangar {
@@ -310,8 +310,8 @@ impl WebSearchResultHangar {
         Some(format!("https://hangar.papermc.io/{}/{}", self.author, self.slug))
     }
 
-    fn avatar_img_url(&self) -> String {
-        let url = self.avatar_url.clone();
+    fn icon_img_url(&self) -> String {
+        let url = self.icon_url.clone();
 
         if url.is_empty() {
             return NO_ICON_IMAGE_URL.to_string();
@@ -338,7 +338,7 @@ impl From<SearchResultHangar> for WebSearchResultHangar {
             description: h.description,
             author: h.author,
             version: h.version,
-            avatar_url: h.avatar_url,
+            icon_url: h.icon_url,
         }
     }
 }
@@ -961,7 +961,7 @@ fn HangarProjectInner(
 ) -> impl IntoView {
     let hangar_name = hangar.name.clone();
     let hangar_url = hangar.url();
-    let hangar_avatar_img_url = hangar.avatar_img_url();
+    let hangar_icon_img_url = hangar.icon_img_url();
     let hangar_icon_alt_text = hangar.icon_alt_text();
     let hangar_version = hangar.version;
     let hangar_author = hangar.author;
@@ -969,7 +969,7 @@ fn HangarProjectInner(
 
     view! {
         <a class="search-row__hangar-link" href=hangar_url.clone() target="_blank">
-            <img class="search-row__image" src=hangar_avatar_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
+            <img class="search-row__image" src=hangar_icon_img_url.clone() title=hangar_name.clone() alt=hangar_icon_alt_text.clone() loading="lazy" />
             <div class="search-row__text-contents">
                 <div class="search-row__cell-title">
                     <h3 class="search-row__plugin-name">{hangar_name.clone()}</h3>

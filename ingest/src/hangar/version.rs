@@ -315,7 +315,7 @@ pub mod test {
             stars: 200,
             watchers: 200,
             visibility: "public".to_string(),
-            avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+            icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
             version_name: None,
             source_url: Some("https://github.com/alice/foo".to_string()),
             source_repository: Some(SourceRepository {

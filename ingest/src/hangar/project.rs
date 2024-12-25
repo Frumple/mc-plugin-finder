@@ -257,7 +257,7 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, incom
         stars: incoming_project.stats.stars,
         watchers: incoming_project.stats.watchers,
         visibility: incoming_project.visibility,
-        avatar_url: incoming_project.avatar_url,
+        icon_url: incoming_project.avatar_url,
         version_name: None,
         source_url: source_code_link.clone(),
         source_repository: None
@@ -366,7 +366,7 @@ mod test {
                 stars: 200,
                 watchers: 200,
                 visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some(version_name.to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
                 source_repository: Some(SourceRepository {

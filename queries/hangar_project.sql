@@ -1,8 +1,8 @@
 --: HangarProjectEntity(latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 
 --! upsert_hangar_project (latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
-INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, latest_minecraft_version, downloads, stars, watchers, visibility, avatar_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
-  VALUES (:slug, :author, :name, :description, :date_created, :date_updated, :latest_minecraft_version, :downloads, :stars, :watchers, :visibility, :avatar_url, :version_name, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
+INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, latest_minecraft_version, downloads, stars, watchers, visibility, icon_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)
+  VALUES (:slug, :author, :name, :description, :date_created, :date_updated, :latest_minecraft_version, :downloads, :stars, :watchers, :visibility, :icon_url, :version_name, :source_url, :source_repository_host, :source_repository_owner, :source_repository_name)
   ON CONFLICT (slug)
   DO UPDATE SET
     author = EXCLUDED.author,
@@ -15,7 +15,7 @@ INSERT INTO hangar_project (slug, author, name, description, date_created, date_
     stars = EXCLUDED.stars,
     watchers = EXCLUDED.watchers,
     visibility = EXCLUDED.visibility,
-    avatar_url = EXCLUDED.avatar_url,
+    icon_url = EXCLUDED.icon_url,
     version_name = EXCLUDED.version_name,
     source_url = EXCLUDED.source_url,
     source_repository_host = EXCLUDED.source_repository_host,

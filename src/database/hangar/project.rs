@@ -21,7 +21,7 @@ pub struct HangarProject {
     pub stars: i32,
     pub watchers: i32,
     pub visibility: String,
-    pub avatar_url: String,
+    pub icon_url: String,
     pub version_name: Option<String>,
     pub source_url: Option<String>,
     pub source_repository: Option<SourceRepository>
@@ -51,7 +51,7 @@ impl From<HangarProject> for UpsertHangarProjectParams<String, String, String, S
             stars: project.stars,
             watchers: project.watchers,
             visibility: project.visibility,
-            avatar_url: project.avatar_url,
+            icon_url: project.icon_url,
             version_name: project.version_name,
             source_url: project.source_url,
             source_repository_host,
@@ -87,7 +87,7 @@ impl From<HangarProjectEntity> for HangarProject {
             stars: entity.stars,
             watchers: entity.watchers,
             visibility: entity.visibility,
-            avatar_url: entity.avatar_url,
+            icon_url: entity.icon_url,
             version_name: entity.version_name,
             source_url: entity.source_url,
             source_repository
@@ -205,7 +205,7 @@ pub mod test {
             stars: 200,
             watchers: 300,
             visibility: "public".to_string(),
-            avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+            icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
             version_name: Some("v2.3.4".to_string()),
             source_url: Some("https://github.com/alice/foo-updated".to_string()),
             source_repository: Some(SourceRepository {
@@ -283,7 +283,7 @@ pub mod test {
                 stars: 200,
                 watchers: 200,
                 visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://github.com/alice/foo".to_string()),
                 source_repository: Some(SourceRepository {
@@ -304,7 +304,7 @@ pub mod test {
                 stars: 100,
                 watchers: 300,
                 visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://gitlab.com/bob/bar".to_string()),
                 source_repository: Some(SourceRepository {
@@ -325,7 +325,7 @@ pub mod test {
                 stars: 300,
                 watchers: 100,
                 visibility: "public".to_string(),
-                avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
+                icon_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 version_name: Some("v1.2.3".to_string()),
                 source_url: Some("https://bitbucket.org/eve/baz".to_string()),
                 source_repository: Some(SourceRepository {

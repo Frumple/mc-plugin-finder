@@ -145,7 +145,7 @@ impl From<SearchResultEntity> for SearchResult {
             description: entity.hangar_description.expect("Hangar description should not be None"),
             author: entity.hangar_author.expect("Hangar author should not be None"),
             version: entity.hangar_version,
-            avatar_url: entity.hangar_avatar_url.expect("Hangar avatar url should not be None")
+            icon_url: entity.hangar_icon_url.expect("Hangar icon url should not be None")
         });
 
         let mut source_repository = None;
@@ -209,7 +209,7 @@ pub struct SearchResultHangar {
     pub description: String,
     pub author: String,
     pub version: Option<String>,
-    pub avatar_url: String
+    pub icon_url: String
 }
 
 #[instrument(
@@ -913,6 +913,6 @@ mod test {
         assert_that(&h.description).is_equal_to(&hangar_project.description);
         assert_that(&h.author).is_equal_to(&hangar_project.author);
         assert_that(&h.version).is_equal_to(&hangar_project.version_name);
-        assert_that(&h.avatar_url).is_equal_to(&hangar_project.avatar_url);
+        assert_that(&h.icon_url).is_equal_to(&hangar_project.icon_url);
     }
 }
