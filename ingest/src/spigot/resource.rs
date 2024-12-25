@@ -433,7 +433,7 @@ fn replace_dashes_and_underscores_adjacent_to_whitespace_with_separators(input: 
 }
 
 static ABANDONMENT_REGEX: LazyLock<Regex> = LazyLock::new(||
-    RegexBuilder::new(r"abandoned|discontinued|deprecated|outdated")
+    RegexBuilder::new(r"abandoned|archived|deprecated|discontinued|outdated")
     .case_insensitive(true)
     .build()
     .unwrap());
@@ -581,15 +581,20 @@ mod test {
     #[case::word_lowercase_abandoned("Foo abandoned", "Foo")]
     #[case::word_uppercase_abandoned("Foo ABANDONED", "Foo")]
 
-    #[case::lowercase_discontinued_word("discontinued Foo", "Foo")]
-    #[case::uppercase_discontinued_word("DISCONTINUED Foo", "Foo")]
-    #[case::word_lowercase_discontinued("Foo discontinued", "Foo")]
-    #[case::word_uppercase_discontinued("Foo DISCONTINUED", "Foo")]
+    #[case::lowercase_archived_word("archived Foo", "Foo")]
+    #[case::uppercase_archived_word("ARCHIVED Foo", "Foo")]
+    #[case::word_lowercase_archived("Foo archived", "Foo")]
+    #[case::word_uppercase_archived("Foo ARCHIVED", "Foo")]
 
     #[case::lowercase_deprecated_word("deprecated Foo", "Foo")]
     #[case::uppercase_deprecated_word("DEPRECATED Foo", "Foo")]
     #[case::word_lowercase_deprecated("Foo deprecated", "Foo")]
     #[case::word_uppercase_deprecated("Foo DEPRECATED", "Foo")]
+
+    #[case::lowercase_discontinued_word("discontinued Foo", "Foo")]
+    #[case::uppercase_discontinued_word("DISCONTINUED Foo", "Foo")]
+    #[case::word_lowercase_discontinued("Foo discontinued", "Foo")]
+    #[case::word_uppercase_discontinued("Foo DISCONTINUED", "Foo")]
 
     #[case::lowercase_outdated_word("outdated Foo", "Foo")]
     #[case::uppercase_outdated_word("OUTDATED Foo", "Foo")]
@@ -726,6 +731,54 @@ mod test {
             version_name: Some(version_name.to_string()),
             premium: false,
             abandoned: false,
+            icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
+            icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
+            source_url: Some("https://github.com/alice/foo".to_string()),
+            source_repository: Some(SourceRepository {
+                host: "github.com".to_string(),
+                owner: "alice".to_string(),
+                name: "foo".to_string()
+            })
+        };
+
+        assert_that(&resource).is_equal_to(expected_resource);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[rstest]
+    #[case::abandoned("ABANDONED foo-spigot")]
+    #[case::archived("ARCHIVED foo-spigot")]
+    #[case::deprecated("DEPRECATED foo-spigot")]
+    #[case::discontinued("DISCONTINUED foo-spigot")]
+    #[case::outdated("OUTDATED foo-spigot")]
+    async fn should_convert_incoming_abandoned_resource(#[case] resource_name: &str) -> Result<()> {
+        // Arrange
+        let mut incoming_resource = create_test_resources()[0].clone();
+        incoming_resource.name = resource_name.to_string();
+        let version_name = "v1.2.3";
+
+        // Act
+        let resource = convert_incoming_resource(incoming_resource, &Some(version_name.to_string())).await?;
+
+        // Assert
+        let expected_resource = SpigotResource {
+            id: 1,
+            name: resource_name.to_string(),
+            parsed_name: Some("foo-spigot".to_string()),
+            description: "foo-spigot-description".to_string(),
+            slug: "foo.1".to_string(),
+            date_created: datetime!(2020-01-01 0:00 UTC),
+            date_updated: datetime!(2020-02-03 0:00 UTC),
+            latest_minecraft_version: Some("1.21".to_string()),
+            downloads: 100,
+            likes: 200,
+            author_id: 1,
+            version_id: 1,
+            version_name: Some(version_name.to_string()),
+            premium: false,
+            abandoned: true,
             icon_url: Some("data/resource_icons/1/1.jpg".to_string()),
             icon_data: Some(SPIGOT_BASE64_TEST_ICON_DATA.to_string()),
             source_url: Some("https://github.com/alice/foo".to_string()),
