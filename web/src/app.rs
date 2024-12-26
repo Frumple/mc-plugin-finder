@@ -567,7 +567,7 @@ fn SearchForm(
 
     view! {
         <Form action="" class="search-form">
-            <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" value=move || params().query />
+            <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" placeholder="Enter search query here..." value=move || params().query />
 
             <span class="search-form__repository-text">Repository:</span>
 
