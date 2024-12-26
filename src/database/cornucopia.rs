@@ -443,7 +443,7 @@ time::OffsetDateTime, 0>
         |row| { row.get(0) }, mapper: |it| { it },
     }
 } }}pub mod search_result
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct SearchProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub modrinth: bool,pub hangar: bool,pub name: bool,pub query: T1,pub description: bool,pub author: bool,pub sort: T2,pub limit: i64,pub offset: i64,}#[derive( Debug, Clone, PartialEq,)] pub struct SearchResultEntity
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct SearchProjectsParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> { pub spigot: bool,pub modrinth: bool,pub hangar: bool,pub query: T1,pub name: bool,pub description: bool,pub author: bool,pub sort: T2,pub limit: i64,pub offset: i64,}#[derive( Debug, Clone, PartialEq,)] pub struct SearchResultEntity
 { pub full_count : i64,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<String>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub spigot_abandoned : Option<bool>,pub spigot_icon_data : Option<String>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub modrinth_status : Option<String>,pub modrinth_icon_url : Option<String>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,pub hangar_icon_url : Option<String>,pub source_repository_host : Option<String>,pub source_repository_owner : Option<String>,pub source_repository_name : Option<String>,}pub struct SearchResultEntityBorrowed<'a> { pub full_count : i64,pub date_created : time::OffsetDateTime,pub date_updated : time::OffsetDateTime,pub latest_minecraft_version : Option<&'a str>,pub downloads : i32,pub likes_and_stars : i32,pub follows_and_watchers : i32,pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub spigot_abandoned : Option<bool>,pub spigot_icon_data : Option<&'a str>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub modrinth_status : Option<&'a str>,pub modrinth_icon_url : Option<&'a str>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,pub hangar_icon_url : Option<&'a str>,pub source_repository_host : Option<&'a str>,pub source_repository_owner : Option<&'a str>,pub source_repository_name : Option<&'a str>,}
 impl<'a> From<SearchResultEntityBorrowed<'a>> for SearchResultEntity
 {
@@ -589,64 +589,68 @@ GenericClient
 FROM
   common_project
 WHERE
-  CASE $1 IS TRUE AND $4 IS TRUE
-    WHEN TRUE THEN spigot_name ILIKE $5
+  $4 = ''
+
+  OR
+
+  CASE $1 IS TRUE AND $5 IS TRUE
+    WHEN TRUE THEN $4 <% spigot_name
     ELSE FALSE
   END
 
   OR
 
   CASE $1 IS TRUE AND $6 IS TRUE
-    WHEN TRUE THEN spigot_description ILIKE $5
+    WHEN TRUE THEN $4 <% spigot_description
     ELSE FALSE
   END
 
   OR
 
   CASE $1 IS TRUE AND $7 IS TRUE
-    WHEN TRUE THEN spigot_author ILIKE $5
+    WHEN TRUE THEN $4 <% spigot_author
     ELSE FALSE
   END
 
   OR
 
-  CASE $2 IS TRUE AND $4 IS TRUE
-    WHEN TRUE THEN modrinth_name ILIKE $5
+  CASE $2 IS TRUE AND $5 IS TRUE
+    WHEN TRUE THEN $4 <% modrinth_name
     ELSE FALSE
   END
 
   OR
 
   CASE $2 IS TRUE AND $6 IS TRUE
-    WHEN TRUE THEN modrinth_description ILIKE $5
+    WHEN TRUE THEN $4 <% modrinth_description
     ELSE FALSE
   END
 
   OR
 
   CASE $2 IS TRUE AND $7 IS TRUE
-    WHEN TRUE THEN modrinth_author ILIKE $5
+    WHEN TRUE THEN $4 <% modrinth_author
     ELSE FALSE
   END
 
   OR
 
-  CASE $3 IS TRUE AND $4 IS TRUE
-    WHEN TRUE THEN hangar_name ILIKE $5
+  CASE $3 IS TRUE AND $5 IS TRUE
+    WHEN TRUE THEN $4 <% hangar_name
     ELSE FALSE
   END
 
   OR
 
   CASE $3 IS TRUE AND $6 IS TRUE
-    WHEN TRUE THEN hangar_description ILIKE $5
+    WHEN TRUE THEN $4 <% hangar_description
     ELSE FALSE
   END
 
   OR
 
   CASE $3 IS TRUE AND $7 IS TRUE
-    WHEN TRUE THEN hangar_author ILIKE $5
+    WHEN TRUE THEN $4 <% hangar_author
     ELSE FALSE
   END
 
@@ -724,12 +728,12 @@ SearchProjectsStmt(cornucopia_async::private::Stmt); impl SearchProjectsStmt
 GenericClient,T1:
 cornucopia_async::StringSql,T2:
 cornucopia_async::StringSql,>(&'a mut self, client: &'a  C,
-spigot: &'a bool,modrinth: &'a bool,hangar: &'a bool,name: &'a bool,query: &'a T1,description: &'a bool,author: &'a bool,sort: &'a T2,limit: &'a i64,offset: &'a i64,) -> SearchResultEntityQuery<'a,C,
+spigot: &'a bool,modrinth: &'a bool,hangar: &'a bool,query: &'a T1,name: &'a bool,description: &'a bool,author: &'a bool,sort: &'a T2,limit: &'a i64,offset: &'a i64,) -> SearchResultEntityQuery<'a,C,
 SearchResultEntity, 10>
 {
     SearchResultEntityQuery
     {
-        client, params: [spigot,modrinth,hangar,name,query,description,author,sort,limit,offset,], stmt: &mut self.0, extractor:
+        client, params: [spigot,modrinth,hangar,query,name,description,author,sort,limit,offset,], stmt: &mut self.0, extractor:
         |row| { SearchResultEntityBorrowed { full_count: row.get(0),date_created: row.get(1),date_updated: row.get(2),latest_minecraft_version: row.get(3),downloads: row.get(4),likes_and_stars: row.get(5),follows_and_watchers: row.get(6),spigot_id: row.get(7),spigot_slug: row.get(8),spigot_name: row.get(9),spigot_description: row.get(10),spigot_author: row.get(11),spigot_version: row.get(12),spigot_premium: row.get(13),spigot_abandoned: row.get(14),spigot_icon_data: row.get(15),modrinth_id: row.get(16),modrinth_slug: row.get(17),modrinth_name: row.get(18),modrinth_description: row.get(19),modrinth_author: row.get(20),modrinth_version: row.get(21),modrinth_status: row.get(22),modrinth_icon_url: row.get(23),hangar_slug: row.get(24),hangar_name: row.get(25),hangar_description: row.get(26),hangar_author: row.get(27),hangar_version: row.get(28),hangar_icon_url: row.get(29),source_repository_host: row.get(30),source_repository_owner: row.get(31),source_repository_name: row.get(32),} }, mapper: |it| { <SearchResultEntity>::from(it) },
     }
 } }impl <'a, C: GenericClient,T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,> cornucopia_async::Params<'a,
@@ -740,7 +744,7 @@ SearchResultEntity, 10>, C> for SearchProjectsStmt
     params(&'a mut self, client: &'a  C, params: &'a
     SearchProjectsParams<T1,T2,>) -> SearchResultEntityQuery<'a, C,
     SearchResultEntity, 10>
-    { self.bind(client, &params.spigot,&params.modrinth,&params.hangar,&params.name,&params.query,&params.description,&params.author,&params.sort,&params.limit,&params.offset,) }
+    { self.bind(client, &params.spigot,&params.modrinth,&params.hangar,&params.query,&params.name,&params.description,&params.author,&params.sort,&params.limit,&params.offset,) }
 }}pub mod spigot_author
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct InsertSpigotAuthorParams<T1: cornucopia_async::StringSql,> { pub id: i32,pub name: T1,}#[derive( Debug, Clone, PartialEq,)] pub struct SpigotAuthorEntity
 { pub id : i32,pub name : String,}pub struct SpigotAuthorEntityBorrowed<'a> { pub id : i32,pub name : &'a str,}

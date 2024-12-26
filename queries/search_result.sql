@@ -101,64 +101,68 @@ SELECT
 FROM
   common_project
 WHERE
+  :query = ''
+
+  OR
+
   CASE :spigot IS TRUE AND :name IS TRUE
-    WHEN TRUE THEN spigot_name ILIKE :query
+    WHEN TRUE THEN :query <% spigot_name
     ELSE FALSE
   END
 
   OR
 
   CASE :spigot IS TRUE AND :description IS TRUE
-    WHEN TRUE THEN spigot_description ILIKE :query
+    WHEN TRUE THEN :query <% spigot_description
     ELSE FALSE
   END
 
   OR
 
   CASE :spigot IS TRUE AND :author IS TRUE
-    WHEN TRUE THEN spigot_author ILIKE :query
+    WHEN TRUE THEN :query <% spigot_author
     ELSE FALSE
   END
 
   OR
 
   CASE :modrinth IS TRUE AND :name IS TRUE
-    WHEN TRUE THEN modrinth_name ILIKE :query
+    WHEN TRUE THEN :query <% modrinth_name
     ELSE FALSE
   END
 
   OR
 
   CASE :modrinth IS TRUE AND :description IS TRUE
-    WHEN TRUE THEN modrinth_description ILIKE :query
+    WHEN TRUE THEN :query <% modrinth_description
     ELSE FALSE
   END
 
   OR
 
   CASE :modrinth IS TRUE AND :author IS TRUE
-    WHEN TRUE THEN modrinth_author ILIKE :query
+    WHEN TRUE THEN :query <% modrinth_author
     ELSE FALSE
   END
 
   OR
 
   CASE :hangar IS TRUE AND :name IS TRUE
-    WHEN TRUE THEN hangar_name ILIKE :query
+    WHEN TRUE THEN :query <% hangar_name
     ELSE FALSE
   END
 
   OR
 
   CASE :hangar IS TRUE AND :description IS TRUE
-    WHEN TRUE THEN hangar_description ILIKE :query
+    WHEN TRUE THEN :query <% hangar_description
     ELSE FALSE
   END
 
   OR
 
   CASE :hangar IS TRUE AND :author IS TRUE
-    WHEN TRUE THEN hangar_author ILIKE :query
+    WHEN TRUE THEN :query <% hangar_author
     ELSE FALSE
   END
 

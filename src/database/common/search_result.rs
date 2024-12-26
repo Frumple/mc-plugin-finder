@@ -42,8 +42,7 @@ impl Default for SearchParams {
 impl From<SearchParams> for SearchProjectsParams<String, String> {
     fn from(params: SearchParams) -> Self {
         SearchProjectsParams {
-            // Add SQL wildcard characters to both sides of the query string
-            query: format!("%{0}%", params.query),
+            query: params.query,
             spigot: params.spigot,
             modrinth: params.modrinth,
             hangar: params.hangar,
