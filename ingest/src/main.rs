@@ -3,7 +3,7 @@ use crate::modrinth::{ModrinthClient, ModrinthServer};
 use crate::spigot::{SpigotClient, SpigotServer};
 
 use mc_plugin_finder::database::get_db;
-use mc_plugin_finder::database::common::project::refresh_common_projects;
+
 use mc_plugin_finder::database::hangar::project::get_latest_hangar_project_update_date;
 use mc_plugin_finder::database::modrinth::project::get_latest_modrinth_project_update_date;
 use mc_plugin_finder::database::spigot::author::get_highest_spigot_author_id;
@@ -11,6 +11,7 @@ use mc_plugin_finder::database::spigot::resource::get_latest_spigot_resource_upd
 
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
+use deadpool_postgres::Pool;
 use tracing::info;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
@@ -48,7 +49,9 @@ enum ActionSubcommand {
         repository: UpdateRepositorySubcommand
     },
     /// Refresh common projects: Run this after populating/updating all repositories
-    Refresh
+    Refresh,
+    /// Update all items and refresh
+    UpdateAllAndRefresh
 }
 
 #[derive(Subcommand)]
@@ -216,14 +219,10 @@ async fn main() -> Result<()> {
 
                     match item {
                         UpdateSpigotItems::Authors => {
-                            let highest_author_id = get_highest_spigot_author_id(&db_pool).await?;
-                            info!("Updating Spigot Authors with ID higher than: {}", highest_author_id);
-                            spigot_client.update_spigot_authors(&db_pool, highest_author_id).await?;
+                            update_spigot_authors(&spigot_client, &db_pool).await?;
                         },
                         UpdateSpigotItems::Resources => {
-                            let latest_update_date = get_latest_spigot_resource_update_date(&db_pool).await?;
-                            info!("Updating Spigot Resources since: {}", latest_update_date);
-                            spigot_client.update_spigot_resources(&db_pool, latest_update_date).await?;
+                            update_spigot_resources(&spigot_client, &db_pool).await?;
                         }
                     }
                 },
@@ -233,9 +232,7 @@ async fn main() -> Result<()> {
 
                     match item {
                         UpdateModrinthItems::Projects => {
-                            let latest_update_date = get_latest_modrinth_project_update_date(&db_pool).await?;
-                            info!("Updating Modrinth Projects since: {}", latest_update_date);
-                            modrinth_client.update_modrinth_projects(&db_pool, latest_update_date).await?;
+                            update_modrinth_projects(&modrinth_client, &db_pool).await?;
                         }
                     }
                 },
@@ -245,20 +242,74 @@ async fn main() -> Result<()> {
 
                     match item {
                         UpdateHangarItems::Projects => {
-                            let latest_update_date = get_latest_hangar_project_update_date(&db_pool).await?;
-                            info!("Updating Hangar Projects since: {}", latest_update_date);
-                            hangar_client.update_hangar_projects(&db_pool, latest_update_date).await?;
+                            update_hangar_projects(&hangar_client, &db_pool).await?;
                         }
                     }
-                }
+                },
             }
 
         },
         ActionSubcommand::Refresh => {
-            info!("Refreshing common projects...");
+            refresh_common_projects(&db_pool).await?;
+        },
+        ActionSubcommand::UpdateAllAndRefresh => {
+            info!("Updating all items...");
+
+            let spigot_server = SpigotServer::new().await;
+            let spigot_client = SpigotClient::new(spigot_server)?;
+
+            let modrinth_server = ModrinthServer::new().await;
+            let modrinth_client = ModrinthClient::new(modrinth_server)?;
+
+            let hangar_server = HangarServer::new().await;
+            let hangar_client = HangarClient::new(hangar_server)?;
+
+            update_spigot_authors(&spigot_client, &db_pool).await?;
+            update_spigot_resources(&spigot_client, &db_pool).await?;
+            update_modrinth_projects(&modrinth_client, &db_pool).await?;
+            update_hangar_projects(&hangar_client, &db_pool).await?;
             refresh_common_projects(&db_pool).await?;
         }
     }
+
+    Ok(())
+}
+
+async fn update_spigot_authors(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
+    let highest_author_id = get_highest_spigot_author_id(db_pool).await?;
+    info!("Updating Spigot Authors with ID higher than: {}", highest_author_id);
+    spigot_client.update_spigot_authors(db_pool, highest_author_id).await?;
+
+    Ok(())
+}
+
+async fn update_spigot_resources(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
+    let latest_update_date = get_latest_spigot_resource_update_date(db_pool).await?;
+    info!("Updating Spigot Resources since: {}", latest_update_date);
+    spigot_client.update_spigot_resources(db_pool, latest_update_date).await?;
+
+    Ok(())
+}
+
+async fn update_modrinth_projects(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
+    let latest_update_date = get_latest_modrinth_project_update_date(db_pool).await?;
+    info!("Updating Modrinth Projects since: {}", latest_update_date);
+    modrinth_client.update_modrinth_projects(db_pool, latest_update_date).await?;
+
+    Ok(())
+}
+
+async fn update_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
+    let latest_update_date = get_latest_hangar_project_update_date(db_pool).await?;
+    info!("Updating Hangar Projects since: {}", latest_update_date);
+    hangar_client.update_hangar_projects(db_pool, latest_update_date).await?;
+
+    Ok(())
+}
+
+async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
+    info!("Refreshing common projects...");
+    mc_plugin_finder::database::common::project::refresh_common_projects(db_pool).await?;
 
     Ok(())
 }
