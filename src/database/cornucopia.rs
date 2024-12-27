@@ -589,7 +589,10 @@ GenericClient
 FROM
   common_project
 WHERE
-  $4 = ''
+  CASE $1 IS TRUE AND $4 = ''
+    WHEN TRUE THEN spigot_name IS NOT NULL
+    ELSE FALSE
+  END
 
   OR
 
@@ -614,6 +617,13 @@ WHERE
 
   OR
 
+  CASE $2 IS TRUE AND $4 = ''
+    WHEN TRUE THEN modrinth_name IS NOT NULL
+    ELSE FALSE
+  END
+
+  OR
+
   CASE $2 IS TRUE AND $5 IS TRUE
     WHEN TRUE THEN $4 <% modrinth_name
     ELSE FALSE
@@ -630,6 +640,13 @@ WHERE
 
   CASE $2 IS TRUE AND $7 IS TRUE
     WHEN TRUE THEN $4 <% modrinth_author
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE $3 IS TRUE AND $4 = ''
+    WHEN TRUE THEN hangar_name IS NOT NULL
     ELSE FALSE
   END
 

@@ -101,7 +101,10 @@ SELECT
 FROM
   common_project
 WHERE
-  :query = ''
+  CASE :spigot IS TRUE AND :query = ''
+    WHEN TRUE THEN spigot_name IS NOT NULL
+    ELSE FALSE
+  END
 
   OR
 
@@ -126,6 +129,13 @@ WHERE
 
   OR
 
+  CASE :modrinth IS TRUE AND :query = ''
+    WHEN TRUE THEN modrinth_name IS NOT NULL
+    ELSE FALSE
+  END
+
+  OR
+
   CASE :modrinth IS TRUE AND :name IS TRUE
     WHEN TRUE THEN :query <% modrinth_name
     ELSE FALSE
@@ -142,6 +152,13 @@ WHERE
 
   CASE :modrinth IS TRUE AND :author IS TRUE
     WHEN TRUE THEN :query <% modrinth_author
+    ELSE FALSE
+  END
+
+  OR
+
+  CASE :hangar IS TRUE AND :query = ''
+    WHEN TRUE THEN hangar_name IS NOT NULL
     ELSE FALSE
   END
 
