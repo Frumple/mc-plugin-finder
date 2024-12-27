@@ -412,12 +412,10 @@ pub mod ssr {
     use mc_plugin_finder::database::get_db;
     use deadpool_postgres::{CreatePoolError, Pool};
 
-    const LIVE_DB_NAME: &str = "mc_plugin_finder";
-
     pub async fn db() -> Result<Pool, CreatePoolError> {
         // TODO: Is there a way to initialize the database client globally instead of per request?
         let db = get_db();
-        db.create_pool(LIVE_DB_NAME).await
+        db.create_pool().await
     }
 }
 

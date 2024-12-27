@@ -8,6 +8,7 @@ anyhow = "1.0.79"
 clap = { version = "4.5.4", features = ["derive"] }
 constcat = "0.4.0"
 deadpool-postgres = "0.12.1"
+dotenvy = "0.15.7"
 emojis = "0.6.1"
 futures = "0.3.30"
 governor = "0.6.0"

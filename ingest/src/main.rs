@@ -22,8 +22,6 @@ pub mod hangar;
 pub mod modrinth;
 pub mod spigot;
 
-const LIVE_DB_NAME: &str = "mc_plugin_finder";
-
 pub trait HttpServer {
     #[allow(async_fn_in_trait)]
     async fn new() -> Self;
@@ -128,6 +126,8 @@ enum UpdateHangarItems {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenvy::dotenv().expect("could not read .env file");
+
     // Parse command line arguments
     let cli = CommandLineArguments::parse();
 
@@ -152,7 +152,7 @@ async fn main() -> Result<()> {
 
     // Initialize database client
     let db = get_db();
-    let db_pool = db.create_pool(LIVE_DB_NAME).await?;
+    let db_pool = db.create_pool().await?;
 
     match &cli.action {
         ActionSubcommand::Populate { repository } => {

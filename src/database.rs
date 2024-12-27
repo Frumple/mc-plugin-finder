@@ -5,6 +5,8 @@ pub mod modrinth;
 pub mod source_repository;
 pub mod spigot;
 
+use std::env;
+
 use anyhow::Result;
 use deadpool_postgres::{Config, CreatePoolError, Pool, Runtime};
 use tokio_postgres::NoTls;
@@ -14,26 +16,34 @@ pub struct Database {
     pub password: String,
     pub host: String,
     pub port: u16,
+    pub db_name: String
 }
 
 impl Database {
-    pub async fn create_pool(&self, db_name: &str) -> Result<Pool, CreatePoolError> {
-        let mut config = Config::new();
-        config.user = Some(self.user.clone());
-        config.password = Some(self.password.clone());
-        config.host = Some(self.host.clone());
-        config.port = Some(self.port);
-        config.dbname = Some(db_name.to_string());
+    pub async fn create_pool(&self) -> Result<Pool, CreatePoolError> {
+        self.create_custom_pool(&self.db_name).await
+    }
+
+    pub async fn create_custom_pool(&self, db_name: &str) -> Result<Pool, CreatePoolError> {
+        let config = Config {
+            user: Some(self.user.clone()),
+            password: Some(self.password.clone()),
+            host: Some(self.host.clone()),
+            port: Some(self.port),
+            dbname: Some(db_name.to_string()),
+            ..Default::default()
+        };
         config.create_pool(Some(Runtime::Tokio1), NoTls)
     }
 }
 
 pub fn get_db() -> Database {
     Database {
-        user: "postgres".to_string(),
-        password: "postgres".to_string(),
-        host: "localhost".to_string(),
-        port: 5433
+        user: env::var("POSTGRES_USER").expect("POSTGRES_USER is not set"),
+        password: env::var("POSTGRES_PASSWORD").expect("POSTGRES_PASSWORD is not set"),
+        host: env::var("POSTGRES_HOST").expect("POSTGRES_HOST is not set"),
+        port: env::var("POSTGRES_PORT").expect("POSTGRES_PORT is not set").parse::<u16>().expect("could not parse POSTGRES_PORT"),
+        db_name: env::var("POSTGRES_DB").expect("POSTGRES_DB is not set")
     }
 }
 
@@ -53,9 +63,12 @@ mod test {
 
     impl DatabaseTestContext {
         pub async fn new(db_name: &str) -> Self {
+            dotenvy::dotenv().expect("could not read .env file");
+
             let db = get_db();
 
-            let base_pool = db.create_pool(DEFAULT_POSTGRES_DB_NAME)
+            // Tests should always connect to the default database before creating/dropping other databases
+            let base_pool = db.create_custom_pool(DEFAULT_POSTGRES_DB_NAME)
                 .await
                 .expect("could not create database pool");
 
@@ -66,7 +79,7 @@ mod test {
                 .await
                 .expect("could not create database");
 
-            let pool = db.create_pool(db_name)
+            let pool = db.create_custom_pool(db_name)
                 .await
                 .expect("could not create database pool");
 

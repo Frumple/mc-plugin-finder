@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 axum = { version = "0.7", optional = true }
 console_error_panic_hook = "0.1"
 deadpool-postgres = { version = "0.12.1", optional = true }
+dotenvy = "0.15.7"
 http = "1"
 leptos = { version = "0.6" }
 leptos_axum = { version = "0.6", optional = true }

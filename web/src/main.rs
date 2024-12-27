@@ -11,6 +11,8 @@ async fn main() {
     use web::app::*;
     use web::fileserv::file_and_error_handler;
 
+    dotenvy::dotenv().expect("could not read .env file");
+
     // Initialize tracing
     let appender = tracing_appender::rolling::daily("logs/web", "web.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(appender);
