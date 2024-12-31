@@ -4,14 +4,13 @@ async fn main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
+    use tracing::{info, warn};
     use tracing_subscriber::prelude::*;
     use tracing_subscriber::EnvFilter;
     use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use web::app::*;
     use web::fileserv::file_and_error_handler;
-
-    dotenvy::dotenv().expect("could not read .env file");
 
     // Initialize tracing
     let appender = tracing_appender::rolling::daily("logs/web", "web.log");
@@ -31,6 +30,12 @@ async fn main() {
         .with(file_layer)
         .with(console_layer);
     tracing::subscriber::set_global_default(subscriber).unwrap();
+
+    // Load environment variables from .env file if it exists
+    match dotenvy::dotenv() {
+        Ok(_) => info!("Environment variables successfully loaded from .env file."),
+        Err(_) => warn!("Could not load environment variables from .env file, falling back to set variables...")
+    };
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
     // For deployment these variables are:

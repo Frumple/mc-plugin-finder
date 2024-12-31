@@ -36,9 +36,16 @@ Ensure that you have Docker or Podman installed on your system. For more details
 
 Setup the initial schema on your database by running [schema.sql](https://github.com/Frumple/mc-plugin-finder/blob/main/schema.sql) on it.
 
-TODO: Database ENV variables
+Set the database settings in the .env file as desired:
+```
+MCPF_DB_USER=postgres
+MCPF_DB_PASSWORD=postgres
+MCPF_DB_HOST=localhost
+MCPF_DB_PORT=5432
+MCPF_DB_NAME=mc_plugin_finder
+```
 
-Whenever you make changes to the SQL queries, regenerate the cornucopia.rs file:
+Regenerate the cornucopia.rs file after making any changes to queries:
 - `cornucopia -d src/database/cornucopia.rs schema schema.sql`
 
 ### Run Commands

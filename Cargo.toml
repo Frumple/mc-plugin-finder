@@ -13,6 +13,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.79"
+config = "0.14.0"
 cornucopia_async = "0.6.0"
 deadpool-postgres = "0.12.1"
 dotenvy = "0.15.7"

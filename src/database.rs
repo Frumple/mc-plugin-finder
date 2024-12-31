@@ -5,10 +5,10 @@ pub mod modrinth;
 pub mod source_repository;
 pub mod spigot;
 
-use std::env;
+use crate::config::{get_config_string, get_config_int};
 
 use anyhow::Result;
-use deadpool_postgres::{Config, CreatePoolError, Pool, Runtime};
+use deadpool_postgres::{CreatePoolError, Pool, Runtime};
 use tokio_postgres::NoTls;
 
 pub struct Database {
@@ -25,7 +25,7 @@ impl Database {
     }
 
     pub async fn create_custom_pool(&self, db_name: &str) -> Result<Pool, CreatePoolError> {
-        let config = Config {
+        let config = deadpool_postgres::Config {
             user: Some(self.user.clone()),
             password: Some(self.password.clone()),
             host: Some(self.host.clone()),
@@ -39,11 +39,11 @@ impl Database {
 
 pub fn get_db() -> Database {
     Database {
-        user: env::var("POSTGRES_USER").expect("POSTGRES_USER is not set"),
-        password: env::var("POSTGRES_PASSWORD").expect("POSTGRES_PASSWORD is not set"),
-        host: env::var("POSTGRES_HOST").expect("POSTGRES_HOST is not set"),
-        port: env::var("POSTGRES_PORT").expect("POSTGRES_PORT is not set").parse::<u16>().expect("could not parse POSTGRES_PORT"),
-        db_name: env::var("POSTGRES_DB").expect("POSTGRES_DB is not set")
+       user: get_config_string("db.user"),
+       password: get_config_string("db.password"),
+       host: get_config_string("db.host"),
+       port: u16::try_from(get_config_int("db.port")).expect("could not convert db.port to u16"),
+       db_name: get_config_string("db.name"),
     }
 }
 
@@ -63,7 +63,7 @@ mod test {
 
     impl DatabaseTestContext {
         pub async fn new(db_name: &str) -> Self {
-            dotenvy::dotenv().expect("could not read .env file");
+            dotenvy::dotenv().expect("could not load environment variables from .env file");
 
             let db = get_db();
 

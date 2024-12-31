@@ -12,7 +12,7 @@ use mc_plugin_finder::database::spigot::resource::get_latest_spigot_resource_upd
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 use deadpool_postgres::Pool;
-use tracing::info;
+use tracing::{info, warn};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::Layer;
@@ -129,8 +129,6 @@ enum UpdateHangarItems {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv().expect("could not read .env file");
-
     // Parse command line arguments
     let cli = CommandLineArguments::parse();
 
@@ -152,6 +150,12 @@ async fn main() -> Result<()> {
         .with(file_layer)
         .with(console_layer);
     tracing::subscriber::set_global_default(subscriber)?;
+
+    // Load environment variables from .env file if it exists
+    match dotenvy::dotenv() {
+        Ok(_) => info!("Environment variables successfully loaded from .env file."),
+        Err(_) => warn!("Could not load environment variables from .env file, falling back to set variables...")
+    };
 
     // Initialize database client
     let db = get_db();
