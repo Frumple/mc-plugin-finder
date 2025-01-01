@@ -19,6 +19,7 @@ use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
 
 const HANGAR_PROJECTS_REQUESTS_AHEAD: usize = 2;
+const HANGAR_PROJECTS_CONCURRENT_FUTURES: usize = 10;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetHangarProjectsRequest {
@@ -139,7 +140,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         let result= self
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, false))
+            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, false))
             .await;
 
         let count = count_cell.get();
@@ -160,7 +161,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.last_updated.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each_concurrent(None, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
+            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();

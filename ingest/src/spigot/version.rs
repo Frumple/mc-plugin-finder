@@ -11,6 +11,8 @@ use std::cell::Cell;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
+const SPIGOT_VERSIONS_CONCURRENT_FUTURES: usize = 10;
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct GetSpigotVersionResponse {
     name: String
@@ -41,7 +43,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
 
         let result = resource_stream
             .map(Ok)
-            .try_for_each_concurrent(None, |resource| self.process_spigot_resource(resource, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_VERSIONS_CONCURRENT_FUTURES, |resource| self.process_spigot_resource(resource, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();

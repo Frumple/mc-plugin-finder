@@ -13,6 +13,8 @@ use std::fmt::Debug;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
+const HANGAR_VERSIONS_CONCURRENT_FUTURES: usize = 10;
+
 #[derive(Clone, Debug, Serialize)]
 pub struct GetHangarVersionsRequest {
     limit: u32,
@@ -76,7 +78,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
 
         let result = project_stream
             .map(Ok)
-            .try_for_each_concurrent(None, |project| self.process_hangar_project(project, db_pool, &count_cell))
+            .try_for_each_concurrent(HANGAR_VERSIONS_CONCURRENT_FUTURES, |project| self.process_hangar_project(project, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();

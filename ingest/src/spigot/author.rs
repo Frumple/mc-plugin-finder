@@ -15,6 +15,7 @@ use tracing::{info, warn, instrument};
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
 const SPIGOT_AUTHORS_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_AUTHORS_CONCURRENT_FUTURES: usize = 10;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotAuthorsRequest {
@@ -109,7 +110,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
@@ -130,7 +131,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.id > author_id_higher_than)))
-            .try_for_each_concurrent(None, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();

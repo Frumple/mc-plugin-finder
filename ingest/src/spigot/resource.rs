@@ -21,6 +21,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 const SPIGOT_RESOURCES_REQUEST_FIELDS: &str = "id,name,tag,icon,releaseDate,updateDate,testedVersions,downloads,likes,file,author,version,premium,sourceCodeLink";
 const SPIGOT_RESOURCES_REQUESTS_AHEAD: usize = 2;
+const SPIGOT_RESOURCES_CONCURRENT_FUTURES: usize = 10;
 
 #[derive(Clone, Debug, Serialize)]
 struct GetSpigotResourcesRequest {
@@ -160,7 +161,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         let result = self
             .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(None, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, false))
+            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, false))
             .await;
 
         let count = count_cell.get();
@@ -181,7 +182,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each_concurrent(None, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
+            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
             .await;
 
         let count = count_cell.get();

@@ -12,6 +12,8 @@ use std::fmt::Debug;
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
+const MODRINTH_VERSIONS_CONCURRENT_FUTURES: usize = 10;
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GetModrinthVersionResponse {
     version_number: String
@@ -44,7 +46,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
 
         let result = project_stream
             .map(Ok)
-            .try_for_each_concurrent(None, |project| self.process_modrinth_project(project, db_pool, &count_cell))
+            .try_for_each_concurrent(MODRINTH_VERSIONS_CONCURRENT_FUTURES, |project| self.process_modrinth_project(project, db_pool, &count_cell))
             .await;
 
         let count = count_cell.get();
