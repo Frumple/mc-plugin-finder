@@ -18,17 +18,17 @@ leptos_meta = { version = "0.6" }
 leptos_router = { version = "0.6" }
 mc-plugin-finder = { path = "..", optional = true }
 num-format = "0.4.4"
-serde = { version = "1.0.195", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 serde_urlencoded = "0.7.1"
-time = { version = "0.3.36", features = ["formatting", "macros", "parsing", "serde"] }
+time = { version = "0.3.37", features = ["formatting", "macros", "parsing", "serde"] }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
-tower = { version = "0.4", features = ["util"], optional = true }
-tower-http = { version = "0.5", features = ["fs"], optional = true }
+tower = { version = "0.5.2", features = ["util"], optional = true }
+tower-http = { version = "0.6.2", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.99"
-thiserror = "1"
+thiserror = "2.0.9"
 tracing = { version = "0.1", optional = true }
 tracing-appender = { version = "0.2.3", optional = true }
-tracing-subscriber = { version = "0.3.18", optional = true, features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.19", optional = true, features = ["env-filter"] }
 
 [features]
 default = ["ssr"]
