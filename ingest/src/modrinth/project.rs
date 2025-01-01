@@ -219,7 +219,6 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
     }
 
     #[instrument(
-        level = "debug",
         skip(self)
     )]
     async fn get_project_from_api(&self, id: &str) -> Result<GetModrinthProjectResponse> {
