@@ -5,6 +5,10 @@ body {
 	margin: 0;
 }
 
+:link, :visited, :link:active, :visited:active {
+	color: #58a6ff;
+}
+
 .github-corner__svg {
   fill: #ffffff;
 	color: #151513;
@@ -61,10 +65,22 @@ body {
 	flex-direction: column;
 }
 
-.home-page__disclaimer {
-	text-align: center;
-	font-style: italic;
+.home-page__footer {
+  display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: #aeb3bb;
 	margin: 10px;
+}
+
+.home-page__footer-text {
+
+}
+
+.home-page__footer-disclaimer {
+	font-size: small;
+	font-style: italic;
+	margin-top: 5px;
 }
 
 .search-form {

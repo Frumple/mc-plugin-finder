@@ -23,6 +23,8 @@ const NO_ICON_IMAGE_URL: &str = "images/no-icon.svg";
 const ABANDONED_IMAGE_URL: &str = "images/abandoned.svg";
 const PREMIUM_IMAGE_URL: &str = "images/premium.svg";
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
 pub struct WebSearchParams {
     pub query: Option<String>,
@@ -545,13 +547,30 @@ fn HomePage() -> impl IntoView {
         </a>
 
         <h1 class="home-page__title">"MC Plugin Finder"</h1>
-        <div class="home-page__subtitle">"Search for Minecraft: Java Edition plugins on Spigot, Modrinth, and Hangar."</div>
+        <div class="home-page__subtitle">
+          <span>"Search for Minecraft: Java Edition plugins on "</span>
+          <a href="https://www.spigotmc.org" target="_blank">Spigot</a>
+          <span>", "</span>
+          <a href="https://modrinth.com/plugins" target="_blank">Modrinth</a>
+          <span>", and "</span>
+          <a href="https://hangar.papermc.io" target="_blank">Hangar</a>
+          <span>"."</span>
+        </div>
 
         <div class="home-page__container">
             <SearchForm params_memo />
             <SearchResults params_memo resource />
         </div>
-        <div class="home-page__disclaimer">"MC Plugin Finder is not an official Minecraft service, and is not approved or associated with Mojang or Microsoft."</div>
+        <div class="home-page__footer">
+            <div class="home-page__footer-text">
+                <span>MC Plugin Finder v{VERSION}</span>
+                <span>" | "</span>
+                <span>"© Frumple"</span>
+                <span>" | "</span>
+                <a href="https://github.com/Frumple/mc-plugin-finder" aria-label="View source on GitHub" target="_blank">GitHub</a>
+            </div>
+            <div class="home-page__footer-disclaimer">"MC Plugin Finder is not an official Minecraft service, and is not approved or associated with Mojang, Microsoft, SpigotMC, Modrinth, or PaperMC."</div>
+        </div>
     }
 }
 

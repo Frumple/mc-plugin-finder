@@ -1,6 +1,6 @@
 # MC Plugin Finder
 
-A search aggregator for finding Minecraft: Java Edition server plugins on [Spigot](https://www.spigotmc.org/), [Modrinth](https://modrinth.com/plugins), and [Hangar](https://hangar.papermc.io/).
+A search aggregator for finding Minecraft: Java Edition server plugins on [Spigot](https://www.spigotmc.org), [Modrinth](https://modrinth.com/plugins), and [Hangar](https://hangar.papermc.io).
 
 ### Live Application: [https://mcpluginfinder.com](https://mcpluginfinder.com)
 
@@ -68,4 +68,4 @@ Run the web server:
 
 MC Plugin Finder is provided under the [GNU Affero General Public License 3.0](https://github.com/Frumple/mc-plugin-finder/blob/main/LICENSE).
 
-MC Plugin Finder is not an official Minecraft service, and is not approved or associated with Mojang or Microsoft.
+MC Plugin Finder is not an official Minecraft service, and is not approved or associated with Mojang, Microsoft, SpigotMC, Modrinth, or PaperMC.
