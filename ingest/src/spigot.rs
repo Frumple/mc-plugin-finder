@@ -1,6 +1,7 @@
 use crate::HttpServer;
 
 use anyhow::Result;
+use constcat::concat;
 use governor::{Quota, RateLimiter};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -15,7 +16,7 @@ mod version;
 
 const SPIGOT_BASE_URL: &str = "https://api.spiget.org/v2/";
 
-const SPIGOT_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
+const SPIGOT_USER_AGENT: &str = concat!("Frumple/mc-plugin-finder/", env!("CARGO_PKG_VERSION"), " (contact@mcpluginfinder.com)");
 const SPIGOT_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(5u32);
 
 #[derive(Debug)]

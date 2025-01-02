@@ -16,7 +16,7 @@ const MODRINTH_IS_LIVE: bool = true;
 const MODRINTH_STAGING_BASE_URL: &str = "https://staging-api.modrinth.com/v2/";
 const MODRINTH_LIVE_BASE_URL: &str = "https://api.modrinth.com/v2/";
 
-const MODRINTH_USER_AGENT: &str = "mc-plugin-finder (contact@mcpluginfinder.com)";
+const MODRINTH_USER_AGENT: &str = concat!("Frumple/mc-plugin-finder/", env!("CARGO_PKG_VERSION"), " (contact@mcpluginfinder.com)");
 const MODRINTH_RATE_LIMIT_PER_SECOND: NonZeroU32 = nonzero!(4u32);
 
 #[derive(Debug)]
