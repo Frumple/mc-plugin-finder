@@ -641,7 +641,7 @@ fn SearchResults(
     resource: Resource<Result<WebSearchParams, ParamsError>, Result<Vec<WebSearchResult>, ServerFnError>>
 ) -> impl IntoView {
     view! {
-        <Transition fallback=move || view! { <p>"Loading..."</p> }>
+        <Transition fallback=move || view! { <div class="search-results__loading">"Loading..."</div> }>
             <ErrorBoundary fallback=|errors| view!{<ErrorTemplate errors=errors/>}>
                 {move || {
                     let headers = {
@@ -685,7 +685,7 @@ fn SearchResults(
                                     }
                                     Ok(projects) => {
                                         if projects.is_empty() {
-                                            view! { <div class="search_results__no-projects-found">"No projects were found."</div> }.into_view()
+                                            view! { <div class="search-results__no-projects-found">"No projects were found."</div> }.into_view()
                                         } else {
                                             let full_count = projects[0].full_count;
 
