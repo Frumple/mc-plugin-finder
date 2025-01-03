@@ -4,6 +4,8 @@ A search aggregator for finding Minecraft: Java Edition server plugins on [Spigo
 
 ### Live Application: [https://mcpluginfinder.com](https://mcpluginfinder.com)
 
+![mc-plugin-finder-screenshot](https://github.com/user-attachments/assets/bed098ff-9db5-414b-90dd-26c7c6cf8c4b)
+
 ## Elevator Pitch
 
 As a Minecraft server owner, have you ever been annoyed when trying to find a plugin? Do I have to search for it on Spigot? Or maybe it's on Modrinth? Or Hangar? And on top of all that, the plugin developer might have only posted their latest version on some platforms but not others. What a mess.
@@ -26,9 +28,11 @@ MC Plugin Finder will only recognize URLs from these source code repository host
 - [bitbucket.org](https://bitbucket.org)
 - [codeberg.org](https://codeberg.org)
 
+![MC Plugin Finder drawio](https://github.com/user-attachments/assets/826e4b22-5e8f-440a-b2bc-b903ef3e858f)
+
 The **web app** allows users to search the database for plugins.
 
-The MC Plugin Finder hosted infrastructure runs an instance of [imageproxy](https://github.com/willnorris/imageproxy) to cache plugin project icons from Modrinth and Hangar. This reduces the load on the Modrinth and Hangar CDNs, and provides improved image loading performance. Icon data for Spigot-hosted plugins are provided directly by the Spiget API and stored in the database, so no proxy or caching is needed in that case.
+The MC Plugin Finder hosted infrastructure runs an instance of [imageproxy](https://github.com/willnorris/imageproxy) to cache plugin project icons from Modrinth and Hangar as they are requested by users. This reduces the load on the Modrinth and Hangar CDNs, and provides improved image loading performance. Icon data for Spigot-hosted plugins are provided directly by the Spiget API and stored in the database, so no proxy or caching is needed in that case.
 
 ## Development Setup
 
