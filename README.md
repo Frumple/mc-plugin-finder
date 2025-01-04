@@ -8,7 +8,7 @@ A search aggregator for finding Minecraft: Java Edition server plugins on [Spigo
 
 ## Elevator Pitch
 
-As a Minecraft server owner, have you ever been annoyed when trying to find a plugin? Do I have to search for it on Spigot? Or maybe it's on Modrinth? Or Hangar? And on top of all that, the plugin developer might have only posted their latest version on some platforms but not others. What a mess.
+As a Minecraft server admin, have you ever been annoyed when trying to find a plugin? Do I have to search for it on Spigot? Or maybe it's on Modrinth? Or Hangar? And on top of all that, the plugin developer might have only posted their latest version on some platforms but not others. What a mess.
 
 MC Plugin Finder seeks to solve this problem by being the one-stop shop for searching all three of these platforms simultaneously, thanks to their public APIs. You can filter and sort your search results as desired, and you can compare versions of the same plugin on each platform to ensure that you are getting the latest version.
 
@@ -74,8 +74,8 @@ Run the ingest tool to populate the database, starting with these commands:
 
 Optionally, you may populate plugin versions as well (However, note that populating Spigot versions takes several hours):
 - `ingest populate spigot versions`
-- `ingest populate modrinth verisons`
-- `ingest populate hangar verisons`
+- `ingest populate modrinth versions`
+- `ingest populate hangar versions`
 
 Run the ingest tool again to refresh the common database view:
 - `ingest refresh`
