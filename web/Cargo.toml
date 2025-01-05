@@ -9,8 +9,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 axum = { version = "0.7", optional = true }
 console_error_panic_hook = "0.1"
-deadpool-postgres = { version = "0.12.1", optional = true }
-dotenvy = "0.15.7"
+deadpool-postgres = { workspace = true, optional = true }
+dotenvy = { workspace = true }
 http = "1"
 leptos = { version = "0.6" }
 leptos_axum = { version = "0.6", optional = true }
@@ -18,17 +18,17 @@ leptos_meta = { version = "0.6" }
 leptos_router = { version = "0.6" }
 mc-plugin-finder = { path = "..", optional = true }
 num-format = "0.4.4"
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { workspace = true }
 serde_urlencoded = "0.7.1"
-time = { version = "0.3.37", features = ["formatting", "macros", "parsing", "serde"] }
-tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["formatting", "serde"] }
+tokio = { workspace = true, optional = true }
 tower = { version = "0.5.2", features = ["util"], optional = true }
 tower-http = { version = "0.6.2", features = ["fs"], optional = true }
+tracing = { workspace = true, optional = true }
+tracing-appender = { workspace = true, optional = true }
+tracing-subscriber = {workspace = true, optional = true }
 wasm-bindgen = "=0.2.99"
-thiserror = "2.0.9"
-tracing = { version = "0.1", optional = true }
-tracing-appender = { version = "0.2.3", optional = true }
-tracing-subscriber = { version = "0.3.19", optional = true, features = ["env-filter"] }
 
 [features]
 default = ["ssr"]
