@@ -10,6 +10,7 @@ use crate::config::{get_config_string, get_config_int};
 use anyhow::Result;
 use deadpool_postgres::{CreatePoolError, Pool, Runtime};
 use tokio_postgres::NoTls;
+use url::Url;
 
 pub struct Database {
     pub user: String,
@@ -38,12 +39,19 @@ impl Database {
 }
 
 pub fn get_db() -> Database {
+    let url = Url::parse(&get_config_string("database.url"))
+        .expect("could not parse database url");
+    let mut path_segments = url.path_segments()
+        .expect("database url is not a base url");
+
+    assert_eq!(url.scheme(), "postgres", "database url does not begin with postgres://");
+
     Database {
-       user: get_config_string("db.user"),
-       password: get_config_string("db.password"),
-       host: get_config_string("db.host"),
-       port: u16::try_from(get_config_int("db.port")).expect("could not convert db.port to u16"),
-       db_name: get_config_string("db.name"),
+       user: url.username().to_string(),
+       password: url.password().expect("could not find password in database url").to_string(),
+       host: url.host_str().expect("could not find host in database url").to_string(),
+       port: url.port().expect("could not find port in database url"),
+       db_name: path_segments.next().expect("could not find database name in database url").to_string(),
     }
 }
 

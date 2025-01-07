@@ -47,6 +47,7 @@ Install Cargo extensions:
 - `cargo install cornucopia`
 - `cargo install cargo-nextest`
 - `cargo install cargo-leptos`
+- `cargo install refinery_cli`
 
 Build the workspace:
 - `cargo build --workspace`
@@ -55,16 +56,13 @@ Build the workspace:
 
 Ensure that you have Docker or Podman installed on your system. For more details, see the [Cornucopia installation instructions](https://cornucopia-rs.netlify.app/book/introduction/installation).
 
-Setup the initial schema on your PostgreSQL database by running [schema.sql](https://github.com/Frumple/mc-plugin-finder/blob/main/schema.sql) on it.
+Set the database url in the .env file as desired:
+```
+MCPF_DATABASE_URL=postgres://postgres:postgres@localhost:5432/mc_plugin_finder
+```
 
-Set the database settings in the .env file as desired:
-```
-MCPF_DB_USER=postgres
-MCPF_DB_PASSWORD=postgres
-MCPF_DB_HOST=localhost
-MCPF_DB_PORT=5432
-MCPF_DB_NAME=mc_plugin_finder
-```
+Run the migrations:
+- `refinery migrate -e MCPF_DATABASE_URL`
 
 Run the ingest tool to populate the database, starting with these commands:
 - `ingest populate spigot authors`
