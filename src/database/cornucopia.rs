@@ -692,7 +692,7 @@ WHERE
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_updated
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_updated
         END
-    END DESC,
+    END DESC NULLS LAST,
 
     CASE
       WHEN $8 = 'latest_minecraft_version' THEN
@@ -736,7 +736,7 @@ WHERE
              WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
              WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
         END
-    END DESC
+    END DESC NULLS LAST
 
 LIMIT $9
 OFFSET $10")) } pub struct

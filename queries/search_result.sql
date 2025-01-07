@@ -204,7 +204,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_date_updated
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_date_updated
         END
-    END DESC,
+    END DESC NULLS LAST,
 
     CASE
       WHEN :sort = 'latest_minecraft_version' THEN
@@ -248,7 +248,7 @@ WHERE
              WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_follows, 0)
              WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_watchers, 0)
         END
-    END DESC
+    END DESC NULLS LAST
 
 LIMIT :limit
 OFFSET :offset;
