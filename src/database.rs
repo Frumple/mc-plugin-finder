@@ -5,7 +5,7 @@ pub mod modrinth;
 pub mod source_repository;
 pub mod spigot;
 
-use crate::config::{get_config_string, get_config_int};
+use crate::config::get_config_string;
 
 use anyhow::Result;
 use deadpool_postgres::{CreatePoolError, Pool, Runtime};

@@ -17,7 +17,3 @@ fn config() -> &'static config::Config {
 pub fn get_config_string(key: &str) -> String {
     config().get_string(key).unwrap_or_else(|_| panic!("config key '{}' is not set to a string", key))
 }
-
-pub fn get_config_int(key: &str) -> i64 {
-    config().get_int(key).unwrap_or_else(|_| panic!("config key '{}' is not set to an integer", key))
-}
