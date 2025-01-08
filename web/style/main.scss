@@ -195,17 +195,36 @@ body {
 
 .search-results__stat-column {
 	flex: 0 0 6rem;
+	display: flex;
+}
+
+// Hide stat columns on mobile devices with width 1600px or less.
+@media screen and (max-width: 1600px) {
+	.search-results__stat-column {
+		display: none;
+	}
 }
 
 .search-results__main-column {
 	flex: 1 0 1;
+	display: flex;
 	overflow: hidden;
+}
+
+.search-results__source-column {
+	@extend .search-results__main-column;
+}
+
+// Hide the source column on mobile devices with width 1000px or less.
+@media screen and (max-width: 1000px) {
+	.search-results__source-column {
+		display: none;
+	}
 }
 
 .search-results__stat-header {
 	@extend .search-results__stat-column;
 	font-size: medium;
-	display: flex;
 	align-items: center;
 	margin: 0;
 }
@@ -213,7 +232,6 @@ body {
 .search-results__main-header {
 	@extend .search-results__main-column;
 	font-size: large;
-	display: flex;
 	justify-content: center;
 	align-items: center;
 	margin: 0;
@@ -257,6 +275,7 @@ body {
 
 .search-results__source-header {
 	@extend .search-results__main-header;
+	@extend .search-results__source-column;
 }
 
 .search-results__message {
@@ -324,14 +343,12 @@ body {
 .search-row__stat-cell {
 	@extend .search-results__stat-column;
 	align-self: center;
-	display: flex;
 	flex-direction: column;
 }
 
 .search-row__main-cell {
 	@extend .search-results__main-column;
 	align-self: stretch;
-	display: flex;
 	flex-direction: column;
 }
 
@@ -411,6 +428,7 @@ body {
 
 .search-row__source-cell {
 	@extend .search-row__main-cell;
+	@extend .search-results__source-column;
 }
 
 .search-row__source-link {
@@ -426,6 +444,13 @@ body {
 	align-self: center;
 	width: 75px;
 	height: 75px;
+}
+
+// Hide images on mobile devices with width 800px or less.
+@media screen and (max-width: 800px) {
+	.search-row__image {
+    display: none;
+	}
 }
 
 .search-row__text-contents {
@@ -469,6 +494,13 @@ body {
 
 .search-row__cell-description {
   color: #aeb3bb;
+}
+
+// Hide descriptions on mobile devices with width 600px or less.
+@media screen and (max-width: 600px) {
+	.search-row__cell-description {
+		display: none;
+	}
 }
 
 .search-row__plugin-premium {
