@@ -74,17 +74,6 @@ pub async fn get_spigot_authors(db_pool: &Pool) -> Result<Vec<SpigotAuthor>> {
     Ok(authors)
 }
 
-pub async fn get_highest_spigot_author_id(db_pool: &Pool) -> Result<i32> {
-    let db_client = db_pool.get().await?;
-
-    let id = spigot_author::get_highest_spigot_author_id()
-        .bind(&db_client)
-        .one()
-        .await?;
-
-    Ok(id)
-}
-
 #[cfg(test)]
 pub mod test {
     use super::*;
@@ -150,31 +139,6 @@ pub mod test {
 
         assert_that(&retrieved_authors).has_length(1);
         assert_that(&retrieved_author).is_equal_to(author);
-
-        // Teardown
-        context.drop().await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[named]
-    async fn should_get_highest_spigot_author_id() -> Result<()> {
-        // Setup
-        let context = DatabaseTestContext::new(function_name!()).await;
-
-        // Arrange
-        let authors = create_test_authors();
-
-        for author in authors {
-            insert_spigot_author(&context.pool, &author).await?;
-        }
-
-        // Act
-        let highest_id = get_highest_spigot_author_id(&context.pool).await?;
-
-        // Assert
-        assert_that(&highest_id).is_equal_to(3);
 
         // Teardown
         context.drop().await?;

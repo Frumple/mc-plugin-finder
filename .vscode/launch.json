@@ -19,6 +19,17 @@
         }
       },
       "args": ["populate", "spigot", "authors"],
+      // "args": ["populate", "spigot", "resources"],
+      // "args": ["populate", "spigot", "versions"],
+      // "args": ["populate", "modrinth", "projects"],
+      // "args": ["populate", "modrinth", "versions"],
+      // "args": ["populate", "hangar", "projects"],
+      // "args": ["populate", "hangar", "versions"],
+      // "args": ["update", "spigot", "resources"],
+      // "args": ["update", "modrinth", "projects"],
+      // "args": ["update", "hangar", "projects"],
+      // "args": ["update-all-and-refresh"],
+      // "args": ["refresh"],
       "cwd": "${workspaceFolder}"
     }
   ]

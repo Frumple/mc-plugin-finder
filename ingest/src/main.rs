@@ -6,7 +6,6 @@ use mc_plugin_finder::database::get_db;
 
 use mc_plugin_finder::database::hangar::project::get_latest_hangar_project_update_date;
 use mc_plugin_finder::database::modrinth::project::get_latest_modrinth_project_update_date;
-use mc_plugin_finder::database::spigot::author::get_highest_spigot_author_id;
 use mc_plugin_finder::database::spigot::resource::get_latest_spigot_resource_update_date;
 
 use anyhow::Result;
@@ -113,7 +112,6 @@ enum UpdateRepositorySubcommand {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum UpdateSpigotItems {
-    Authors,
     Resources
 }
 
@@ -170,16 +168,13 @@ async fn main() -> Result<()> {
 
                     match item {
                         PopulateSpigotItems::Authors => {
-                            info!("Populating Spigot Authors...");
-                            spigot_client.populate_spigot_authors(&db_pool).await?;
+                            populate_spigot_authors(&spigot_client, &db_pool).await?;
                         },
                         PopulateSpigotItems::Resources => {
-                            info!("Populating Spigot Resources...");
-                            spigot_client.populate_spigot_resources(&db_pool).await?;
+                            populate_spigot_resources(&spigot_client, &db_pool).await?;
                         },
                         PopulateSpigotItems::Versions => {
-                            info!("Populating Spigot Versions...");
-                            spigot_client.populate_spigot_versions(&db_pool).await?;
+                            populate_spigot_versions(&spigot_client, &db_pool).await?;
                         }
                     }
                 },
@@ -189,12 +184,10 @@ async fn main() -> Result<()> {
 
                     match item {
                          PopulateModrinthItems::Projects => {
-                            info!("Populating Modrinth Projects...");
-                            modrinth_client.populate_modrinth_projects(&db_pool).await?;
+                            populate_modrinth_projects(&modrinth_client, &db_pool).await?;
                         },
                         PopulateModrinthItems::Versions => {
-                            info!("Populating Modrinth Versions...");
-                            modrinth_client.populate_modrinth_versions(&db_pool).await?;
+                            populate_modrinth_versions(&modrinth_client, &db_pool).await?;
                         }
                     }
                 },
@@ -204,12 +197,10 @@ async fn main() -> Result<()> {
 
                     match item {
                         PopulateHangarItems::Projects => {
-                           info!("Populating Hangar Projects...");
-                           hangar_client.populate_hangar_projects(&db_pool).await?;
+                           populate_hangar_projects(&hangar_client, &db_pool).await?;
                        },
                        PopulateHangarItems::Versions => {
-                           info!("Populating Hangar Versions...");
-                           hangar_client.populate_hangar_versions(&db_pool).await?;
+                           populate_hangar_versions(&hangar_client, &db_pool).await?;
                        }
                    }
                 },
@@ -222,9 +213,6 @@ async fn main() -> Result<()> {
                     let spigot_client = SpigotClient::new(spigot_server)?;
 
                     match item {
-                        UpdateSpigotItems::Authors => {
-                            update_spigot_authors(&spigot_client, &db_pool).await?;
-                        },
                         UpdateSpigotItems::Resources => {
                             update_spigot_resources(&spigot_client, &db_pool).await?;
                         }
@@ -257,32 +245,58 @@ async fn main() -> Result<()> {
             refresh_common_projects(&db_pool).await?;
         },
         ActionSubcommand::UpdateAllAndRefresh => {
-            info!("Updating all items...");
-
-            let spigot_server = SpigotServer::new().await;
-            let spigot_client = SpigotClient::new(spigot_server)?;
-
-            let modrinth_server = ModrinthServer::new().await;
-            let modrinth_client = ModrinthClient::new(modrinth_server)?;
-
-            let hangar_server = HangarServer::new().await;
-            let hangar_client = HangarClient::new(hangar_server)?;
-
-            update_spigot_authors(&spigot_client, &db_pool).await?;
-            update_spigot_resources(&spigot_client, &db_pool).await?;
-            update_modrinth_projects(&modrinth_client, &db_pool).await?;
-            update_hangar_projects(&hangar_client, &db_pool).await?;
-            refresh_common_projects(&db_pool).await?;
+            update_all_and_refresh(&db_pool).await?;
         }
     }
 
     Ok(())
 }
 
-async fn update_spigot_authors(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
-    let highest_author_id = get_highest_spigot_author_id(db_pool).await?;
-    info!("Updating Spigot Authors with ID higher than: {}", highest_author_id);
-    spigot_client.update_spigot_authors(db_pool, highest_author_id).await?;
+async fn populate_spigot_authors(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Spigot Authors...");
+    spigot_client.populate_spigot_authors(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_spigot_resources(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Spigot Resources...");
+    spigot_client.populate_spigot_resources(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_spigot_versions(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Spigot Versions...");
+    spigot_client.populate_spigot_versions(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_modrinth_projects(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Modrinth Projects...");
+    modrinth_client.populate_modrinth_projects(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_modrinth_versions(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Modrinth Versions...");
+    modrinth_client.populate_modrinth_versions(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Hangar Projects...");
+    hangar_client.populate_hangar_projects(db_pool).await?;
+
+    Ok(())
+}
+
+async fn populate_hangar_versions(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
+    info!("Populating Hangar Versions...");
+    hangar_client.populate_hangar_versions(db_pool).await?;
 
     Ok(())
 }
@@ -307,6 +321,27 @@ async fn update_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_p
     let latest_update_date = get_latest_hangar_project_update_date(db_pool).await?;
     info!("Updating Hangar Projects since: {}", latest_update_date);
     hangar_client.update_hangar_projects(db_pool, latest_update_date).await?;
+
+    Ok(())
+}
+
+async fn update_all_and_refresh(db_pool: &Pool) -> Result<()> {
+    info!("Updating all items...");
+
+    let spigot_server = SpigotServer::new().await;
+    let spigot_client = SpigotClient::new(spigot_server)?;
+
+    let modrinth_server = ModrinthServer::new().await;
+    let modrinth_client = ModrinthClient::new(modrinth_server)?;
+
+    let hangar_server = HangarServer::new().await;
+    let hangar_client = HangarClient::new(hangar_server)?;
+
+    populate_spigot_authors(&spigot_client, db_pool).await?;
+    update_spigot_resources(&spigot_client, db_pool).await?;
+    update_modrinth_projects(&modrinth_client, db_pool).await?;
+    update_hangar_projects(&hangar_client, db_pool).await?;
+    refresh_common_projects(db_pool).await?;
 
     Ok(())
 }
