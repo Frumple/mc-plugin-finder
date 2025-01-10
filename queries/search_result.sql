@@ -3,70 +3,36 @@
 --! search_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit, offset) : SearchResultEntity
 SELECT
   COUNT(*) OVER() AS full_count,
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_date_created
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_date_created
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_date_created
-       ELSE timestamptz '-infinity'
-  END
-  AS date_created,
 
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_date_updated
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_date_updated
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_date_updated
-       ELSE timestamptz '-infinity'
-  END
-  AS date_updated,
+  GREATEST(
+    CASE WHEN :spigot IS TRUE THEN spigot_date_created ELSE NULL END,
+    CASE WHEN :modrinth IS TRUE THEN modrinth_date_created ELSE NULL END,
+    CASE WHEN :hangar IS TRUE THEN hangar_date_created ELSE NULL END
+  ) AS date_created,
 
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_latest_minecraft_version
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_latest_minecraft_version
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_latest_minecraft_version
-       ELSE NULL
-  END
-  AS latest_minecraft_version,
+  GREATEST(
+    CASE WHEN :spigot IS TRUE THEN spigot_date_updated ELSE NULL END,
+    CASE WHEN :modrinth IS TRUE THEN modrinth_date_updated ELSE NULL END,
+    CASE WHEN :hangar IS TRUE THEN hangar_date_updated ELSE NULL END
+  ) AS date_updated,
 
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(spigot_downloads, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_downloads, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_downloads, 0)
-       ELSE 0
-  END
+  GREATEST(
+    CASE WHEN :spigot IS TRUE THEN spigot_latest_minecraft_version ELSE NULL END,
+    CASE WHEN :modrinth IS TRUE THEN modrinth_latest_minecraft_version ELSE NULL END,
+    CASE WHEN :hangar IS TRUE THEN hangar_latest_minecraft_version ELSE NULL END
+  ) AS latest_minecraft_version,
+
+  CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+  CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+  CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
   AS downloads,
 
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(spigot_likes, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(hangar_stars, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(spigot_likes, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN 0
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_stars, 0)
-       ELSE 0
-  END
+  CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
+  CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
   AS likes_and_stars,
 
-  CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_follows, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_watchers, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-       WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN 0
-       WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_follows, 0)
-       WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_watchers, 0)
-       ELSE 0
-  END
+  CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
+  CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
   AS follows_and_watchers,
 
   (CASE WHEN :spigot IS TRUE THEN spigot_id ELSE NULL END) AS spigot_id,
@@ -184,70 +150,47 @@ WHERE
   END
 
   ORDER BY
+    -- Sorts on 'timestamptz' type
     CASE
       WHEN :sort = 'date_created' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_date_created
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_date_created
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_date_created
-        END
+        GREATEST(
+          CASE WHEN :spigot IS TRUE THEN spigot_date_created ELSE NULL END,
+          CASE WHEN :modrinth IS TRUE THEN modrinth_date_created ELSE NULL END,
+          CASE WHEN :hangar IS TRUE THEN hangar_date_created ELSE NULL END
+        )
 
       WHEN :sort = 'date_updated' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_date_updated
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_date_updated
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_date_updated
-        END
+        GREATEST(
+          CASE WHEN :spigot IS TRUE THEN spigot_date_updated ELSE NULL END,
+          CASE WHEN :modrinth IS TRUE THEN modrinth_date_updated ELSE NULL END,
+          CASE WHEN :hangar IS TRUE THEN hangar_date_updated ELSE NULL END
+        )
     END DESC NULLS LAST,
 
+    -- Sorts on 'text' type
     CASE
       WHEN :sort = 'latest_minecraft_version' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN spigot_latest_minecraft_version
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN modrinth_latest_minecraft_version
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN hangar_latest_minecraft_version
-        END
+        GREATEST(
+          CASE WHEN :spigot IS TRUE THEN spigot_latest_minecraft_version ELSE NULL END,
+          CASE WHEN :modrinth IS TRUE THEN modrinth_latest_minecraft_version ELSE NULL END,
+          CASE WHEN :hangar IS TRUE THEN hangar_latest_minecraft_version ELSE NULL END
+        )
     END DESC NULLS LAST,
 
+    -- Sorts on 'integer' type
     CASE
       WHEN :sort = 'downloads' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(spigot_downloads, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_downloads, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_downloads, 0)
-        END
+        CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+        CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+        CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
 
       WHEN :sort = 'likes_and_stars' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(spigot_likes, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(hangar_stars, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN COALESCE(spigot_likes, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN 0
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_stars, 0)
-        END
+        CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
+        CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
 
       WHEN :sort = 'follows_and_watchers' THEN
-        CASE WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_follows, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_watchers, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-             WHEN :spigot IS TRUE  AND :modrinth IS FALSE AND :hangar IS FALSE THEN 0
-             WHEN :spigot IS FALSE AND :modrinth IS TRUE  AND :hangar IS FALSE THEN COALESCE(modrinth_follows, 0)
-             WHEN :spigot IS FALSE AND :modrinth IS FALSE AND :hangar IS TRUE  THEN COALESCE(hangar_watchers, 0)
-        END
+        CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
+        CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
     END DESC NULLS LAST
 
 LIMIT :limit

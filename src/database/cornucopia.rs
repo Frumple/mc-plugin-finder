@@ -491,70 +491,36 @@ GenericClient
 }pub fn search_projects() -> SearchProjectsStmt
 { SearchProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
   COUNT(*) OVER() AS full_count,
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_created
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_created
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_created
-       ELSE timestamptz '-infinity'
-  END
-  AS date_created,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_updated
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_updated
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_updated
-       ELSE timestamptz '-infinity'
-  END
-  AS date_updated,
+  GREATEST(
+    CASE WHEN $1 IS TRUE THEN spigot_date_created ELSE NULL END,
+    CASE WHEN $2 IS TRUE THEN modrinth_date_created ELSE NULL END,
+    CASE WHEN $3 IS TRUE THEN hangar_date_created ELSE NULL END
+  ) AS date_created,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_latest_minecraft_version
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_latest_minecraft_version
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_latest_minecraft_version
-       ELSE NULL
-  END
-  AS latest_minecraft_version,
+  GREATEST(
+    CASE WHEN $1 IS TRUE THEN spigot_date_updated ELSE NULL END,
+    CASE WHEN $2 IS TRUE THEN modrinth_date_updated ELSE NULL END,
+    CASE WHEN $3 IS TRUE THEN hangar_date_updated ELSE NULL END
+  ) AS date_updated,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_downloads, 0)
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_downloads, 0)
-       ELSE 0
-  END
+  GREATEST(
+    CASE WHEN $1 IS TRUE THEN spigot_latest_minecraft_version ELSE NULL END,
+    CASE WHEN $2 IS TRUE THEN modrinth_latest_minecraft_version ELSE NULL END,
+    CASE WHEN $3 IS TRUE THEN hangar_latest_minecraft_version ELSE NULL END
+  ) AS latest_minecraft_version,
+
+  CASE WHEN $1 IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+  CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+  CASE WHEN $3 IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
   AS downloads,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN 0
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
-       ELSE 0
-  END
+  CASE WHEN $1 IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
+  CASE WHEN $3 IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
   AS likes_and_stars,
 
-  CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-       WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-       WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN 0
-       WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
-       WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
-       ELSE 0
-  END
+  CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
+  CASE WHEN $3 IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
   AS follows_and_watchers,
 
   (CASE WHEN $1 IS TRUE THEN spigot_id ELSE NULL END) AS spigot_id,
@@ -672,70 +638,47 @@ WHERE
   END
 
   ORDER BY
+    -- Sorts on 'timestamptz' type
     CASE
       WHEN $8 = 'date_created' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_created, modrinth_date_created, hangar_date_created)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_created, modrinth_date_created)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_created, hangar_date_created)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_created, hangar_date_created)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_created
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_created
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_created
-        END
+        GREATEST(
+          CASE WHEN $1 IS TRUE THEN spigot_date_created ELSE NULL END,
+          CASE WHEN $2 IS TRUE THEN modrinth_date_created ELSE NULL END,
+          CASE WHEN $3 IS TRUE THEN hangar_date_created ELSE NULL END
+        )
 
       WHEN $8 = 'date_updated' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, modrinth_date_updated, hangar_date_updated)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_date_updated, modrinth_date_updated)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_date_updated, hangar_date_updated)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_date_updated, hangar_date_updated)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_date_updated
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_date_updated
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_date_updated
-        END
+        GREATEST(
+          CASE WHEN $1 IS TRUE THEN spigot_date_updated ELSE NULL END,
+          CASE WHEN $2 IS TRUE THEN modrinth_date_updated ELSE NULL END,
+          CASE WHEN $3 IS TRUE THEN hangar_date_updated ELSE NULL END
+        )
     END DESC NULLS LAST,
 
+    -- Sorts on 'text' type
     CASE
       WHEN $8 = 'latest_minecraft_version' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN GREATEST(spigot_latest_minecraft_version, modrinth_latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN GREATEST(spigot_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN GREATEST(modrinth_latest_minecraft_version, hangar_latest_minecraft_version)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN spigot_latest_minecraft_version
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN modrinth_latest_minecraft_version
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN hangar_latest_minecraft_version
-        END
+        GREATEST(
+          CASE WHEN $1 IS TRUE THEN spigot_latest_minecraft_version ELSE NULL END,
+          CASE WHEN $2 IS TRUE THEN modrinth_latest_minecraft_version ELSE NULL END,
+          CASE WHEN $3 IS TRUE THEN hangar_latest_minecraft_version ELSE NULL END
+        )
     END DESC NULLS LAST,
 
+    -- Sorts on 'integer' type
     CASE
       WHEN $8 = 'downloads' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0) + COALESCE(modrinth_downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_downloads, 0) + COALESCE(hangar_downloads, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_downloads, 0)
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_downloads, 0)
-        END
+        CASE WHEN $1 IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+        CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+        CASE WHEN $3 IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
 
       WHEN $8 = 'likes_and_stars' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(spigot_likes, 0) + COALESCE(hangar_stars, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN COALESCE(spigot_likes, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN 0
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_stars, 0)
-        END
+        CASE WHEN $1 IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
+        CASE WHEN $3 IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
 
       WHEN $8 = 'follows_and_watchers' THEN
-        CASE WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-             WHEN $1 IS TRUE  AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS TRUE  THEN COALESCE(modrinth_follows, 0) + COALESCE(hangar_watchers, 0)
-             WHEN $1 IS TRUE  AND $2 IS FALSE AND $3 IS FALSE THEN 0
-             WHEN $1 IS FALSE AND $2 IS TRUE  AND $3 IS FALSE THEN COALESCE(modrinth_follows, 0)
-             WHEN $1 IS FALSE AND $2 IS FALSE AND $3 IS TRUE  THEN COALESCE(hangar_watchers, 0)
-        END
+        CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
+        CASE WHEN $3 IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
     END DESC NULLS LAST
 
 LIMIT $9
