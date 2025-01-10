@@ -102,7 +102,7 @@ FROM
   common_project
 WHERE
   CASE :spigot IS TRUE AND :query = ''
-    WHEN TRUE THEN spigot_name IS NOT NULL
+    WHEN TRUE THEN spigot_id IS NOT NULL
     ELSE FALSE
   END
 
@@ -130,7 +130,7 @@ WHERE
   OR
 
   CASE :modrinth IS TRUE AND :query = ''
-    WHEN TRUE THEN modrinth_name IS NOT NULL
+    WHEN TRUE THEN modrinth_id IS NOT NULL
     ELSE FALSE
   END
 
@@ -158,7 +158,7 @@ WHERE
   OR
 
   CASE :hangar IS TRUE AND :query = ''
-    WHEN TRUE THEN hangar_name IS NOT NULL
+    WHEN TRUE THEN hangar_slug IS NOT NULL
     ELSE FALSE
   END
 

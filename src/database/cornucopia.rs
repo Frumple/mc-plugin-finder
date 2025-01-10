@@ -590,7 +590,7 @@ FROM
   common_project
 WHERE
   CASE $1 IS TRUE AND $4 = ''
-    WHEN TRUE THEN spigot_name IS NOT NULL
+    WHEN TRUE THEN spigot_id IS NOT NULL
     ELSE FALSE
   END
 
@@ -618,7 +618,7 @@ WHERE
   OR
 
   CASE $2 IS TRUE AND $4 = ''
-    WHEN TRUE THEN modrinth_name IS NOT NULL
+    WHEN TRUE THEN modrinth_id IS NOT NULL
     ELSE FALSE
   END
 
@@ -646,7 +646,7 @@ WHERE
   OR
 
   CASE $3 IS TRUE AND $4 = ''
-    WHEN TRUE THEN hangar_name IS NOT NULL
+    WHEN TRUE THEN hangar_slug IS NOT NULL
     ELSE FALSE
   END
 
