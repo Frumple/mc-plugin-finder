@@ -114,31 +114,27 @@ pub mod test {
         let context = DatabaseTestContext::new(function_name!()).await;
 
         // Arrange
-        let author = &create_test_authors()[0];
+        let old_author = &create_test_authors()[0];
+        let mut new_author = old_author.clone();
 
         // Act
-        insert_spigot_author(&context.pool, author).await?;
+        insert_spigot_author(&context.pool, old_author).await?;
 
-        let result = insert_spigot_author(&context.pool, author).await;
+        new_author.name = "carl".to_string();
+
+        let result = insert_spigot_author(&context.pool, &new_author).await;
 
         // Assert
-        assert_that(&result).is_err();
 
-        let error = result.unwrap_err();
-        let downcast_error = error.downcast_ref::<SpigotAuthorError>().unwrap();
+        // Verify no error occurs
+        assert_that(&result).is_ok();
 
-        #[allow(irrefutable_let_patterns)]
-        if let SpigotAuthorError::DatabaseQueryFailed { author_id, source: _ } = downcast_error {
-            assert_that(&author_id).is_equal_to(&author.id);
-        } else {
-            panic!("expected error to be DatabaseQueryFailed, but was {}", downcast_error);
-        }
-
+        // Verify author has not been changed
         let retrieved_authors = get_spigot_authors(&context.pool).await?;
         let retrieved_author = &retrieved_authors[0];
 
         assert_that(&retrieved_authors).has_length(1);
-        assert_that(&retrieved_author).is_equal_to(author);
+        assert_that(&retrieved_author).is_equal_to(old_author);
 
         // Teardown
         context.drop().await?;
