@@ -58,10 +58,11 @@ impl From<SearchParams> for SearchProjectsParams<String, String> {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum SearchParamsSort {
+    #[default]
+    Relevance,
     DateCreated,
     DateUpdated,
     LatestMinecraftVersion,
-    #[default]
     Downloads,
     LikesAndStars,
     FollowsAndWatchers,
@@ -71,6 +72,7 @@ pub enum SearchParamsSort {
 impl From<SearchParamsSort> for String {
     fn from(sort: SearchParamsSort) -> Self {
         match sort {
+            SearchParamsSort::Relevance => "relevance".to_string(),
             SearchParamsSort::DateCreated => "date_created".to_string(),
             SearchParamsSort::DateUpdated => "date_updated".to_string(),
             SearchParamsSort::LatestMinecraftVersion => "latest_minecraft_version".to_string(),
@@ -86,6 +88,7 @@ impl FromStr for SearchParamsSort {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
+            "relevance"                => Ok(Self::Relevance),
             "date_created"             => Ok(Self::DateCreated),
             "date_updated"             => Ok(Self::DateUpdated),
             "latest_minecraft_version" => Ok(Self::LatestMinecraftVersion),

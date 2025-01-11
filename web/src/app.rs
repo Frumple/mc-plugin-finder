@@ -60,7 +60,7 @@ impl WebSearchParams {
     fn form_url(&self) -> String {
         "?".to_string() +
         &serde_urlencoded::to_string(self).unwrap_or(
-            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=downloads&limit=25&page=1".to_string())
+            "query=&spigot=true&modrinth=true&hangar=true&name=true&sort=relevance&limit=25&page=1".to_string())
     }
 
     fn first_url(&self) -> String {
@@ -98,7 +98,7 @@ impl Default for WebSearchParams {
             name: Some(false),
             description: Some(false),
             author: Some(false),
-            sort: Some("downloads".to_string()),
+            sort: Some("relevance".to_string()),
             limit: Some(25),
             page: Some(1)
         }
@@ -523,7 +523,7 @@ fn HomePage() -> impl IntoView {
                     name: Some(true),
                     description: None,
                     author: None,
-                    sort: Some("downloads".to_string()),
+                    sort: Some("relevance".to_string()),
                     limit: Some(25),
                     page: Some(1)
                 }
@@ -611,6 +611,7 @@ fn SearchForm(
             <div class="search-form__sort-limit-container">
                 <label for="sort-select" class="search-form__sort-label">Sort by:</label>
                 <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()" prop:value=move || params().sort>
+                    <option value="relevance">Relevance</option>
                     <option value="date_created">Newest</option>
                     <option value="date_updated">Recently Updated</option>
                     <option value="latest_minecraft_version">Latest MC Version</option>

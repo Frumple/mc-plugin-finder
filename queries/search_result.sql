@@ -150,6 +150,34 @@ WHERE
   END
 
   ORDER BY
+    -- Sorts on 'real' type
+    CASE
+      WHEN :sort = 'relevance' AND :query != '' THEN
+        GREATEST(
+          CASE WHEN :spigot IS TRUE THEN
+            GREATEST(
+              CASE WHEN :name IS TRUE THEN :query <<-> spigot_name ELSE NULL END,
+              CASE WHEN :description IS TRUE THEN :query <<-> spigot_description ELSE NULL END,
+              CASE WHEN :author IS TRUE THEN :query <<-> spigot_author ELSE NULL END
+            )
+          ELSE NULL END,
+          CASE WHEN :modrinth IS TRUE THEN
+            GREATEST(
+              CASE WHEN :name IS TRUE THEN :query <<-> modrinth_name ELSE NULL END,
+              CASE WHEN :description IS TRUE THEN :query <<-> modrinth_description ELSE NULL END,
+              CASE WHEN :author IS TRUE THEN :query <<-> modrinth_author ELSE NULL END
+            )
+          ELSE NULL END,
+          CASE WHEN :hangar IS TRUE THEN
+            GREATEST(
+              CASE WHEN :name IS TRUE THEN :query <<-> hangar_name ELSE NULL END,
+              CASE WHEN :description IS TRUE THEN :query <<-> hangar_description ELSE NULL END,
+              CASE WHEN :author IS TRUE THEN :query <<-> hangar_author ELSE NULL END
+            )
+          ELSE NULL END
+        )
+    END ASC NULLS LAST,
+
     -- Sorts on 'timestamptz' type
     CASE
       WHEN :sort = 'date_created' THEN
@@ -179,11 +207,6 @@ WHERE
 
     -- Sorts on 'integer' type
     CASE
-      WHEN :sort = 'downloads' THEN
-        CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
-        CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
-        CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
-
       WHEN :sort = 'likes_and_stars' THEN
         CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
         CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
@@ -191,7 +214,13 @@ WHERE
       WHEN :sort = 'follows_and_watchers' THEN
         CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
         CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
-    END DESC NULLS LAST
+    END DESC NULLS LAST,
+
+    -- Fallback to sort by downloads when no sort is specified or as a secondary sort
+    CASE WHEN :spigot IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+    CASE WHEN :modrinth IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+    CASE WHEN :hangar IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
+    DESC NULLS LAST
 
 LIMIT :limit
 OFFSET :offset;

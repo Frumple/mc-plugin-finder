@@ -638,6 +638,34 @@ WHERE
   END
 
   ORDER BY
+    -- Sorts on 'real' type
+    CASE
+      WHEN $8 = 'relevance' AND $4 != '' THEN
+        GREATEST(
+          CASE WHEN $1 IS TRUE THEN
+            GREATEST(
+              CASE WHEN $5 IS TRUE THEN $4 <<-> spigot_name ELSE NULL END,
+              CASE WHEN $6 IS TRUE THEN $4 <<-> spigot_description ELSE NULL END,
+              CASE WHEN $7 IS TRUE THEN $4 <<-> spigot_author ELSE NULL END
+            )
+          ELSE NULL END,
+          CASE WHEN $2 IS TRUE THEN
+            GREATEST(
+              CASE WHEN $5 IS TRUE THEN $4 <<-> modrinth_name ELSE NULL END,
+              CASE WHEN $6 IS TRUE THEN $4 <<-> modrinth_description ELSE NULL END,
+              CASE WHEN $7 IS TRUE THEN $4 <<-> modrinth_author ELSE NULL END
+            )
+          ELSE NULL END,
+          CASE WHEN $3 IS TRUE THEN
+            GREATEST(
+              CASE WHEN $5 IS TRUE THEN $4 <<-> hangar_name ELSE NULL END,
+              CASE WHEN $6 IS TRUE THEN $4 <<-> hangar_description ELSE NULL END,
+              CASE WHEN $7 IS TRUE THEN $4 <<-> hangar_author ELSE NULL END
+            )
+          ELSE NULL END
+        )
+    END ASC NULLS LAST,
+
     -- Sorts on 'timestamptz' type
     CASE
       WHEN $8 = 'date_created' THEN
@@ -667,11 +695,6 @@ WHERE
 
     -- Sorts on 'integer' type
     CASE
-      WHEN $8 = 'downloads' THEN
-        CASE WHEN $1 IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
-        CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
-        CASE WHEN $3 IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
-
       WHEN $8 = 'likes_and_stars' THEN
         CASE WHEN $1 IS TRUE THEN COALESCE(spigot_likes, 0) ELSE 0 END +
         CASE WHEN $3 IS TRUE THEN COALESCE(hangar_stars, 0) ELSE 0 END
@@ -679,7 +702,13 @@ WHERE
       WHEN $8 = 'follows_and_watchers' THEN
         CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_follows, 0) ELSE 0 END +
         CASE WHEN $3 IS TRUE THEN COALESCE(hangar_watchers, 0) ELSE 0 END
-    END DESC NULLS LAST
+    END DESC NULLS LAST,
+
+    -- Fallback to sort by downloads when no sort is specified or as a secondary sort
+    CASE WHEN $1 IS TRUE THEN COALESCE(spigot_downloads, 0) ELSE 0 END +
+    CASE WHEN $2 IS TRUE THEN COALESCE(modrinth_downloads, 0) ELSE 0 END +
+    CASE WHEN $3 IS TRUE THEN COALESCE(hangar_downloads, 0) ELSE 0 END
+    DESC NULLS LAST
 
 LIMIT $9
 OFFSET $10")) } pub struct
