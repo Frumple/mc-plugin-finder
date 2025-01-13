@@ -9,7 +9,8 @@ use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
-use std::cell::Cell;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
@@ -28,7 +29,7 @@ struct GetSpigotAuthorsRequest {
 impl GetSpigotAuthorsRequest {
     fn create_populate_request() -> Self {
         Self {
-            size: 500,
+            size: 100,
             page: 1,
             sort: "+id".to_string(),
             fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
@@ -105,16 +106,15 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_spigot_authors(&self, db_pool: &Pool) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result = self
             .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count))
             .await;
 
-        let count = count_cell.get();
-        info!("Spigot authors populated: {}", count);
+        info!("Spigot authors populated: {}", count.load(Ordering::Relaxed));
 
         result
     }
@@ -125,17 +125,16 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn update_spigot_authors(&self, db_pool: &Pool, author_id_higher_than: i32) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_update_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result = self
             .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.id > author_id_higher_than)))
-            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count))
             .await;
 
-        let count = count_cell.get();
-        info!("Spigot authors updated: {}", count);
+        info!("Spigot authors updated: {}", count.load(Ordering::Relaxed));
 
         result
     }
@@ -197,11 +196,13 @@ impl<T> PageTurner<GetSpigotAuthorsRequest> for SpigotClient<T> where T: HttpSer
     }
 }
 
-async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+async fn process_incoming_author(incoming_author: IncomingSpigotAuthor, db_pool: &Pool, count: &Arc<AtomicU32>) -> Result<()> {
     let db_result = insert_spigot_author(db_pool, &incoming_author.into()).await;
 
     match db_result {
-        Ok(_) => count_cell.set(count_cell.get() + 1),
+        Ok(_) => {
+            count.fetch_add(1, Ordering::Relaxed);
+        }
         Err(err) => warn!("{}", err)
     }
 

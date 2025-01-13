@@ -12,8 +12,9 @@ use page_turner::prelude::*;
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
-use std::cell::Cell;
 use std::fmt::Debug;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
 use time::format_description::well_known::Rfc3339;
 use tracing::{info, warn, instrument};
@@ -135,16 +136,15 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_hangar_projects(&self, db_pool: &Pool) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result= self
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, false))
+            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count, false))
             .await;
 
-        let count = count_cell.get();
-        info!("Hangar projects populated: {}", count);
+        info!("Hangar projects populated: {}", count.load(Ordering::Relaxed));
 
         result
     }
@@ -155,22 +155,21 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     pub async fn update_hangar_projects(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result = self
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(OffsetDateTime::parse(x.last_updated.as_str(), &Rfc3339).unwrap() > update_date_later_than)))
-            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count_cell, true))
+            .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count, true))
             .await;
 
-        let count = count_cell.get();
-        info!("Hangar projects updated: {}", count);
+        info!("Hangar projects updated: {}", count.load(Ordering::Relaxed));
 
         result
     }
 
-    async fn process_incoming_project(&self, incoming_project: IncomingHangarProject, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
+    async fn process_incoming_project(&self, incoming_project: IncomingHangarProject, db_pool: &Pool, count: &Arc<AtomicU32>, get_version: bool) -> Result<()> {
         let mut incoming_version: Option<IncomingHangarVersion> = None;
 
         if get_version {
@@ -189,7 +188,9 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
                 let db_result = upsert_hangar_project(db_pool, &project).await;
 
                 match db_result {
-                    Ok(_) => count_cell.set(count_cell.get() + 1),
+                    Ok(_) => {
+                        count.fetch_add(1, Ordering::Relaxed);
+                    },
                     Err(err) => warn!("{}", err)
                 }
             }

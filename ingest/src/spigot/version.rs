@@ -7,7 +7,8 @@ use deadpool_postgres::Pool;
 use futures::stream::{self, StreamExt, TryStreamExt};
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
-use std::cell::Cell;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
@@ -36,23 +37,22 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_spigot_versions(&self, db_pool: &Pool) -> Result<()> {
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let resources = get_spigot_resources(db_pool).await?;
         let resource_stream = stream::iter(resources);
 
         let result = resource_stream
             .map(Ok)
-            .try_for_each_concurrent(SPIGOT_VERSIONS_CONCURRENT_FUTURES, |resource| self.process_spigot_resource(resource, db_pool, &count_cell))
+            .try_for_each_concurrent(SPIGOT_VERSIONS_CONCURRENT_FUTURES, |resource| self.process_spigot_resource(resource, db_pool, &count))
             .await;
 
-        let count = count_cell.get();
-        info!("Spigot resource versions populated: {}", count);
+        info!("Spigot resource versions populated: {}", count.load(Ordering::Relaxed));
 
         result
     }
 
-    async fn process_spigot_resource(&self, resource: SpigotResource, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+    async fn process_spigot_resource(&self, resource: SpigotResource, db_pool: &Pool, count: &Arc<AtomicU32>) -> Result<()> {
         let version_result = self.get_latest_spigot_resource_version_from_api(resource.id).await;
 
         match version_result {
@@ -62,7 +62,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
                 let db_result = upsert_spigot_resource(db_pool, &new_resource).await;
 
                 match db_result {
-                    Ok(_) => count_cell.set(count_cell.get() + 1),
+                    Ok(_) => {
+                        count.fetch_add(1, Ordering::Relaxed);
+                    },
                     Err(err) => warn!("{}", err)
                 }
             }

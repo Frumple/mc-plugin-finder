@@ -15,9 +15,9 @@ use regex::Regex;
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
-use std::cell::Cell;
 use std::fmt::Debug;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
+use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
@@ -158,16 +158,15 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn populate_spigot_resources(&self, db_pool: &Pool) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_populate_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result = self
             .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
-            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, false))
+            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count, false))
             .await;
 
-        let count = count_cell.get();
-        info!("Spigot resources populated: {}", count);
+        info!("Spigot resources populated: {}", count.load(Ordering::Relaxed));
 
         result
     }
@@ -178,17 +177,16 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     pub async fn update_spigot_resources(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetSpigotResourcesRequest::create_update_request();
 
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let result = self
             .pages_ahead(SPIGOT_RESOURCES_REQUESTS_AHEAD, Limit::None, request)
             .items()
             .try_take_while(|x| future::ready(Ok(x.update_date > update_date_later_than.unix_timestamp())))
-            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count_cell, true))
+            .try_for_each_concurrent(SPIGOT_RESOURCES_CONCURRENT_FUTURES, |incoming_resource| self.process_incoming_resource(incoming_resource, db_pool, &count, true))
             .await;
 
-        let count = count_cell.get();
-        info!("Spigot resources updated: {}", count);
+        info!("Spigot resources updated: {}", count.load(Ordering::Relaxed));
 
         result
     }
@@ -232,7 +230,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         }
     }
 
-    async fn process_incoming_resource(&self, incoming_resource: IncomingSpigotResource, db_pool: &Pool, count_cell: &Cell<u32>, get_version: bool) -> Result<()> {
+    async fn process_incoming_resource(&self, incoming_resource: IncomingSpigotResource, db_pool: &Pool, count: &Arc<AtomicU32>, get_version: bool) -> Result<()> {
         let mut version_name = None;
 
         if get_version {
@@ -251,7 +249,9 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
                 let db_result = upsert_spigot_resource(db_pool, &resource).await;
 
                 match db_result {
-                    Ok(_) => count_cell.set(count_cell.get() + 1),
+                    Ok(_) => {
+                        count.fetch_add(1, Ordering::Relaxed);
+                    }
                     Err(err) => warn!("{}", err)
                 }
             }

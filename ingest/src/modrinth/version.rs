@@ -7,8 +7,9 @@ use deadpool_postgres::Pool;
 use futures::stream::{self, StreamExt, TryStreamExt};
 use reqwest::StatusCode;
 use serde::{Serialize, Deserialize};
-use std::cell::Cell;
 use std::fmt::Debug;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
 use tracing::{info, warn, instrument};
 
@@ -39,23 +40,22 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_modrinth_versions(&self, db_pool: &Pool) -> Result<()> {
-        let count_cell: Cell<u32> = Cell::new(0);
+        let count = Arc::new(AtomicU32::new(0));
 
         let projects = get_modrinth_projects(db_pool).await?;
         let project_stream = stream::iter(projects);
 
         let result = project_stream
             .map(Ok)
-            .try_for_each_concurrent(MODRINTH_VERSIONS_CONCURRENT_FUTURES, |project| self.process_modrinth_project(project, db_pool, &count_cell))
+            .try_for_each_concurrent(MODRINTH_VERSIONS_CONCURRENT_FUTURES, |project| self.process_modrinth_project(project, db_pool, &count))
             .await;
 
-        let count = count_cell.get();
-        info!("Modrinth project versions populated: {}", count);
+        info!("Modrinth project versions populated: {}", count.load(Ordering::Relaxed));
 
         result
     }
 
-    async fn process_modrinth_project(&self, project: ModrinthProject, db_pool: &Pool, count_cell: &Cell<u32>) -> Result<()> {
+    async fn process_modrinth_project(&self, project: ModrinthProject, db_pool: &Pool, count: &Arc<AtomicU32>) -> Result<()> {
         if let Some(ref version_id) = project.version_id {
             let version_result = self.get_latest_modrinth_project_version_from_api(&project.id, version_id).await;
 
@@ -66,7 +66,9 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
                     let db_result = upsert_modrinth_project(db_pool, &new_project).await;
 
                     match db_result {
-                        Ok(_) => count_cell.set(count_cell.get() + 1),
+                        Ok(_) => {
+                            count.fetch_add(1, Ordering::Relaxed);
+                        },
                         Err(err) => warn!("{}", err)
                     }
                 }
