@@ -78,15 +78,29 @@ pub struct IncomingModrinthProject {
     versions: Vec<String>,
     downloads: i32,
     follows: i32,
-    latest_version: Option<String>,
     icon_url: Option<String>,
     monetization_status: Option<String>
 }
 
+impl IncomingModrinthProject {
+    // Assume that the last entry in the list of MC versions from the API is the latest version.
+    fn latest_minecraft_version(&self) -> Option<String> {
+        filter_release_minecraft_versions(self.versions.last().cloned())
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GetModrinthProjectResponse {
+    source_url: Option<String>,
     status: String,
-    source_url: Option<String>
+    versions: Vec<String>
+}
+
+impl GetModrinthProjectResponse {
+    // Assume that the last entry in the list of plugin versions from the API is the latest version.
+    fn latest_version(&self) -> Option<String> {
+        self.versions.last().cloned()
+    }
 }
 
 #[derive(Debug, Error)]
@@ -152,26 +166,28 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
     }
 
     async fn process_incoming_project(&self, incoming_project: IncomingModrinthProject, db_pool: &Pool, count: &Arc<AtomicU32>, get_version: bool) -> Result<()> {
-        let mut version_name = None;
-
         let project_id = incoming_project.project_id.clone();
-
-        if get_version {
-            if let Some(version_id) = incoming_project.latest_version.clone() {
-                let version_result = self.get_latest_modrinth_project_version_from_api(&project_id, &version_id).await;
-
-                match version_result {
-                    Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
-                    Err(err) => warn!("{}", err)
-                }
-            }
-        }
-
         let project_result = self.get_project_from_api(&project_id).await;
 
         match project_result {
             Ok(project_response) => {
-                let convert_result = convert_incoming_project(incoming_project, &project_response, &version_name).await;
+                let mut version_id: Option<String> = None;
+                let mut version_name: Option<String> = None;
+
+                if let Some(latest_version_id) = project_response.latest_version() {
+                    version_id = Some(latest_version_id.to_string());
+
+                    if get_version {
+                        let version_result = self.get_latest_modrinth_project_version_from_api(&project_id, &latest_version_id).await;
+
+                        match version_result {
+                            Ok(retrieved_version_name) => version_name = Some(retrieved_version_name),
+                            Err(err) => warn!("{}", err)
+                        }
+                    }
+                }
+
+                let convert_result = convert_incoming_project(incoming_project, &project_response, &version_id, &version_name).await;
 
                 match convert_result {
                     Ok(project) => {
@@ -272,23 +288,21 @@ impl<T> PageTurner<SearchModrinthProjectsRequest> for ModrinthClient<T> where T:
     }
 }
 
-async fn convert_incoming_project(incoming_project: IncomingModrinthProject, project_response: &GetModrinthProjectResponse, version_name: &Option<String>) -> Result<ModrinthProject> {
-    let project_id = incoming_project.project_id;
-    let latest_minecraft_version = filter_release_minecraft_versions(incoming_project.versions.last().cloned());
+async fn convert_incoming_project(incoming_project: IncomingModrinthProject, project_response: &GetModrinthProjectResponse, version_id: &Option<String>, version_name: &Option<String>) -> Result<ModrinthProject> {
+    let latest_minecraft_version = incoming_project.latest_minecraft_version();
 
     let mut project = ModrinthProject {
-        id: project_id,
+        id: incoming_project.project_id,
         slug: incoming_project.slug,
         name: incoming_project.title,
         description: incoming_project.description,
         author: incoming_project.author,
         date_created: OffsetDateTime::parse(&incoming_project.date_created, &Rfc3339)?,
         date_updated: OffsetDateTime::parse(&incoming_project.date_modified, &Rfc3339)?,
-        // Assume that the last entry in the given list of versions from the API is the latest version.
         latest_minecraft_version,
         downloads: incoming_project.downloads,
         follows: incoming_project.follows,
-        version_id: incoming_project.latest_version,
+        version_id: version_id.clone(),
         version_name: version_name.clone(),
         status: project_response.status.clone(),
         icon_url: incoming_project.icon_url,
@@ -376,8 +390,9 @@ mod test {
         let modrinth_server = ModrinthTestServer::new().await;
 
         let expected_response = GetModrinthProjectResponse {
+            source_url: Some("https://github.com/alice/foo".to_string()),
             status: "approved".to_string(),
-            source_url: Some("https://github.com/alice/foo".to_string())
+            versions: vec!["aaaa1111".to_string(), "bbbb2222".to_string(), "cccc3333".to_string()]
         };
 
         let response_template = ResponseTemplate::new(200)
@@ -406,13 +421,16 @@ mod test {
         // Arrange
         let incoming_project = create_test_modrinth_projects()[0].clone();
         let project_response = GetModrinthProjectResponse {
+            source_url: Some("https://github.com/alice/foo".to_string()),
             status: "approved".to_string(),
-            source_url: Some("https://github.com/alice/foo".to_string())
+            versions: vec!["aaaa1111".to_string(), "bbbb2222".to_string(), "cccc3333".to_string()]
         };
+
+        let version_id = "cccc3333";
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_id.to_string()), &Some(version_name.to_string())).await?;
 
         // Assert
         let expected_project = ModrinthProject {
@@ -426,7 +444,7 @@ mod test {
             latest_minecraft_version: Some("1.21".to_string()),
             downloads: 100,
             follows: 200,
-            version_id: Some("aaaa1111".to_string()),
+            version_id: project_response.latest_version(),
             version_name: Some(version_name.to_string()),
             status: project_response.status,
             icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
@@ -454,13 +472,16 @@ mod test {
         let mut incoming_project = create_test_modrinth_projects()[0].clone();
         incoming_project.versions = vec![version.to_string()];
         let project_response = GetModrinthProjectResponse {
+            source_url: Some("https://github.com/alice/foo".to_string()),
             status: "approved".to_string(),
-            source_url: Some("https://github.com/alice/foo".to_string())
+            versions: vec!["aaaa1111".to_string(), "bbbb2222".to_string(), "cccc3333".to_string()]
         };
+
+        let version_id = "cccc3333";
         let version_name = "v1.2.3";
 
         // Act
-        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_name.to_string())).await?;
+        let project = convert_incoming_project(incoming_project, &project_response, &Some(version_id.to_string()), &Some(version_name.to_string())).await?;
 
         // Assert
         assert_that(&project.latest_minecraft_version).is_none();
@@ -481,7 +502,6 @@ mod test {
                 versions: vec!["1.20".to_string(), "1.20.6".to_string(), "1.21".to_string()],
                 downloads: 100,
                 follows: 200,
-                latest_version: Some("aaaa1111".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/aaaaaaaa/icon.png".to_string()),
                 monetization_status: None
             },
@@ -496,7 +516,6 @@ mod test {
                 versions: vec!["1.6".to_string(), "1.7".to_string(), "1.8".to_string()],
                 downloads: 300,
                 follows: 300,
-                latest_version: Some("bbbb1111".to_string()),
                 icon_url: Some("https://cdn.modrinth.com/data/bbbbbbbb/icon.png".to_string()),
                 monetization_status: None
             },
