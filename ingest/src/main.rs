@@ -29,10 +29,14 @@ pub trait HttpServer {
 }
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about = None, arg_required_else_help(true))]
 struct CommandLineArguments {
     #[command(subcommand)]
-    action: ActionSubcommand
+    action: Option<ActionSubcommand>,
+
+    /// Refresh common projects: Will run after the populate/update command if the command was specified
+    #[arg(global = true, short, long)]
+    refresh: bool
 }
 
 #[derive(Subcommand)]
@@ -46,11 +50,7 @@ enum ActionSubcommand {
     Update {
         #[command(subcommand)]
         repository: UpdateRepositorySubcommand
-    },
-    /// Refresh common projects: Run this after populating/updating all repositories
-    Refresh,
-    /// Update all items and refresh
-    UpdateAllAndRefresh
+    }
 }
 
 #[derive(Subcommand)]
@@ -93,7 +93,7 @@ enum PopulateHangarItems {
 
 #[derive(Subcommand)]
 enum UpdateRepositorySubcommand {
-    /// Spigot authors or resources
+    /// Spigot resources
     Spigot {
         #[arg(value_enum)]
         item: UpdateSpigotItems
@@ -107,7 +107,9 @@ enum UpdateRepositorySubcommand {
     Hangar {
         #[arg(value_enum)]
         item: UpdateHangarItems
-    }
+    },
+    /// All authors, resources, and projects
+    All
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -159,94 +161,99 @@ async fn main() -> Result<()> {
     let db = get_db();
     let db_pool = db.create_pool().await?;
 
-    match &cli.action {
-        ActionSubcommand::Populate { repository } => {
-            match repository {
-                PopulateRepositorySubcommand::Spigot { item } => {
-                    let spigot_server = SpigotServer::new().await;
-                    let spigot_client = SpigotClient::new(spigot_server)?;
+    if let Some(action) = &cli.action {
+        match &action {
+            ActionSubcommand::Populate { repository } => {
+                match repository {
+                    PopulateRepositorySubcommand::Spigot { item } => {
+                        let spigot_server = SpigotServer::new().await;
+                        let spigot_client = SpigotClient::new(spigot_server)?;
 
-                    match item {
-                        PopulateSpigotItems::Authors => {
-                            populate_spigot_authors(&spigot_client, &db_pool).await?;
-                        },
-                        PopulateSpigotItems::Resources => {
-                            populate_spigot_resources(&spigot_client, &db_pool).await?;
-                        },
-                        PopulateSpigotItems::Versions => {
-                            populate_spigot_versions(&spigot_client, &db_pool).await?;
+                        match item {
+                            PopulateSpigotItems::Authors => {
+                                populate_spigot_authors(&spigot_client, &db_pool).await?;
+                            },
+                            PopulateSpigotItems::Resources => {
+                                populate_spigot_resources(&spigot_client, &db_pool).await?;
+                            },
+                            PopulateSpigotItems::Versions => {
+                                populate_spigot_versions(&spigot_client, &db_pool).await?;
+                            }
                         }
-                    }
-                },
-                PopulateRepositorySubcommand::Modrinth { item } => {
-                    let modrinth_server = ModrinthServer::new().await;
-                    let modrinth_client = ModrinthClient::new(modrinth_server)?;
+                    },
+                    PopulateRepositorySubcommand::Modrinth { item } => {
+                        let modrinth_server = ModrinthServer::new().await;
+                        let modrinth_client = ModrinthClient::new(modrinth_server)?;
 
-                    match item {
-                         PopulateModrinthItems::Projects => {
-                            populate_modrinth_projects(&modrinth_client, &db_pool).await?;
-                        },
-                        PopulateModrinthItems::Versions => {
-                            populate_modrinth_versions(&modrinth_client, &db_pool).await?;
+                        match item {
+                             PopulateModrinthItems::Projects => {
+                                populate_modrinth_projects(&modrinth_client, &db_pool).await?;
+                            },
+                            PopulateModrinthItems::Versions => {
+                                populate_modrinth_versions(&modrinth_client, &db_pool).await?;
+                            }
                         }
-                    }
-                },
-                PopulateRepositorySubcommand::Hangar { item } => {
-                    let hangar_server = HangarServer::new().await;
-                    let hangar_client = HangarClient::new(hangar_server)?;
+                    },
+                    PopulateRepositorySubcommand::Hangar { item } => {
+                        let hangar_server = HangarServer::new().await;
+                        let hangar_client = HangarClient::new(hangar_server)?;
 
-                    match item {
-                        PopulateHangarItems::Projects => {
-                           populate_hangar_projects(&hangar_client, &db_pool).await?;
-                       },
-                       PopulateHangarItems::Versions => {
-                           populate_hangar_versions(&hangar_client, &db_pool).await?;
+                        match item {
+                            PopulateHangarItems::Projects => {
+                               populate_hangar_projects(&hangar_client, &db_pool).await?;
+                           },
+                           PopulateHangarItems::Versions => {
+                               populate_hangar_versions(&hangar_client, &db_pool).await?;
+                           }
                        }
-                   }
-                },
+                    },
+                }
+            },
+            ActionSubcommand::Update { repository } => {
+                match repository {
+                    UpdateRepositorySubcommand::Spigot { item } => {
+                        let spigot_server = SpigotServer::new().await;
+                        let spigot_client = SpigotClient::new(spigot_server)?;
+
+                        match item {
+                            UpdateSpigotItems::Resources => {
+                                update_spigot_resources(&spigot_client, &db_pool).await?;
+                            }
+                        }
+                    },
+                    UpdateRepositorySubcommand::Modrinth { item } => {
+                        let modrinth_server = ModrinthServer::new().await;
+                        let modrinth_client = ModrinthClient::new(modrinth_server)?;
+
+                        match item {
+                            UpdateModrinthItems::Projects => {
+                                update_modrinth_projects(&modrinth_client, &db_pool).await?;
+                            }
+                        }
+                    },
+                    UpdateRepositorySubcommand::Hangar { item } => {
+                        let hangar_server = HangarServer::new().await;
+                        let hangar_client = HangarClient::new(hangar_server)?;
+
+                        match item {
+                            UpdateHangarItems::Projects => {
+                                update_hangar_projects(&hangar_client, &db_pool).await?;
+                            }
+                        }
+                    },
+                    UpdateRepositorySubcommand::All => {
+                        update_all(&db_pool).await?;
+                    }
+                }
             }
-        },
-        ActionSubcommand::Update { repository } => {
-            match repository {
-                UpdateRepositorySubcommand::Spigot { item } => {
-                    let spigot_server = SpigotServer::new().await;
-                    let spigot_client = SpigotClient::new(spigot_server)?;
-
-                    match item {
-                        UpdateSpigotItems::Resources => {
-                            update_spigot_resources(&spigot_client, &db_pool).await?;
-                        }
-                    }
-                },
-                UpdateRepositorySubcommand::Modrinth { item } => {
-                    let modrinth_server = ModrinthServer::new().await;
-                    let modrinth_client = ModrinthClient::new(modrinth_server)?;
-
-                    match item {
-                        UpdateModrinthItems::Projects => {
-                            update_modrinth_projects(&modrinth_client, &db_pool).await?;
-                        }
-                    }
-                },
-                UpdateRepositorySubcommand::Hangar { item } => {
-                    let hangar_server = HangarServer::new().await;
-                    let hangar_client = HangarClient::new(hangar_server)?;
-
-                    match item {
-                        UpdateHangarItems::Projects => {
-                            update_hangar_projects(&hangar_client, &db_pool).await?;
-                        }
-                    }
-                },
-            }
-
-        },
-        ActionSubcommand::Refresh => {
-            refresh_common_projects(&db_pool).await?;
-        },
-        ActionSubcommand::UpdateAllAndRefresh => {
-            update_all_and_refresh(&db_pool).await?;
         }
+    } else {
+
+    }
+
+    // Refresh the common projects table if specified
+    if cli.refresh {
+        refresh_common_projects(&db_pool).await?;
     }
 
     Ok(())
@@ -325,7 +332,7 @@ async fn update_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_p
     Ok(())
 }
 
-async fn update_all_and_refresh(db_pool: &Pool) -> Result<()> {
+async fn update_all(db_pool: &Pool) -> Result<()> {
     info!("Updating all items...");
 
     let spigot_server = SpigotServer::new().await;
@@ -341,7 +348,6 @@ async fn update_all_and_refresh(db_pool: &Pool) -> Result<()> {
     update_spigot_resources(&spigot_client, db_pool).await?;
     update_modrinth_projects(&modrinth_client, db_pool).await?;
     update_hangar_projects(&hangar_client, db_pool).await?;
-    refresh_common_projects(db_pool).await?;
 
     Ok(())
 }

@@ -61,6 +61,8 @@ Set the database url in the .env file as desired:
 MCPF_DATABASE_URL=postgres://postgres:postgres@localhost:5432/mc_plugin_finder
 ```
 
+Set the MCPF_DATABASE_URL variable in your environment. This varies depending on your operating system.
+
 Run the migrations:
 - `refinery migrate -e MCPF_DATABASE_URL`
 
@@ -75,8 +77,16 @@ Optionally, you may populate plugin versions as well (However, note that populat
 - `ingest populate modrinth versions`
 - `ingest populate hangar versions`
 
-Run the ingest tool again to refresh the common database view:
-- `ingest refresh`
+Run the ingest tool again to refresh the common projects:
+- `ingest --refresh`
+
+The database can then be later updated using these commands:
+- `ingest update spigot resources`
+- `ingest update modrinth projects`
+- `ingest update hangar projects`
+
+For daily updates in a live environment, this command is used:
+- `ingest update all --refresh`
 
 ### Commands
 
