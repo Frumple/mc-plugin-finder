@@ -49,14 +49,15 @@ impl From<SearchParams> for SearchProjectsParams<String, String> {
             name: params.name,
             description: params.description,
             author: params.author,
-            sort: params.sort.into(),
+            sort: params.sort.to_string(),
             limit: params.limit,
             offset: params.offset
         }
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, strum::Display, strum::EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum SearchParamsSort {
     #[default]
     Relevance,
@@ -66,38 +67,6 @@ pub enum SearchParamsSort {
     Downloads,
     LikesAndStars,
     FollowsAndWatchers,
-}
-
-// TODO: Re-implement this into a bidirection one-to-one String/Enum mapping
-impl From<SearchParamsSort> for String {
-    fn from(sort: SearchParamsSort) -> Self {
-        match sort {
-            SearchParamsSort::Relevance => "relevance".to_string(),
-            SearchParamsSort::DateCreated => "date_created".to_string(),
-            SearchParamsSort::DateUpdated => "date_updated".to_string(),
-            SearchParamsSort::LatestMinecraftVersion => "latest_minecraft_version".to_string(),
-            SearchParamsSort::Downloads => "downloads".to_string(),
-            SearchParamsSort::LikesAndStars => "likes_and_stars".to_string(),
-            SearchParamsSort::FollowsAndWatchers => "follows_and_watchers".to_string()
-        }
-    }
-}
-
-impl FromStr for SearchParamsSort {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input {
-            "relevance"                => Ok(Self::Relevance),
-            "date_created"             => Ok(Self::DateCreated),
-            "date_updated"             => Ok(Self::DateUpdated),
-            "latest_minecraft_version" => Ok(Self::LatestMinecraftVersion),
-            "downloads"                => Ok(Self::Downloads),
-            "likes_and_stars"          => Ok(Self::LikesAndStars),
-            "follows_and_watchers"     => Ok(Self::FollowsAndWatchers),
-            _                          => Err(())
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
