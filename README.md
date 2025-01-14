@@ -2,13 +2,15 @@
 
 A search aggregator for finding Minecraft: Java Edition server plugins on [Spigot](https://www.spigotmc.org), [Modrinth](https://modrinth.com/plugins), and [Hangar](https://hangar.papermc.io).
 
-### Live Application: [https://mcpluginfinder.com](https://mcpluginfinder.com)
+### Try it out here: [https://mcpluginfinder.com](https://mcpluginfinder.com)
 
 ![mc-plugin-finder-screenshot](https://github.com/user-attachments/assets/bed098ff-9db5-414b-90dd-26c7c6cf8c4b)
 
 ## Elevator Pitch
 
-As a Minecraft server admin, have you ever been annoyed when trying to find a plugin? Do I have to search for it on Spigot? Or maybe it's on Modrinth? Or Hangar? And on top of all that, the plugin developer might have only posted their latest version on some platforms but not others. What a mess.
+As a Minecraft server admin, have you ever been annoyed when trying to find a plugin? Do I have to search for it on Spigot? Or maybe it's on Modrinth? Or Hangar? Then you have to check if the plugin has been recently updated or supports your Minecraft version. And on top of all that, the plugin developer might have only uploaded their latest version on some platforms but not others.
+
+What a mess.
 
 MC Plugin Finder seeks to solve this problem by being the one-stop shop for searching all three of these platforms simultaneously, thanks to their public APIs. You can filter and sort your search results as desired, and you can compare versions of the same plugin on each platform to ensure that you are getting the latest version.
 
@@ -16,19 +18,26 @@ MC Plugin Finder seeks to solve this problem by being the one-stop shop for sear
 
 MC Plugin Finder has two main components: The **ingest tool** and the **web app**.
 
+![MC Plugin Finder drawio](https://github.com/user-attachments/assets/826e4b22-5e8f-440a-b2bc-b903ef3e858f)
+
 The **ingest tool** is a CLI application that retrieves plugin project data from the [Spiget API](https://spiget.org/) (for Spigot), [Modrinth API](https://docs.modrinth.com/), and [Hangar API](https://hangar.papermc.io/api-docs). The tool runs daily to update the database with the latest plugin information. It also considers projects from different plugin repositories to be the same if they **share the same source code repository URL**.
 
-For example, suppose there was a project named "Foo" on Spigot and another project named "Bar" on Modrinth, and both projects have `https://github.com/example/asdf` as their source code repository URL. Both projects would be considered the same on MC Plugin Finder, even though their project names are different.
+For example, suppose there was a project named "Foo" on Spigot and another project named "Bar" on Modrinth, and both projects have `https://github.com/foo/foo` as their source code repository URL. Both projects would be considered the same on MC Plugin Finder, even though their project names are different.
 
 On the other hand, if there were two projects named "Baz" on Spigot and Modrinth each, but the plugin developer forgot to add a source code URL to one of these plugin repositories, then these projects would **not** be considered be the same on MC Plugin Finder, even though their project names match.
+
+**Examples illustrated:**
+
+| Spigot Plugin Name | Spigot Plugin Source URL     | Modrinth Plugin Name | Modrinth Plugin Source URL   | Considered the same plugin by MC Plugin Finder |
+| ------------------ | ---------------------------- | -------------------- | ---------------------------- | ---------------------------------------------- |
+| Foo                | `https://github.com/foo/foo` | Bar                  | `https://github.com/foo/foo` | :heavy_check_mark:                             |
+| Baz                | `https://github.com/baz/baz` | Baz                  | N/A                          | :x:                                            |
 
 MC Plugin Finder will only recognize URLs from these source code repository hosts:
 - [github.com](https://github.com)
 - [gitlab.com](https://gitlab.com)
 - [bitbucket.org](https://bitbucket.org)
 - [codeberg.org](https://codeberg.org)
-
-![MC Plugin Finder drawio](https://github.com/user-attachments/assets/826e4b22-5e8f-440a-b2bc-b903ef3e858f)
 
 The **web app** allows users to search the database for plugins.
 
