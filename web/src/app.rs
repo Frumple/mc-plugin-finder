@@ -411,13 +411,11 @@ impl From<mc_plugin_finder::database::source_repository::SourceRepository> for W
 
 #[cfg(feature = "ssr")]
 pub mod ssr {
-    use mc_plugin_finder::database::get_db;
-    use deadpool_postgres::{CreatePoolError, Pool};
+    use leptos::use_context;
+    use deadpool_postgres::Pool;
 
-    pub async fn db() -> Result<Pool, CreatePoolError> {
-        // TODO: Is there a way to initialize the database client globally instead of per request?
-        let db = get_db();
-        db.create_pool().await
+    pub async fn db() -> Option<Pool> {
+        use_context::<Pool>()
     }
 }
 
@@ -481,12 +479,15 @@ pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchRes
     use self::ssr::*;
     use mc_plugin_finder::database::common::search_result::search_projects;
 
-    let db_pool = db().await?;
-    let common_projects = search_projects(&db_pool, &params.into()).await;
+    if let Some(db_pool) = db().await {
+        let common_projects = search_projects(&db_pool, &params.into()).await;
 
-    match common_projects {
-        Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),
-        Err(error) => Err(ServerFnError::ServerError(error.to_string()))
+        match common_projects {
+            Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),
+            Err(error) => Err(ServerFnError::ServerError(error.to_string()))
+        }
+    } else {
+        Err(ServerFnError::ServerError("database connection pool not found".to_string()))
     }
 }
 

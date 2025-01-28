@@ -4,6 +4,7 @@ async fn main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
+    use mc_plugin_finder::database::get_db;
     use tracing::{info, warn};
     use tracing_subscriber::prelude::*;
     use tracing_subscriber::EnvFilter;
@@ -47,9 +48,16 @@ async fn main() {
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
 
+    let db = get_db();
+    let db_pool = db.create_pool().await.unwrap();
+
     // build our application with a route
     let app = Router::new()
-        .leptos_routes(&leptos_options, routes, App)
+        .leptos_routes_with_context(
+            &leptos_options,
+            routes,
+            move || provide_context(db_pool.clone()),
+            App)
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
