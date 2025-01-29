@@ -247,8 +247,6 @@ async fn main() -> Result<()> {
                 }
             }
         }
-    } else {
-
     }
 
     // Refresh the common projects table if specified
