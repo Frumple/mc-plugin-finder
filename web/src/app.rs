@@ -700,62 +700,16 @@ fn SearchResults(
                                                 })
                                                 .collect_view();
 
-                                            let pagination = {
-                                                move || {
-                                                    params_memo.get()
-                                                        .map(move |params| {
-                                                            let page = params.page.unwrap_or_default();
-                                                            let total_pages = params.total_pages(full_count).unwrap_or_default();
-
-                                                            let first_url = params.first_url();
-                                                            let previous_url = params.previous_url();
-                                                            let previous_url_clone = previous_url.clone();
-
-                                                            let current_url = params.form_url();
-
-                                                            let next_url = params.next_url();
-                                                            let next_url_clone = next_url.clone();
-                                                            let last_url = params.last_url(full_count);
-
-                                                            view! {
-                                                                <Show when=move || { page > 1 }>
-                                                                    <a class="search-results__pagination-link" href=previous_url.clone()>"<"</a>
-                                                                    <a class="search-results__pagination-link" href=first_url.clone()>"1"</a>
-                                                                </Show>
-
-                                                                <Show when=move || { page > 3 }>
-                                                                    <span class="search-results__pagination-item">"—"</span>
-                                                                </Show>
-
-                                                                <Show when=move || { page > 2 }>
-                                                                    <a class="search-results__pagination-link" href=previous_url_clone.clone()>{page - 1}</a>
-                                                                </Show>
-
-                                                                <a class="search-results__pagination-link_current" href=current_url.clone()>{page}</a>
-
-                                                                <Show when=move || { page < total_pages.saturating_sub(1) }>
-                                                                    <a class="search-results__pagination-link" href=next_url_clone.clone()>{page + 1}</a>
-                                                                </Show>
-
-                                                                <Show when=move || { page < total_pages.saturating_sub(2) }>
-                                                                    <span class="search-results__pagination-item">"—"</span>
-                                                                </Show>
-
-                                                                <Show when=move || { page < total_pages }>
-                                                                    <a class="search-results__pagination-link" href=last_url.clone()>{total_pages}</a>
-                                                                    <a class="search-results__pagination-link" href=next_url.clone()>">"</a>
-                                                                </Show>
-                                                            }
-                                                        })
-                                                }
-                                            };
-
                                             view! {
+                                                <nav class="search-results__pagination">
+                                                    <PaginationControls params_memo full_count />
+                                                </nav>
+                                                {headers}
                                                 <ul class="search-results__list">
                                                     {rows}
                                                 </ul>
                                                 <nav class="search-results__pagination">
-                                                    {pagination}
+                                                    <PaginationControls params_memo full_count />
                                                 </nav>
                                             }.into_view()
                                         }
@@ -767,7 +721,6 @@ fn SearchResults(
 
                     view! {
                         <div class="search-results__container">
-                            {headers}
                             {results}
                         </div>
                     }
@@ -775,6 +728,60 @@ fn SearchResults(
             }
             </ErrorBoundary>
         </Transition>
+    }
+}
+
+/// Pagination controls for the search results.
+#[component]
+fn PaginationControls(
+    /// Memo that tracks the URL query parameters for the search.
+    params_memo: Memo<Result<WebSearchParams, ParamsError>>,
+    /// Total number of projects in the search results.
+    full_count: i64
+) -> impl IntoView {
+    let params = params_memo.get().unwrap_or_default();
+
+    let page = params.page.unwrap_or_default();
+    let total_pages = params.total_pages(full_count).unwrap_or_default();
+
+    let first_url = params.first_url();
+    let previous_url = params.previous_url();
+    let previous_url_clone = previous_url.clone();
+
+    let current_url = params.form_url();
+
+    let next_url = params.next_url();
+    let next_url_clone = next_url.clone();
+    let last_url = params.last_url(full_count);
+
+    view! {
+        <Show when=move || { page > 1 }>
+            <a class="search-results__pagination-link" href=previous_url.clone()>"<"</a>
+            <a class="search-results__pagination-link" href=first_url.clone()>"1"</a>
+        </Show>
+
+        <Show when=move || { page > 3 }>
+            <span class="search-results__pagination-item">"—"</span>
+        </Show>
+
+        <Show when=move || { page > 2 }>
+            <a class="search-results__pagination-link" href=previous_url_clone.clone()>{page - 1}</a>
+        </Show>
+
+        <a class="search-results__pagination-link_current" href=current_url.clone()>{page}</a>
+
+        <Show when=move || { page < total_pages.saturating_sub(1) }>
+            <a class="search-results__pagination-link" href=next_url_clone.clone()>{page + 1}</a>
+        </Show>
+
+        <Show when=move || { page < total_pages.saturating_sub(2) }>
+            <span class="search-results__pagination-item">"—"</span>
+        </Show>
+
+        <Show when=move || { page < total_pages }>
+            <a class="search-results__pagination-link" href=last_url.clone()>{total_pages}</a>
+            <a class="search-results__pagination-link" href=next_url.clone()>">"</a>
+        </Show>
     }
 }
 
