@@ -456,6 +456,9 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="MC Plugin Finder"/>
 
+        // Description shown in search engine results
+        <Meta name="description" content="Find thousands of Minecraft server plugins with MC Plugin Finder, a search aggregator for plugins hosted on Spigot, Modrinth, and Hangar." />
+
         // content for this welcome page
         <Router fallback=|| {
             let mut outside_errors = Errors::default();
@@ -548,15 +551,15 @@ fn HomePage() -> impl IntoView {
         </a>
 
         <h1 class="home-page__title">"MC Plugin Finder"</h1>
-        <div class="home-page__subtitle">
-          <span>"Search for Minecraft: Java Edition plugins on "</span>
+        <h2 class="home-page__subtitle">
+          <span>"Search for Minecraft server plugins on "</span>
           <a href="https://www.spigotmc.org" target="_blank">Spigot</a>
           <span>", "</span>
           <a href="https://modrinth.com/plugins" target="_blank">Modrinth</a>
           <span>", and "</span>
           <a href="https://hangar.papermc.io" target="_blank">Hangar</a>
           <span>"."</span>
-        </div>
+        </h2>
 
         <div class="home-page__container">
             <SearchForm params_memo />
@@ -656,22 +659,22 @@ fn SearchResults(
 
                                     view! {
                                         <div class="search-results__header-row">
-                                            <h2 class="search-results__created-header">Created</h2>
-                                            <h2 class="search-results__updated-header">Updated</h2>
-                                            <h2 class="search-results__latest-minecraft-version-header">Latest MC Version</h2>
-                                            <h2 class="search-results__downloads-header">Downloads</h2>
-                                            <h2 class="search-results__likes-and-stars-header">Likes + Stars</h2>
-                                            <h2 class="search-results__follows-and-watchers-header">Follows + Watchers</h2>
+                                            <h3 class="search-results__created-header">Created</h3>
+                                            <h3 class="search-results__updated-header">Updated</h3>
+                                            <h3 class="search-results__latest-minecraft-version-header">Latest MC Version</h3>
+                                            <h3 class="search-results__downloads-header">Downloads</h3>
+                                            <h3 class="search-results__likes-and-stars-header">Likes + Stars</h3>
+                                            <h3 class="search-results__follows-and-watchers-header">Follows + Watchers</h3>
                                             <Show when=move || { show_spigot }>
-                                                <h2 class="search-results__spigot-header">Spigot</h2>
+                                                <h3 class="search-results__spigot-header">Spigot</h3>
                                             </Show>
                                             <Show when=move || { show_modrinth }>
-                                                <h2 class="search-results__modrinth-header">Modrinth</h2>
+                                                <h3 class="search-results__modrinth-header">Modrinth</h3>
                                             </Show>
                                             <Show when=move || { show_hangar }>
-                                                <h2 class="search-results__hangar-header">Hangar</h2>
+                                                <h3 class="search-results__hangar-header">Hangar</h3>
                                             </Show>
-                                            <h2 class="search-results__source-header">Source Code</h2>
+                                            <h3 class="search-results__source-header">Source Code</h3>
                                         </div>
                                     }
                                 })
