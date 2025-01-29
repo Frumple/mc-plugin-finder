@@ -756,7 +756,7 @@ fn PaginationControls(
 
     view! {
         <Show when=move || { page > 1 }>
-            <a class="search-results__pagination-link" href=previous_url.clone()>"<"</a>
+            <a class="search-results__pagination-link-large" href=previous_url.clone()>"<"</a>
             <a class="search-results__pagination-link" href=first_url.clone()>"1"</a>
         </Show>
 
@@ -780,7 +780,7 @@ fn PaginationControls(
 
         <Show when=move || { page < total_pages }>
             <a class="search-results__pagination-link" href=last_url.clone()>{total_pages}</a>
-            <a class="search-results__pagination-link" href=next_url.clone()>">"</a>
+            <a class="search-results__pagination-link-large" href=next_url.clone()>">"</a>
         </Show>
     }
 }

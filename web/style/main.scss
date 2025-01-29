@@ -315,6 +315,7 @@ body {
 	background: #2B2B2B;
 	color: #e0e6f0;
 	text-decoration: none;
+	text-align: center;
 }
 
 .search-results__pagination-link:hover {
@@ -330,6 +331,12 @@ body {
 
 .search-results__pagination-link_current:hover {
 	background: #e0e6f0;
+}
+
+.search-results__pagination-link-large {
+	@extend .search-results__pagination-link;
+	font-weight: bold;
+	width: 1.5em;
 }
 
 .search-row__list-item {
