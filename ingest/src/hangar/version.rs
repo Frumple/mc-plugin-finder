@@ -1,6 +1,7 @@
 use crate::HttpServer;
 use crate::hangar::HangarClient;
 use crate::hangar::project::HangarResponsePagination;
+use mc_plugin_finder::database::ingest_log::{IngestLog, IngestLogAction, IngestLogRepository, IngestLogItem, insert_ingest_log};
 use mc_plugin_finder::database::hangar::project::{get_hangar_projects, upsert_hangar_project, HangarProject};
 
 use anyhow::Result;
@@ -12,6 +13,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
+use time::OffsetDateTime;
 use tracing::{info, warn, instrument};
 
 const HANGAR_VERSIONS_CONCURRENT_FUTURES: usize = 10;
@@ -73,6 +75,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     )]
     pub async fn populate_hangar_versions(&self, db_pool: &Pool) -> Result<()> {
         let count = Arc::new(AtomicU32::new(0));
+        let date_started = OffsetDateTime::now_utc();
 
         let projects = get_hangar_projects(db_pool).await?;
         let project_stream = stream::iter(projects);
@@ -82,7 +85,20 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(HANGAR_VERSIONS_CONCURRENT_FUTURES, |project| self.process_hangar_project(project, db_pool, &count))
             .await;
 
-        info!("Hangar project versions populated: {}", count.load(Ordering::Relaxed));
+        let date_finished = OffsetDateTime::now_utc();
+        let items_processed = count.load(Ordering::Relaxed);
+
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Populate,
+            repository: IngestLogRepository::Hangar,
+            item: IngestLogItem::Version,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
+
+        info!("Hangar project versions populated: {}", items_processed);
 
         result
     }

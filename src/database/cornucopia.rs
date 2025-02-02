@@ -1,7 +1,154 @@
 // This file was generated with `cornucopia`. Do not modify.
 
 #[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
-#[allow(unused_imports)] #[allow(dead_code)] pub mod types { }#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
+#[allow(unused_imports)] #[allow(dead_code)] pub mod types { pub mod public { #[derive( Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(non_camel_case_types)] pub enum IngestLogAction { Populate,Update,}impl<'a> postgres_types::ToSql for IngestLogAction
+{
+    fn
+    to_sql(&self, ty: &postgres_types::Type, buf: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>,>
+    {
+        let s = match *self { IngestLogAction::Populate => "Populate",IngestLogAction::Update => "Update",};
+        buf.extend_from_slice(s.as_bytes());
+        std::result::Result::Ok(postgres_types::IsNull::No)
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_action" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 2 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Populate" => true,"Update" => true,_ => false, })
+            } _ => false,
+        }
+    } fn
+    to_sql_checked(&self, ty: &postgres_types::Type, out: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>>
+    { postgres_types::__to_sql_checked(self, ty, out) }
+} impl<'a> postgres_types::FromSql<'a> for IngestLogAction
+{
+    fn from_sql(ty: &postgres_types::Type, buf: &'a [u8],) ->
+    Result<IngestLogAction, Box<dyn std::error::Error + Sync + Send>,>
+    {
+        match std::str::from_utf8(buf)?
+        {
+            "Populate" => Ok(IngestLogAction::Populate),"Update" => Ok(IngestLogAction::Update),s =>
+            Result::Err(Into::into(format!("invalid variant `{}`", s))),
+        }
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_action" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 2 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Populate" => true,"Update" => true,_ => false, })
+            } _ => false,
+        }
+    }
+}#[derive( Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(non_camel_case_types)] pub enum IngestLogRepository { Spigot,Modrinth,Hangar,}impl<'a> postgres_types::ToSql for IngestLogRepository
+{
+    fn
+    to_sql(&self, ty: &postgres_types::Type, buf: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>,>
+    {
+        let s = match *self { IngestLogRepository::Spigot => "Spigot",IngestLogRepository::Modrinth => "Modrinth",IngestLogRepository::Hangar => "Hangar",};
+        buf.extend_from_slice(s.as_bytes());
+        std::result::Result::Ok(postgres_types::IsNull::No)
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_repository" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 3 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,_ => false, })
+            } _ => false,
+        }
+    } fn
+    to_sql_checked(&self, ty: &postgres_types::Type, out: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>>
+    { postgres_types::__to_sql_checked(self, ty, out) }
+} impl<'a> postgres_types::FromSql<'a> for IngestLogRepository
+{
+    fn from_sql(ty: &postgres_types::Type, buf: &'a [u8],) ->
+    Result<IngestLogRepository, Box<dyn std::error::Error + Sync + Send>,>
+    {
+        match std::str::from_utf8(buf)?
+        {
+            "Spigot" => Ok(IngestLogRepository::Spigot),"Modrinth" => Ok(IngestLogRepository::Modrinth),"Hangar" => Ok(IngestLogRepository::Hangar),s =>
+            Result::Err(Into::into(format!("invalid variant `{}`", s))),
+        }
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_repository" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 3 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,_ => false, })
+            } _ => false,
+        }
+    }
+}#[derive( Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(non_camel_case_types)] pub enum IngestLogItem { Author,Resource,Project,Version,}impl<'a> postgres_types::ToSql for IngestLogItem
+{
+    fn
+    to_sql(&self, ty: &postgres_types::Type, buf: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>,>
+    {
+        let s = match *self { IngestLogItem::Author => "Author",IngestLogItem::Resource => "Resource",IngestLogItem::Project => "Project",IngestLogItem::Version => "Version",};
+        buf.extend_from_slice(s.as_bytes());
+        std::result::Result::Ok(postgres_types::IsNull::No)
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_item" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 4 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Author" => true,"Resource" => true,"Project" => true,"Version" => true,_ => false, })
+            } _ => false,
+        }
+    } fn
+    to_sql_checked(&self, ty: &postgres_types::Type, out: &mut
+    postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
+    Box<dyn std::error::Error + Sync + Send>>
+    { postgres_types::__to_sql_checked(self, ty, out) }
+} impl<'a> postgres_types::FromSql<'a> for IngestLogItem
+{
+    fn from_sql(ty: &postgres_types::Type, buf: &'a [u8],) ->
+    Result<IngestLogItem, Box<dyn std::error::Error + Sync + Send>,>
+    {
+        match std::str::from_utf8(buf)?
+        {
+            "Author" => Ok(IngestLogItem::Author),"Resource" => Ok(IngestLogItem::Resource),"Project" => Ok(IngestLogItem::Project),"Version" => Ok(IngestLogItem::Version),s =>
+            Result::Err(Into::into(format!("invalid variant `{}`", s))),
+        }
+    } fn accepts(ty: &postgres_types::Type) -> bool
+    {
+        if ty.name() != "ingest_log_item" { return false; } match *ty.kind()
+        {
+            postgres_types::Kind::Enum(ref variants) =>
+            {
+                if variants.len() != 4 { return false; }
+                variants.iter().all(|v| match &**v
+                { "Author" => true,"Resource" => true,"Project" => true,"Version" => true,_ => false, })
+            } _ => false,
+        }
+    }
+} }}#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
@@ -277,6 +424,96 @@ time::OffsetDateTime, 0>
     {
         client, params: [], stmt: &mut self.0, extractor:
         |row| { row.get(0) }, mapper: |it| { it },
+    }
+} }}pub mod ingest_log
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive(Clone,Copy, Debug)] pub struct InsertIngestLogParams<> { pub action: super::super::types::public::IngestLogAction,pub repository: super::super::types::public::IngestLogRepository,pub item: super::super::types::public::IngestLogItem,pub date_started: time::OffsetDateTime,pub date_finished: time::OffsetDateTime,pub items_processed: i32,}#[derive( Debug, Clone, PartialEq,Copy)] pub struct IngestLogEntity
+{ pub id : i32,pub action : super::super::types::public::IngestLogAction,pub repository : super::super::types::public::IngestLogRepository,pub item : super::super::types::public::IngestLogItem,pub date_started : time::OffsetDateTime,pub date_finished : time::OffsetDateTime,pub items_processed : i32,}pub struct IngestLogEntityQuery<'a, C: GenericClient, T, const N: usize>
+{
+    client: &'a  C, params:
+    [&'a (dyn postgres_types::ToSql + Sync); N], stmt: &'a mut
+    cornucopia_async::private::Stmt, extractor: fn(&tokio_postgres::Row) -> IngestLogEntity,
+    mapper: fn(IngestLogEntity) -> T,
+} impl<'a, C, T:'a, const N: usize> IngestLogEntityQuery<'a, C, T, N> where C:
+GenericClient
+{
+    pub fn map<R>(self, mapper: fn(IngestLogEntity) -> R) ->
+    IngestLogEntityQuery<'a,C,R,N>
+    {
+        IngestLogEntityQuery
+        {
+            client: self.client, params: self.params, stmt: self.stmt,
+            extractor: self.extractor, mapper,
+        }
+    } pub async fn one(self) -> Result<T, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?; let row =
+        self.client.query_one(stmt, &self.params).await?;
+        Ok((self.mapper)((self.extractor)(&row)))
+    } pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error>
+    { self.iter().await?.try_collect().await } pub async fn opt(self) ->
+    Result<Option<T>, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?;
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
+    } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
+    tokio_postgres::Error>> + 'a, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?; let it =
+        self.client.query_raw(stmt,
+        cornucopia_async::private::slice_iter(&self.params)) .await?
+        .map(move |res|
+        res.map(|row| (self.mapper)((self.extractor)(&row)))) .into_stream();
+        Ok(it)
+    }
+}pub fn insert_ingest_log() -> InsertIngestLogStmt
+{ InsertIngestLogStmt(cornucopia_async::private::Stmt::new("INSERT INTO ingest_log (action, repository, item, date_started, date_finished, items_processed)
+  VALUES ($1, $2, $3, $4, $5, $6)")) } pub struct
+InsertIngestLogStmt(cornucopia_async::private::Stmt); impl InsertIngestLogStmt
+{ pub async fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+action: &'a super::super::types::public::IngestLogAction,repository: &'a super::super::types::public::IngestLogRepository,item: &'a super::super::types::public::IngestLogItem,date_started: &'a time::OffsetDateTime,date_finished: &'a time::OffsetDateTime,items_processed: &'a i32,) -> Result<u64, tokio_postgres::Error>
+{
+    let stmt = self.0.prepare(client).await?;
+    client.execute(stmt, &[action,repository,item,date_started,date_finished,items_processed,]).await
+} }impl <'a, C: GenericClient + Send + Sync, >
+cornucopia_async::Params<'a, InsertIngestLogParams<>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+tokio_postgres::Error>> + Send + 'a>>, C> for InsertIngestLogStmt
+{
+    fn
+    params(&'a mut self, client: &'a  C, params: &'a
+    InsertIngestLogParams<>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
+    tokio_postgres::Error>> + Send + 'a>>
+    { Box::pin(self.bind(client, &params.action,&params.repository,&params.item,&params.date_started,&params.date_finished,&params.items_processed,)) }
+}pub fn get_last_ingest_log() -> GetLastIngestLogStmt
+{ GetLastIngestLogStmt(cornucopia_async::private::Stmt::new("SELECT *
+FROM ingest_log
+ORDER BY id DESC
+LIMIT 1")) } pub struct
+GetLastIngestLogStmt(cornucopia_async::private::Stmt); impl GetLastIngestLogStmt
+{ pub fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> IngestLogEntityQuery<'a,C,
+IngestLogEntity, 0>
+{
+    IngestLogEntityQuery
+    {
+        client, params: [], stmt: &mut self.0, extractor:
+        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),} }, mapper: |it| { <IngestLogEntity>::from(it) },
+    }
+} }pub fn get_ingest_logs() -> GetIngestLogsStmt
+{ GetIngestLogsStmt(cornucopia_async::private::Stmt::new("SELECT *
+FROM ingest_log")) } pub struct
+GetIngestLogsStmt(cornucopia_async::private::Stmt); impl GetIngestLogsStmt
+{ pub fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> IngestLogEntityQuery<'a,C,
+IngestLogEntity, 0>
+{
+    IngestLogEntityQuery
+    {
+        client, params: [], stmt: &mut self.0, extractor:
+        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),} }, mapper: |it| { <IngestLogEntity>::from(it) },
     }
 } }}pub mod modrinth_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertModrinthProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,T14: cornucopia_async::StringSql,> { pub id: T1,pub slug: T2,pub name: T3,pub description: T4,pub author: T5,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub latest_minecraft_version: Option<T6>,pub downloads: i32,pub follows: i32,pub version_id: Option<T7>,pub version_name: Option<T8>,pub status: T9,pub icon_url: Option<T10>,pub source_url: Option<T11>,pub source_repository_host: Option<T12>,pub source_repository_owner: Option<T13>,pub source_repository_name: Option<T14>,}#[derive( Debug, Clone, PartialEq,)] pub struct ModrinthProjectEntity

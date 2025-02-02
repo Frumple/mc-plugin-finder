@@ -1,10 +1,11 @@
 use crate::HttpServer;
 use crate::spigot::SpigotClient;
+use mc_plugin_finder::database::ingest_log::{IngestLog, IngestLogAction, IngestLogRepository, IngestLogItem, insert_ingest_log};
 use mc_plugin_finder::database::spigot::author::{SpigotAuthor, insert_spigot_author};
+
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
-use futures::future;
 use futures::stream::TryStreamExt;
 use page_turner::prelude::*;
 use reqwest::StatusCode;
@@ -12,6 +13,7 @@ use serde::{Serialize, Deserialize};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
+use time::OffsetDateTime;
 use tracing::{info, warn, instrument};
 
 const SPIGOT_AUTHORS_REQUEST_FIELDS: &str = "id,name";
@@ -32,15 +34,6 @@ impl GetSpigotAuthorsRequest {
             size: 100,
             page: 1,
             sort: "+id".to_string(),
-            fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
-        }
-    }
-
-    fn create_update_request() -> Self {
-        Self {
-            size: 100,
-            page: 1,
-            sort: "-id".to_string(),
             fields: SPIGOT_AUTHORS_REQUEST_FIELDS.to_string()
         }
     }
@@ -105,8 +98,8 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     )]
     pub async fn populate_spigot_authors(&self, db_pool: &Pool) -> Result<()> {
         let request = GetSpigotAuthorsRequest::create_populate_request();
-
         let count = Arc::new(AtomicU32::new(0));
+        let date_started = OffsetDateTime::now_utc();
 
         let result = self
             .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
@@ -114,27 +107,20 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count))
             .await;
 
-        info!("Spigot authors populated: {}", count.load(Ordering::Relaxed));
+        let date_finished = OffsetDateTime::now_utc();
+        let items_processed = count.load(Ordering::Relaxed);
 
-        result
-    }
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Populate,
+            repository: IngestLogRepository::Spigot,
+            item: IngestLogItem::Author,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
 
-    #[instrument(
-        skip(self, db_pool)
-    )]
-    pub async fn update_spigot_authors(&self, db_pool: &Pool, author_id_higher_than: i32) -> Result<()> {
-        let request = GetSpigotAuthorsRequest::create_update_request();
-
-        let count = Arc::new(AtomicU32::new(0));
-
-        let result = self
-            .pages_ahead(SPIGOT_AUTHORS_REQUESTS_AHEAD, Limit::None, request)
-            .items()
-            .try_take_while(|x| future::ready(Ok(x.id > author_id_higher_than)))
-            .try_for_each_concurrent(SPIGOT_AUTHORS_CONCURRENT_FUTURES, |incoming_author| process_incoming_author(incoming_author, db_pool, &count))
-            .await;
-
-        info!("Spigot authors updated: {}", count.load(Ordering::Relaxed));
+        info!("Spigot authors populated: {}", items_processed);
 
         result
     }

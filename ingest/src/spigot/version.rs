@@ -1,5 +1,6 @@
 use crate::HttpServer;
 use crate::spigot::SpigotClient;
+use mc_plugin_finder::database::ingest_log::{IngestLog, IngestLogAction, IngestLogRepository, IngestLogItem, insert_ingest_log};
 use mc_plugin_finder::database::spigot::resource::{SpigotResource, upsert_spigot_resource, get_spigot_resources};
 
 use anyhow::Result;
@@ -10,6 +11,7 @@ use serde::{Serialize, Deserialize};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use thiserror::Error;
+use time::OffsetDateTime;
 use tracing::{info, warn, instrument};
 
 const SPIGOT_VERSIONS_CONCURRENT_FUTURES: usize = 10;
@@ -38,6 +40,7 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
     )]
     pub async fn populate_spigot_versions(&self, db_pool: &Pool) -> Result<()> {
         let count = Arc::new(AtomicU32::new(0));
+        let date_started = OffsetDateTime::now_utc();
 
         let resources = get_spigot_resources(db_pool).await?;
         let resource_stream = stream::iter(resources);
@@ -47,7 +50,20 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(SPIGOT_VERSIONS_CONCURRENT_FUTURES, |resource| self.process_spigot_resource(resource, db_pool, &count))
             .await;
 
-        info!("Spigot resource versions populated: {}", count.load(Ordering::Relaxed));
+        let date_finished = OffsetDateTime::now_utc();
+        let items_processed = count.load(Ordering::Relaxed);
+
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Populate,
+            repository: IngestLogRepository::Spigot,
+            item: IngestLogItem::Version,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
+
+        info!("Spigot resource versions populated: {}", items_processed);
 
         result
     }

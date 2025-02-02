@@ -1,6 +1,7 @@
 mod cornucopia;
 pub mod common;
 pub mod hangar;
+pub mod ingest_log;
 pub mod modrinth;
 pub mod source_repository;
 pub mod spigot;

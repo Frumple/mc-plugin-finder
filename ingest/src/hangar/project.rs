@@ -1,6 +1,7 @@
 use crate::HttpServer;
 use crate::hangar::HangarClient;
 use crate::hangar::version::{IncomingHangarVersion, apply_incoming_hangar_version_to_hangar_project};
+use mc_plugin_finder::database::ingest_log::{IngestLog, IngestLogAction, IngestLogRepository, IngestLogItem, insert_ingest_log};
 use mc_plugin_finder::database::hangar::project::{HangarProject, upsert_hangar_project};
 use mc_plugin_finder::database::source_repository::{SourceRepository, extract_source_repository_from_url};
 
@@ -135,8 +136,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     )]
     pub async fn populate_hangar_projects(&self, db_pool: &Pool) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
-
         let count = Arc::new(AtomicU32::new(0));
+        let date_started = OffsetDateTime::now_utc();
 
         let result= self
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
@@ -144,7 +145,20 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count, false))
             .await;
 
-        info!("Hangar projects populated: {}", count.load(Ordering::Relaxed));
+        let date_finished = OffsetDateTime::now_utc();
+        let items_processed = count.load(Ordering::Relaxed);
+
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Populate,
+            repository: IngestLogRepository::Hangar,
+            item: IngestLogItem::Project,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
+
+        info!("Hangar projects populated: {}", items_processed);
 
         result
     }
@@ -154,8 +168,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
     )]
     pub async fn update_hangar_projects(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
         let request = GetHangarProjectsRequest::create_request();
-
         let count = Arc::new(AtomicU32::new(0));
+        let date_started = OffsetDateTime::now_utc();
 
         let result = self
             .pages_ahead(HANGAR_PROJECTS_REQUESTS_AHEAD, Limit::None, request)
@@ -164,7 +178,20 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             .try_for_each_concurrent(HANGAR_PROJECTS_CONCURRENT_FUTURES, |incoming_project| self.process_incoming_project(incoming_project, db_pool, &count, true))
             .await;
 
-        info!("Hangar projects updated: {}", count.load(Ordering::Relaxed));
+        let date_finished = OffsetDateTime::now_utc();
+        let items_processed = count.load(Ordering::Relaxed);
+
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Update,
+            repository: IngestLogRepository::Hangar,
+            item: IngestLogItem::Project,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
+
+        info!("Hangar projects updated: {}", items_processed);
 
         result
     }
