@@ -13,14 +13,16 @@ use tracing::instrument;
 #[derive(Clone, Debug, PartialEq)]
 pub enum IngestLogAction {
     Populate,
-    Update
+    Update,
+    Refresh
 }
 
 impl From<IngestLogAction> for CornucopiaIngestLogAction {
     fn from(action: IngestLogAction) -> Self {
         match action {
             IngestLogAction::Populate => CornucopiaIngestLogAction::Populate,
-            IngestLogAction::Update => CornucopiaIngestLogAction::Update
+            IngestLogAction::Update => CornucopiaIngestLogAction::Update,
+            IngestLogAction::Refresh => CornucopiaIngestLogAction::Refresh
         }
     }
 }
@@ -29,7 +31,8 @@ impl From<CornucopiaIngestLogAction> for IngestLogAction {
     fn from(action: CornucopiaIngestLogAction) -> Self {
         match action {
             CornucopiaIngestLogAction::Populate => IngestLogAction::Populate,
-            CornucopiaIngestLogAction::Update => IngestLogAction::Update
+            CornucopiaIngestLogAction::Update => IngestLogAction::Update,
+            CornucopiaIngestLogAction::Refresh => IngestLogAction::Refresh
         }
     }
 }
@@ -38,7 +41,8 @@ impl From<CornucopiaIngestLogAction> for IngestLogAction {
 pub enum IngestLogRepository {
     Spigot,
     Modrinth,
-    Hangar
+    Hangar,
+    Common
 }
 
 impl From<IngestLogRepository> for CornucopiaIngestLogRepository {
@@ -46,7 +50,8 @@ impl From<IngestLogRepository> for CornucopiaIngestLogRepository {
         match repository {
             IngestLogRepository::Spigot => CornucopiaIngestLogRepository::Spigot,
             IngestLogRepository::Modrinth => CornucopiaIngestLogRepository::Modrinth,
-            IngestLogRepository::Hangar => CornucopiaIngestLogRepository::Hangar
+            IngestLogRepository::Hangar => CornucopiaIngestLogRepository::Hangar,
+            IngestLogRepository::Common => CornucopiaIngestLogRepository::Common
         }
     }
 }
@@ -56,7 +61,8 @@ impl From<CornucopiaIngestLogRepository> for IngestLogRepository {
         match repository {
             CornucopiaIngestLogRepository::Spigot => IngestLogRepository::Spigot,
             CornucopiaIngestLogRepository::Modrinth => IngestLogRepository::Modrinth,
-            CornucopiaIngestLogRepository::Hangar => IngestLogRepository::Hangar
+            CornucopiaIngestLogRepository::Hangar => IngestLogRepository::Hangar,
+            CornucopiaIngestLogRepository::Common => IngestLogRepository::Common
         }
     }
 }

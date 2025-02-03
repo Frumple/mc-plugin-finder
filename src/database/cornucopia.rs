@@ -2,14 +2,14 @@
 
 #[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod types { pub mod public { #[derive( Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(non_camel_case_types)] pub enum IngestLogAction { Populate,Update,}impl<'a> postgres_types::ToSql for IngestLogAction
+#[allow(non_camel_case_types)] pub enum IngestLogAction { Populate,Update,Refresh,}impl<'a> postgres_types::ToSql for IngestLogAction
 {
     fn
     to_sql(&self, ty: &postgres_types::Type, buf: &mut
     postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
     Box<dyn std::error::Error + Sync + Send>,>
     {
-        let s = match *self { IngestLogAction::Populate => "Populate",IngestLogAction::Update => "Update",};
+        let s = match *self { IngestLogAction::Populate => "Populate",IngestLogAction::Update => "Update",IngestLogAction::Refresh => "Refresh",};
         buf.extend_from_slice(s.as_bytes());
         std::result::Result::Ok(postgres_types::IsNull::No)
     } fn accepts(ty: &postgres_types::Type) -> bool
@@ -18,9 +18,9 @@
         {
             postgres_types::Kind::Enum(ref variants) =>
             {
-                if variants.len() != 2 { return false; }
+                if variants.len() != 3 { return false; }
                 variants.iter().all(|v| match &**v
-                { "Populate" => true,"Update" => true,_ => false, })
+                { "Populate" => true,"Update" => true,"Refresh" => true,_ => false, })
             } _ => false,
         }
     } fn
@@ -35,7 +35,7 @@
     {
         match std::str::from_utf8(buf)?
         {
-            "Populate" => Ok(IngestLogAction::Populate),"Update" => Ok(IngestLogAction::Update),s =>
+            "Populate" => Ok(IngestLogAction::Populate),"Update" => Ok(IngestLogAction::Update),"Refresh" => Ok(IngestLogAction::Refresh),s =>
             Result::Err(Into::into(format!("invalid variant `{}`", s))),
         }
     } fn accepts(ty: &postgres_types::Type) -> bool
@@ -44,21 +44,21 @@
         {
             postgres_types::Kind::Enum(ref variants) =>
             {
-                if variants.len() != 2 { return false; }
+                if variants.len() != 3 { return false; }
                 variants.iter().all(|v| match &**v
-                { "Populate" => true,"Update" => true,_ => false, })
+                { "Populate" => true,"Update" => true,"Refresh" => true,_ => false, })
             } _ => false,
         }
     }
 }#[derive( Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(non_camel_case_types)] pub enum IngestLogRepository { Spigot,Modrinth,Hangar,}impl<'a> postgres_types::ToSql for IngestLogRepository
+#[allow(non_camel_case_types)] pub enum IngestLogRepository { Spigot,Modrinth,Hangar,Common,}impl<'a> postgres_types::ToSql for IngestLogRepository
 {
     fn
     to_sql(&self, ty: &postgres_types::Type, buf: &mut
     postgres_types::private::BytesMut,) -> Result<postgres_types::IsNull,
     Box<dyn std::error::Error + Sync + Send>,>
     {
-        let s = match *self { IngestLogRepository::Spigot => "Spigot",IngestLogRepository::Modrinth => "Modrinth",IngestLogRepository::Hangar => "Hangar",};
+        let s = match *self { IngestLogRepository::Spigot => "Spigot",IngestLogRepository::Modrinth => "Modrinth",IngestLogRepository::Hangar => "Hangar",IngestLogRepository::Common => "Common",};
         buf.extend_from_slice(s.as_bytes());
         std::result::Result::Ok(postgres_types::IsNull::No)
     } fn accepts(ty: &postgres_types::Type) -> bool
@@ -67,9 +67,9 @@
         {
             postgres_types::Kind::Enum(ref variants) =>
             {
-                if variants.len() != 3 { return false; }
+                if variants.len() != 4 { return false; }
                 variants.iter().all(|v| match &**v
-                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,_ => false, })
+                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,"Common" => true,_ => false, })
             } _ => false,
         }
     } fn
@@ -84,7 +84,7 @@
     {
         match std::str::from_utf8(buf)?
         {
-            "Spigot" => Ok(IngestLogRepository::Spigot),"Modrinth" => Ok(IngestLogRepository::Modrinth),"Hangar" => Ok(IngestLogRepository::Hangar),s =>
+            "Spigot" => Ok(IngestLogRepository::Spigot),"Modrinth" => Ok(IngestLogRepository::Modrinth),"Hangar" => Ok(IngestLogRepository::Hangar),"Common" => Ok(IngestLogRepository::Common),s =>
             Result::Err(Into::into(format!("invalid variant `{}`", s))),
         }
     } fn accepts(ty: &postgres_types::Type) -> bool
@@ -93,9 +93,9 @@
         {
             postgres_types::Kind::Enum(ref variants) =>
             {
-                if variants.len() != 3 { return false; }
+                if variants.len() != 4 { return false; }
                 variants.iter().all(|v| match &**v
-                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,_ => false, })
+                { "Spigot" => true,"Modrinth" => true,"Hangar" => true,"Common" => true,_ => false, })
             } _ => false,
         }
     }
@@ -151,7 +151,46 @@
 } }}#[allow(clippy::all, clippy::pedantic)] #[allow(unused_variables)]
 #[allow(unused_imports)] #[allow(dead_code)] pub mod queries
 { pub mod common_project
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;pub struct I64Query<'a, C: GenericClient, T, const N: usize>
+{
+    client: &'a  C, params:
+    [&'a (dyn postgres_types::ToSql + Sync); N], stmt: &'a mut
+    cornucopia_async::private::Stmt, extractor: fn(&tokio_postgres::Row) -> i64,
+    mapper: fn(i64) -> T,
+} impl<'a, C, T:'a, const N: usize> I64Query<'a, C, T, N> where C:
+GenericClient
+{
+    pub fn map<R>(self, mapper: fn(i64) -> R) ->
+    I64Query<'a,C,R,N>
+    {
+        I64Query
+        {
+            client: self.client, params: self.params, stmt: self.stmt,
+            extractor: self.extractor, mapper,
+        }
+    } pub async fn one(self) -> Result<T, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?; let row =
+        self.client.query_one(stmt, &self.params).await?;
+        Ok((self.mapper)((self.extractor)(&row)))
+    } pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error>
+    { self.iter().await?.try_collect().await } pub async fn opt(self) ->
+    Result<Option<T>, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?;
+        Ok(self.client.query_opt(stmt, &self.params) .await?
+        .map(|row| (self.mapper)((self.extractor)(&row))))
+    } pub async fn iter(self,) -> Result<impl futures::Stream<Item = Result<T,
+    tokio_postgres::Error>> + 'a, tokio_postgres::Error>
+    {
+        let stmt = self.stmt.prepare(self.client).await?; let it =
+        self.client.query_raw(stmt,
+        cornucopia_async::private::slice_iter(&self.params)) .await?
+        .map(move |res|
+        res.map(|row| (self.mapper)((self.extractor)(&row)))) .into_stream();
+        Ok(it)
+    }
+}#[derive( Debug, Clone, PartialEq,)] pub struct CommonProjectEntity
 { pub spigot_id : Option<i32>,pub spigot_slug : Option<String>,pub spigot_name : Option<String>,pub spigot_description : Option<String>,pub spigot_author : Option<String>,pub spigot_version : Option<String>,pub spigot_premium : Option<bool>,pub spigot_abandoned : Option<bool>,pub spigot_icon_data : Option<String>,pub spigot_date_created : Option<time::OffsetDateTime>,pub spigot_date_updated : Option<time::OffsetDateTime>,pub spigot_latest_minecraft_version : Option<String>,pub spigot_downloads : Option<i32>,pub spigot_likes : Option<i32>,pub modrinth_id : Option<String>,pub modrinth_slug : Option<String>,pub modrinth_name : Option<String>,pub modrinth_description : Option<String>,pub modrinth_author : Option<String>,pub modrinth_version : Option<String>,pub modrinth_status : Option<String>,pub modrinth_icon_url : Option<String>,pub modrinth_date_created : Option<time::OffsetDateTime>,pub modrinth_date_updated : Option<time::OffsetDateTime>,pub modrinth_latest_minecraft_version : Option<String>,pub modrinth_downloads : Option<i32>,pub modrinth_follows : Option<i32>,pub hangar_slug : Option<String>,pub hangar_name : Option<String>,pub hangar_description : Option<String>,pub hangar_author : Option<String>,pub hangar_version : Option<String>,pub hangar_icon_url : Option<String>,pub hangar_date_created : Option<time::OffsetDateTime>,pub hangar_date_updated : Option<time::OffsetDateTime>,pub hangar_latest_minecraft_version : Option<String>,pub hangar_downloads : Option<i32>,pub hangar_stars : Option<i32>,pub hangar_watchers : Option<i32>,pub source_repository_host : Option<String>,pub source_repository_name : Option<String>,pub source_repository_owner : Option<String>,}pub struct CommonProjectEntityBorrowed<'a> { pub spigot_id : Option<i32>,pub spigot_slug : Option<&'a str>,pub spigot_name : Option<&'a str>,pub spigot_description : Option<&'a str>,pub spigot_author : Option<&'a str>,pub spigot_version : Option<&'a str>,pub spigot_premium : Option<bool>,pub spigot_abandoned : Option<bool>,pub spigot_icon_data : Option<&'a str>,pub spigot_date_created : Option<time::OffsetDateTime>,pub spigot_date_updated : Option<time::OffsetDateTime>,pub spigot_latest_minecraft_version : Option<&'a str>,pub spigot_downloads : Option<i32>,pub spigot_likes : Option<i32>,pub modrinth_id : Option<&'a str>,pub modrinth_slug : Option<&'a str>,pub modrinth_name : Option<&'a str>,pub modrinth_description : Option<&'a str>,pub modrinth_author : Option<&'a str>,pub modrinth_version : Option<&'a str>,pub modrinth_status : Option<&'a str>,pub modrinth_icon_url : Option<&'a str>,pub modrinth_date_created : Option<time::OffsetDateTime>,pub modrinth_date_updated : Option<time::OffsetDateTime>,pub modrinth_latest_minecraft_version : Option<&'a str>,pub modrinth_downloads : Option<i32>,pub modrinth_follows : Option<i32>,pub hangar_slug : Option<&'a str>,pub hangar_name : Option<&'a str>,pub hangar_description : Option<&'a str>,pub hangar_author : Option<&'a str>,pub hangar_version : Option<&'a str>,pub hangar_icon_url : Option<&'a str>,pub hangar_date_created : Option<time::OffsetDateTime>,pub hangar_date_updated : Option<time::OffsetDateTime>,pub hangar_latest_minecraft_version : Option<&'a str>,pub hangar_downloads : Option<i32>,pub hangar_stars : Option<i32>,pub hangar_watchers : Option<i32>,pub source_repository_host : Option<&'a str>,pub source_repository_name : Option<&'a str>,pub source_repository_owner : Option<&'a str>,}
 impl<'a> From<CommonProjectEntityBorrowed<'a>> for CommonProjectEntity
 {
@@ -205,6 +244,19 @@ GenericClient,>(&'a mut self, client: &'a  C,
 {
     let stmt = self.0.prepare(client).await?;
     client.execute(stmt, &[]).await
+} }pub fn get_common_project_count() -> GetCommonProjectCountStmt
+{ GetCommonProjectCountStmt(cornucopia_async::private::Stmt::new("SELECT COUNT(*) FROM common_project")) } pub struct
+GetCommonProjectCountStmt(cornucopia_async::private::Stmt); impl GetCommonProjectCountStmt
+{ pub fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> I64Query<'a,C,
+i64, 0>
+{
+    I64Query
+    {
+        client, params: [], stmt: &mut self.0, extractor:
+        |row| { row.get(0) }, mapper: |it| { it },
+    }
 } }pub fn get_common_projects() -> GetCommonProjectsStmt
 { GetCommonProjectsStmt(cornucopia_async::private::Stmt::new("SELECT
   spigot_id,

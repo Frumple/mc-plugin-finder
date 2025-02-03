@@ -147,8 +147,8 @@ FROM
 
 -- Ingest Logs
 
-CREATE TYPE ingest_log_action AS ENUM('Populate', 'Update');
-CREATE TYPE ingest_log_repository AS ENUM('Spigot', 'Modrinth', 'Hangar');
+CREATE TYPE ingest_log_action AS ENUM('Populate', 'Update', 'Refresh');
+CREATE TYPE ingest_log_repository AS ENUM('Spigot', 'Modrinth', 'Hangar', 'Common');
 CREATE TYPE ingest_log_item AS ENUM('Author', 'Resource', 'Project', 'Version');
 
 CREATE TABLE IF NOT EXISTS ingest_log (

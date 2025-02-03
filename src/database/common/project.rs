@@ -1,4 +1,5 @@
 use crate::database::cornucopia::queries::common_project::{self, CommonProjectEntity};
+use crate::database::ingest_log::{IngestLog, IngestLogAction, IngestLogRepository, IngestLogItem, insert_ingest_log};
 
 use anyhow::Result;
 use deadpool_postgres::Pool;
@@ -125,12 +126,30 @@ pub struct CommonProjectHangar {
 )]
 pub async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
     let db_client = db_pool.get().await?;
+    let date_started = OffsetDateTime::now_utc();
 
     common_project::refresh_common_projects()
         .bind(&db_client)
         .await?;
 
-    info!("Refresh complete.");
+    let date_finished = OffsetDateTime::now_utc();
+
+    let items_processed = common_project::get_common_project_count()
+        .bind(&db_client)
+        .one()
+        .await?;
+
+        let ingest_log = IngestLog {
+            action: IngestLogAction::Refresh,
+            repository: IngestLogRepository::Common,
+            item: IngestLogItem::Project,
+            date_started,
+            date_finished,
+            items_processed: items_processed.try_into()?
+        };
+        insert_ingest_log(db_pool, &ingest_log).await?;
+
+    info!("Common projects refreshed: {}", items_processed);
 
     Ok(())
 }

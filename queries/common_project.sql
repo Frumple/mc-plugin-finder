@@ -3,6 +3,9 @@
 --! refresh_common_projects
 REFRESH MATERIALIZED VIEW common_project;
 
+--! get_common_project_count
+SELECT COUNT(*) FROM common_project;
+
 --! get_common_projects : CommonProjectEntity
 SELECT
   spigot_id,
