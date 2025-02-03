@@ -64,12 +64,13 @@ pub async fn insert_spigot_author(db_pool: &Pool, author: &SpigotAuthor) -> Resu
 pub async fn get_spigot_authors(db_pool: &Pool) -> Result<Vec<SpigotAuthor>> {
     let db_client = db_pool.get().await?;
 
-    let entities = spigot_author::get_spigot_authors()
+    let authors = spigot_author::get_spigot_authors()
         .bind(&db_client)
         .all()
-        .await?;
-
-    let authors = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(authors)
 }

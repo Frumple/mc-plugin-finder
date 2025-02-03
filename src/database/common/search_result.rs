@@ -191,12 +191,13 @@ pub struct SearchResultHangar {
 pub async fn search_projects(db_pool: &Pool, params: &SearchParams) -> Result<Vec<SearchResult>> {
     let db_client = db_pool.get().await?;
 
-    let entities = search_result::search_projects()
+    let projects = search_result::search_projects()
         .params(&db_client, &params.clone().into())
         .all()
-        .await?;
-
-    let projects = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(projects)
 }

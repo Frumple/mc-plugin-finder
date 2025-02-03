@@ -132,12 +132,13 @@ pub async fn upsert_modrinth_project(db_pool: &Pool, project: &ModrinthProject) 
 pub async fn get_modrinth_projects(db_pool: &Pool) -> Result<Vec<ModrinthProject>> {
     let db_client = db_pool.get().await?;
 
-    let entities = modrinth_project::get_modrinth_projects()
+    let projects = modrinth_project::get_modrinth_projects()
         .bind(&db_client)
         .all()
-        .await?;
-
-    let projects = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(projects)
 }

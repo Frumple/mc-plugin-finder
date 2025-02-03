@@ -129,12 +129,13 @@ pub async fn upsert_hangar_project(db_pool: &Pool, project: &HangarProject) -> R
 pub async fn get_hangar_projects(db_pool: &Pool) -> Result<Vec<HangarProject>> {
     let db_client = db_pool.get().await?;
 
-    let entities = hangar_project::get_hangar_projects()
+    let projects = hangar_project::get_hangar_projects()
         .bind(&db_client)
         .all()
-        .await?;
-
-    let projects = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(projects)
 }

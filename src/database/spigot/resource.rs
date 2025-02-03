@@ -141,12 +141,13 @@ pub async fn upsert_spigot_resource(db_pool: &Pool, resource: &SpigotResource) -
 pub async fn get_spigot_resources(db_pool: &Pool) -> Result<Vec<SpigotResource>> {
     let db_client = db_pool.get().await?;
 
-    let entities = spigot_resource::get_spigot_resources()
+    let resources = spigot_resource::get_spigot_resources()
         .bind(&db_client)
         .all()
-        .await?;
-
-    let resources = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(resources)
 }

@@ -158,12 +158,13 @@ pub async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
 pub async fn get_common_projects(db_pool: &Pool) -> Result<Vec<CommonProject>> {
     let db_client = db_pool.get().await?;
 
-    let entities = common_project::get_common_projects()
+    let projects = common_project::get_common_projects()
         .bind(&db_client)
         .all()
-        .await?;
-
-    let projects = entities.into_iter().map(|x| x.into()).collect();
+        .await?
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
 
     Ok(projects)
 }
