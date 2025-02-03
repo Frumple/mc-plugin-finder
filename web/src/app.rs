@@ -6,8 +6,10 @@ use leptos_meta::*;
 use leptos_router::*;
 
 use serde::{Serialize, Deserialize};
+use time::format_description::BorrowedFormatItem;
 use std::str::FromStr;
-use time::{OffsetDateTime, format_description};
+use time::OffsetDateTime;
+use time::macros::format_description;
 
 #[cfg(feature = "ssr")]
 use mc_plugin_finder::database::common::search_result::{SearchParams, SearchParamsSort, SearchResult, SearchResultSpigot, SearchResultModrinth, SearchResultHangar};
@@ -24,6 +26,10 @@ const ABANDONED_IMAGE_URL: &str = "images/abandoned.svg";
 const PREMIUM_IMAGE_URL: &str = "images/premium.svg";
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const SEARCH_RESULT_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day]");
+const SEARCH_RESULT_TIME_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[hour]:[minute]:[second]");
+const LAST_INGEST_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day] [hour]:[minute]:[second] UTC");
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
 pub struct WebSearchParams {
@@ -123,6 +129,11 @@ impl From<WebSearchParams> for SearchParams {
             offset: offset.unwrap_or_default().into()
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebSearchResponse {
+    pub results: Vec<WebSearchResult>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -411,11 +422,16 @@ impl From<mc_plugin_finder::database::source_repository::SourceRepository> for W
 
 #[cfg(feature = "ssr")]
 pub mod ssr {
-    use leptos::use_context;
     use deadpool_postgres::Pool;
+    use leptos::use_context;
 
-    pub async fn db() -> Option<Pool> {
-        use_context::<Pool>()
+    #[derive(Clone)]
+    pub struct WebContext {
+        pub db_pool: Pool
+    }
+
+    pub async fn context() -> Option<WebContext> {
+        use_context::<WebContext>()
     }
 }
 
@@ -478,26 +494,48 @@ pub fn App() -> impl IntoView {
 }
 
 #[server(SearchProjects)]
-pub async fn search_projects(params: WebSearchParams) -> Result<Vec<WebSearchResult>, ServerFnError> {
+pub async fn search_projects(params: WebSearchParams) -> Result<WebSearchResponse, ServerFnError> {
     use self::ssr::*;
     use mc_plugin_finder::database::common::search_result::search_projects;
 
-    if let Some(db_pool) = db().await {
-        let common_projects = search_projects(&db_pool, &params.into()).await;
+    if let Some(context) = context().await {
+        let common_projects = search_projects(&context.db_pool, &params.into()).await;
 
         match common_projects {
-            Ok(projects) => Ok(projects.into_iter().map(|x| x.into()).collect()),
+            Ok(projects) => {
+                let response = WebSearchResponse {
+                    results: projects.into_iter().map(|x| x.into()).collect()
+                };
+                Ok(response)
+            }
             Err(error) => Err(ServerFnError::ServerError(error.to_string()))
         }
     } else {
-        Err(ServerFnError::ServerError("database connection pool not found".to_string()))
+        Err(ServerFnError::ServerError("web context not found".to_string()))
     }
 }
 
-async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> Result<Vec<WebSearchResult>, ServerFnError> {
+async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> Result<WebSearchResponse, ServerFnError> {
     match params_result {
         Ok(params) => search_projects(params).await,
         Err(error) => Err(ServerFnError::ServerError(error.to_string()))
+    }
+}
+
+#[server(GetLastIngestDate)]
+pub async fn get_last_ingest_date() -> Result<String, ServerFnError> {
+    use self::ssr::*;
+    use mc_plugin_finder::database::ingest_log::get_last_ingest_log;
+
+    if let Some(context) = context().await {
+        let last_ingest_log = get_last_ingest_log(&context.db_pool).await;
+
+        match last_ingest_log {
+            Ok(log) => Ok(log.date_finished.format(&LAST_INGEST_DATE_FORMAT_DESCRIPTION)?),
+            Err(error) => Err(ServerFnError::ServerError(error.to_string()))
+        }
+    } else {
+        Err(ServerFnError::ServerError("web context not found".to_string()))
     }
 }
 
@@ -536,10 +574,13 @@ fn HomePage() -> impl IntoView {
         })
     });
 
-    let resource = create_resource(
+    let search_resource = create_resource(
         move || params_memo.get(),
         fetch_projects
     );
+
+    let last_ingest_date_resource = Resource::once(get_last_ingest_date);
+    let last_ingest_date = move || last_ingest_date_resource.get();
 
     view! {
         <a href="https://github.com/Frumple/mc-plugin-finder" class="github-corner" aria-label="View source on GitHub" target="_blank">
@@ -563,9 +604,15 @@ fn HomePage() -> impl IntoView {
 
         <div class="home-page__container">
             <SearchForm params_memo />
-            <SearchResults params_memo resource />
+            <SearchResults params_memo resource=search_resource />
         </div>
         <div class="home-page__footer">
+            <div class="home-page__footer-last-ingest">
+                <span>"Last Ingest: "</span>
+                <Transition fallback=move || view! { <span>"Loading..."</span> }>
+                    <span>{last_ingest_date}</span>
+                </Transition>
+            </div>
             <div class="home-page__footer-text">
                 <span>MC Plugin Finder v{VERSION}</span>
                 <span>" | "</span>
@@ -643,7 +690,7 @@ fn SearchResults(
     /// Memo that tracks the URL query parameters for the search.
     params_memo: Memo<Result<WebSearchParams, ParamsError>>,
     /// The resource that performs the search when the search form is submitted.
-    resource: Resource<Result<WebSearchParams, ParamsError>, Result<Vec<WebSearchResult>, ServerFnError>>
+    resource: Resource<Result<WebSearchParams, ParamsError>, Result<WebSearchResponse, ServerFnError>>
 ) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <div class="search-results__loading">"Loading..."</div> }>
@@ -684,17 +731,17 @@ fn SearchResults(
                     let results = {
                         move || {
                             resource.get()
-                                .map(move |projects| match projects {
+                                .map(move |response| match response {
                                     Err(e) => {
                                         view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
                                     }
-                                    Ok(projects) => {
-                                        if projects.is_empty() {
+                                    Ok(response) => {
+                                        if response.results.is_empty() {
                                             view! { <div class="search-results__no-projects-found">"No projects were found."</div> }.into_view()
                                         } else {
-                                            let full_count = projects[0].full_count;
+                                            let full_count = response.results[0].full_count;
 
-                                            let rows = projects
+                                            let rows = response.results
                                                 .into_iter()
                                                 .map(move |project| {
                                                     view! {
@@ -802,14 +849,11 @@ fn SearchRow(
     let show_modrinth = params.as_ref().map(|p| p.modrinth.unwrap_or(false)).unwrap_or(false);
     let show_hangar = params.map(|p| p.hangar.unwrap_or(false)).unwrap_or(false);
 
-    let date_format = format_description::parse("[year]-[month]-[day]").unwrap();
-    let time_format = format_description::parse("[hour]:[minute]:[second]").unwrap();
+    let date_created = search_result.date_created.format(&SEARCH_RESULT_DATE_FORMAT_DESCRIPTION);
+    let time_created = search_result.date_created.format(&SEARCH_RESULT_TIME_FORMAT_DESCRIPTION);
 
-    let date_created = search_result.date_created.format(&date_format);
-    let time_created = search_result.date_created.format(&time_format);
-
-    let date_updated = search_result.date_updated.format(&date_format);
-    let time_updated = search_result.date_updated.format(&time_format);
+    let date_updated = search_result.date_updated.format(&SEARCH_RESULT_DATE_FORMAT_DESCRIPTION);
+    let time_updated = search_result.date_updated.format(&SEARCH_RESULT_TIME_FORMAT_DESCRIPTION);
 
     let latest_minecraft_version = search_result.latest_minecraft_version.clone().unwrap_or("N/A".to_string());
 

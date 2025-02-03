@@ -70,8 +70,13 @@ body {
   display: flex;
 	flex-direction: column;
 	align-items: center;
+	gap: 5px;
 	color: #aeb3bb;
 	margin: 10px;
+}
+
+.home-page__footer-last-ingest {
+
 }
 
 .home-page__footer-text {
@@ -81,7 +86,6 @@ body {
 .home-page__footer-disclaimer {
 	font-size: small;
 	font-style: italic;
-	margin-top: 5px;
 }
 
 .search-form {

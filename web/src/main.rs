@@ -11,6 +11,7 @@ async fn main() {
     use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use web::app::*;
+    use web::app::ssr::WebContext;
     use web::fileserv::file_and_error_handler;
 
     // Initialize tracing
@@ -48,15 +49,20 @@ async fn main() {
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
 
+    // Create database connection pool
     let db = get_db();
     let db_pool = db.create_pool().await.unwrap();
+
+    let context = WebContext {
+        db_pool
+    };
 
     // build our application with a route
     let app = Router::new()
         .leptos_routes_with_context(
             &leptos_options,
             routes,
-            move || provide_context(db_pool.clone()),
+            move || provide_context(context.clone()),
             App)
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
