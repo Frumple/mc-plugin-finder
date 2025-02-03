@@ -637,7 +637,7 @@ fn SearchForm(
         <Form action="" class="search-form">
             <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" placeholder="Enter search query here..." value=move || params().query />
 
-            <span class="search-form__repository-text">Repository:</span>
+            <span class="search-form__repository-text">"Repository:"</span>
 
             <input id="spigot-checkbox" type="checkbox" name="spigot" class="search-form__spigot-checkbox" value="true" oninput="this.form.requestSubmit()" checked=move || params().spigot />
             <label for="spigot-checkbox" class="search-form__spigot-label">Spigot</label>
@@ -648,7 +648,7 @@ fn SearchForm(
             <input id="hangar-checkbox" type="checkbox" name="hangar" class="search-form__hangar-checkbox" value="true" oninput="this.form.requestSubmit()" checked=move || params().hangar />
             <label for="hangar-checkbox" class="search-form__hangar-label">Hangar</label>
 
-            <span class="search-form__fields-text">Fields:</span>
+            <span class="search-form__fields-text">"Fields:"</span>
 
             <input id="name-checkbox" type="checkbox" name="name" class="search-form__name-checkbox" value="true" oninput="this.form.requestSubmit()" checked=move || params().name />
             <label for="name-checkbox" class="search-form__name-label">Name</label>
@@ -660,7 +660,7 @@ fn SearchForm(
             <label for="author-checkbox" class="search-form__author-label">Author</label>
 
             <div class="search-form__sort-limit-container">
-                <label for="sort-select" class="search-form__sort-label">Sort by:</label>
+                <label for="sort-select" class="search-form__sort-label">"Sort by:"</label>
                 <select id="sort-select" name="sort" class="search-form__sort-select" onchange="this.form.requestSubmit()" prop:value=move || params().sort>
                     <option value="relevance">Relevance</option>
                     <option value="date_created">Newest</option>
@@ -671,7 +671,7 @@ fn SearchForm(
                     <option value="follows_and_watchers">Follows + Watchers</option>
                 </select>
 
-                <label for="limit-select" class="search-form__limit-label">Show per page:</label>
+                <label for="limit-select" class="search-form__limit-label">"Show per page:"</label>
                 <select id="limit-select" name="limit" class="search-form__limit-select" onchange="this.form.requestSubmit()" prop:value=move || params().limit>
                     <option value="25">25</option>
                     <option value="50">50</option>
