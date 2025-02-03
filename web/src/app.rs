@@ -789,48 +789,47 @@ fn PaginationControls(
     /// Total number of projects in the search results.
     full_count: i64
 ) -> impl IntoView {
-    let params = params_memo.get().unwrap_or_default();
 
-    let page = params.page.unwrap_or_default();
-    let total_pages = params.total_pages(full_count).unwrap_or_default();
+    // For some unknown reason, the following line still causes a browser warning that states
+    // we're accessing a signal or memo outside of a reactive tracking context (i.e. move || <closure>).
+    let params = move || params_memo.get().unwrap_or_default();
 
-    let first_url = params.first_url();
-    let previous_url = params.previous_url();
-    let previous_url_clone = previous_url.clone();
+    let page = move || params().page.unwrap_or_default();
+    let total_pages = move || params().total_pages(full_count).unwrap_or_default();
 
-    let current_url = params.form_url();
-
-    let next_url = params.next_url();
-    let next_url_clone = next_url.clone();
-    let last_url = params.last_url(full_count);
+    let first_url = move || params().first_url();
+    let previous_url = move || params().previous_url();
+    let current_url = move || params().form_url();
+    let next_url = move || params().next_url();
+    let last_url = move || params().last_url(full_count);
 
     view! {
-        <Show when=move || { page > 1 }>
-            <a class="search-results__pagination-link-large" href=previous_url.clone()>"<"</a>
-            <a class="search-results__pagination-link" href=first_url.clone()>"1"</a>
+        <Show when=move || { page() > 1 }>
+            <a class="search-results__pagination-link-large" href=previous_url()>"<"</a>
+            <a class="search-results__pagination-link" href=first_url()>"1"</a>
         </Show>
 
-        <Show when=move || { page > 3 }>
+        <Show when=move || { page() > 3 }>
             <span class="search-results__pagination-item">"—"</span>
         </Show>
 
-        <Show when=move || { page > 2 }>
-            <a class="search-results__pagination-link" href=previous_url_clone.clone()>{page - 1}</a>
+        <Show when=move || { page() > 2 }>
+            <a class="search-results__pagination-link" href=previous_url()>{move || page() - 1}</a>
         </Show>
 
-        <a class="search-results__pagination-link_current" href=current_url.clone()>{page}</a>
+        <a class="search-results__pagination-link_current" href=current_url()>{move || page()}</a>
 
-        <Show when=move || { page < total_pages.saturating_sub(1) }>
-            <a class="search-results__pagination-link" href=next_url_clone.clone()>{page + 1}</a>
+        <Show when=move || { page() < total_pages().saturating_sub(1) }>
+            <a class="search-results__pagination-link" href=next_url()>{move || page() + 1}</a>
         </Show>
 
-        <Show when=move || { page < total_pages.saturating_sub(2) }>
+        <Show when=move || { page() < total_pages().saturating_sub(2) }>
             <span class="search-results__pagination-item">"—"</span>
         </Show>
 
-        <Show when=move || { page < total_pages }>
-            <a class="search-results__pagination-link" href=last_url.clone()>{total_pages}</a>
-            <a class="search-results__pagination-link-large" href=next_url.clone()>">"</a>
+        <Show when=move || { page() < total_pages() }>
+            <a class="search-results__pagination-link" href=last_url()>{move || total_pages()}</a>
+            <a class="search-results__pagination-link-large" href=next_url()>">"</a>
         </Show>
     }
 }
@@ -843,11 +842,11 @@ fn SearchRow(
     /// The search result representing this row.
     search_result: WebSearchResult
 ) -> impl IntoView {
-    let params = params_memo.get();
+    let params = move || params_memo.get();
 
-    let show_spigot = params.as_ref().map(|p| p.spigot.unwrap_or(false)).unwrap_or(false);
-    let show_modrinth = params.as_ref().map(|p| p.modrinth.unwrap_or(false)).unwrap_or(false);
-    let show_hangar = params.map(|p| p.hangar.unwrap_or(false)).unwrap_or(false);
+    let show_spigot = move || params().as_ref().map(|p| p.spigot.unwrap_or(false)).unwrap_or(false);
+    let show_modrinth = move || params().as_ref().map(|p| p.modrinth.unwrap_or(false)).unwrap_or(false);
+    let show_hangar = move || params().map(|p| p.hangar.unwrap_or(false)).unwrap_or(false);
 
     let date_created = search_result.date_created.format(&SEARCH_RESULT_DATE_FORMAT_DESCRIPTION);
     let time_created = search_result.date_created.format(&SEARCH_RESULT_TIME_FORMAT_DESCRIPTION);
@@ -898,19 +897,19 @@ fn SearchRow(
                 <span class="search-row__follows-and-watchers">{follows_and_watchers}</span>
             </div>
 
-            <Show when=move || { show_spigot }>
+            <Show when=move || { show_spigot() }>
                 <div class="search-row__spigot-cell">
                     <SpigotResourceOuter spigot=spigot.clone() />
                 </div>
             </Show>
 
-            <Show when=move || { show_modrinth }>
+            <Show when=move || { show_modrinth() }>
                 <div class="search-row__modrinth-cell">
                     <ModrinthProjectOuter modrinth=modrinth.clone() />
                 </div>
             </Show>
 
-            <Show when=move || { show_hangar }>
+            <Show when=move || { show_hangar() }>
                 <div class="search-row__hangar-cell">
                     <HangarProjectOuter hangar=hangar.clone() />
                 </div>
