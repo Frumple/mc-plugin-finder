@@ -229,7 +229,7 @@ impl WebSearchResultSpigot {
     fn icon_img_url(&self) -> String {
         let data = self.icon_data.clone();
 
-        if data.as_ref().map_or(true, String::is_empty) {
+        if data.as_ref().is_none_or(String::is_empty) {
             return NO_ICON_IMAGE_URL.to_string();
         }
 
@@ -278,7 +278,7 @@ impl WebSearchResultModrinth {
     fn icon_img_url(&self) -> String {
         let url = self.icon_url.clone();
 
-        if url.as_ref().map_or(true, String::is_empty) {
+        if url.as_ref().is_none_or(String::is_empty) {
             return NO_ICON_IMAGE_URL.to_string();
         }
 
