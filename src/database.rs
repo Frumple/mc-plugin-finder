@@ -1,5 +1,6 @@
 mod cornucopia;
 pub mod common;
+pub mod fix_upstream_errors;
 pub mod hangar;
 pub mod ingest_log;
 pub mod modrinth;

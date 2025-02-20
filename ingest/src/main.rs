@@ -34,7 +34,11 @@ struct CommandLineArguments {
     #[command(subcommand)]
     action: Option<ActionSubcommand>,
 
-    /// Refresh common projects: Will run after the populate/update command if the command was specified
+    /// Applies corrections to upstream items after the populate/update operation: Run this only after populating all items
+    #[arg(global = true, short, long)]
+    fix: bool,
+
+    /// Refresh common projects after the populate/update operation
     #[arg(global = true, short, long)]
     refresh: bool
 }
@@ -249,6 +253,11 @@ async fn main() -> Result<()> {
         }
     }
 
+    // Fix upstream items if specified
+    if cli.fix {
+        fix_upstream_errors(&db_pool).await?;
+    }
+
     // Refresh the common projects table if specified
     if cli.refresh {
         refresh_common_projects(&db_pool).await?;
@@ -346,6 +355,13 @@ async fn update_all(db_pool: &Pool) -> Result<()> {
     update_spigot_resources(&spigot_client, db_pool).await?;
     update_modrinth_projects(&modrinth_client, db_pool).await?;
     update_hangar_projects(&hangar_client, db_pool).await?;
+
+    Ok(())
+}
+
+async fn fix_upstream_errors(db_pool: &Pool) -> Result<()> {
+    info!("Fixing upstream errors...");
+    mc_plugin_finder::database::fix_upstream_errors::fix_upstream_errors(db_pool).await?;
 
     Ok(())
 }

@@ -20,6 +20,8 @@ MC Plugin Finder has two main components: The **ingest tool** and the **web app*
 
 ![MC Plugin Finder drawio](https://github.com/user-attachments/assets/826e4b22-5e8f-440a-b2bc-b903ef3e858f)
 
+### Ingest Tool
+
 The **ingest tool** is a CLI application that retrieves plugin project data from the [Spiget API](https://spiget.org/) (for Spigot), [Modrinth API](https://docs.modrinth.com/), and [Hangar API](https://hangar.papermc.io/api-docs). The tool runs daily to update the database with the latest plugin information. It also considers projects from different plugin repositories to be the same if they **share the same source code repository URL**.
 
 For example, suppose there was a project named "Foo" on Spigot and another project named "Bar" on Modrinth, and both projects have `https://github.com/foo/foo` as their source code repository URL. Both projects would be considered the same on MC Plugin Finder, even though their project names are different.
@@ -38,6 +40,8 @@ MC Plugin Finder will only recognize URLs from these source code repository host
 - [gitlab.com](https://gitlab.com)
 - [bitbucket.org](https://bitbucket.org)
 - [codeberg.org](https://codeberg.org)
+
+### Web App
 
 The **web app** allows users to search the database for plugins.
 
@@ -86,7 +90,10 @@ Optionally, you may populate plugin versions as well (However, note that populat
 - `ingest populate modrinth versions`
 - `ingest populate hangar versions`
 
-Run the ingest tool again to refresh the common projects:
+After populating all data, run the ingest tool again to fix some errors in upstream resources and projects:
+- `ingest --fix`
+
+Run the ingest tool yet again to refresh the common projects:
 - `ingest --refresh`
 
 The database can then be later updated using these commands:
@@ -95,7 +102,7 @@ The database can then be later updated using these commands:
 - `ingest update hangar projects`
 
 For daily updates in a live environment, this command is used:
-- `ingest update all --refresh`
+- `ingest update all --fix --refresh`
 
 ### Commands
 
