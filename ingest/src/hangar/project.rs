@@ -135,6 +135,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_hangar_projects(&self, db_pool: &Pool) -> Result<()> {
+        info!("Populating Hangar projects...");
+
         let request = GetHangarProjectsRequest::create_request();
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();
@@ -167,6 +169,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn update_hangar_projects(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
+        info!("Updating Hangar projects since: {}", update_date_later_than);
+
         let request = GetHangarProjectsRequest::create_request();
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();

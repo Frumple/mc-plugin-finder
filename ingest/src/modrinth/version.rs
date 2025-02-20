@@ -42,6 +42,8 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_modrinth_versions(&self, db_pool: &Pool) -> Result<()> {
+        info!("Populating Modrinth versions...");
+
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();
 
@@ -66,7 +68,7 @@ impl<T> ModrinthClient<T> where T: HttpServer + Send + Sync {
         };
         insert_ingest_log(db_pool, &ingest_log).await?;
 
-        info!("Modrinth project versions populated: {}", items_processed);
+        info!("Modrinth versions populated: {}", items_processed);
 
         result
     }

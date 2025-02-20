@@ -5,6 +5,8 @@ use deadpool_postgres::Pool;
 use tracing::{info, instrument};
 
 pub async fn fix_upstream_errors(db_pool: &Pool) -> Result<()> {
+    info!("Fixing upstream errors...");
+
     remove_incorrect_source_repository_host_owner_and_name_from_spigot_resources(db_pool).await?;
 
     info!("Upstream errors fixed.");

@@ -267,49 +267,42 @@ async fn main() -> Result<()> {
 }
 
 async fn populate_spigot_authors(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Spigot Authors...");
     spigot_client.populate_spigot_authors(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_spigot_resources(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Spigot Resources...");
     spigot_client.populate_spigot_resources(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_spigot_versions(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Spigot Versions...");
     spigot_client.populate_spigot_versions(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_modrinth_projects(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Modrinth Projects...");
     modrinth_client.populate_modrinth_projects(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_modrinth_versions(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Modrinth Versions...");
     modrinth_client.populate_modrinth_versions(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Hangar Projects...");
     hangar_client.populate_hangar_projects(db_pool).await?;
 
     Ok(())
 }
 
 async fn populate_hangar_versions(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
-    info!("Populating Hangar Versions...");
     hangar_client.populate_hangar_versions(db_pool).await?;
 
     Ok(())
@@ -317,7 +310,6 @@ async fn populate_hangar_versions(hangar_client: &HangarClient<HangarServer>, db
 
 async fn update_spigot_resources(spigot_client: &SpigotClient<SpigotServer>, db_pool: &Pool) -> Result<()> {
     let latest_update_date = get_latest_spigot_resource_update_date(db_pool).await?;
-    info!("Updating Spigot Resources since: {}", latest_update_date);
     spigot_client.update_spigot_resources(db_pool, latest_update_date).await?;
 
     Ok(())
@@ -325,7 +317,6 @@ async fn update_spigot_resources(spigot_client: &SpigotClient<SpigotServer>, db_
 
 async fn update_modrinth_projects(modrinth_client: &ModrinthClient<ModrinthServer>, db_pool: &Pool) -> Result<()> {
     let latest_update_date = get_latest_modrinth_project_update_date(db_pool).await?;
-    info!("Updating Modrinth Projects since: {}", latest_update_date);
     modrinth_client.update_modrinth_projects(db_pool, latest_update_date).await?;
 
     Ok(())
@@ -333,7 +324,6 @@ async fn update_modrinth_projects(modrinth_client: &ModrinthClient<ModrinthServe
 
 async fn update_hangar_projects(hangar_client: &HangarClient<HangarServer>, db_pool: &Pool) -> Result<()> {
     let latest_update_date = get_latest_hangar_project_update_date(db_pool).await?;
-    info!("Updating Hangar Projects since: {}", latest_update_date);
     hangar_client.update_hangar_projects(db_pool, latest_update_date).await?;
 
     Ok(())
@@ -360,14 +350,12 @@ async fn update_all(db_pool: &Pool) -> Result<()> {
 }
 
 async fn fix_upstream_errors(db_pool: &Pool) -> Result<()> {
-    info!("Fixing upstream errors...");
     mc_plugin_finder::database::fix_upstream_errors::fix_upstream_errors(db_pool).await?;
 
     Ok(())
 }
 
 async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
-    info!("Refreshing common projects...");
     mc_plugin_finder::database::common::project::refresh_common_projects(db_pool).await?;
 
     Ok(())

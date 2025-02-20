@@ -157,6 +157,8 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_spigot_resources(&self, db_pool: &Pool) -> Result<()> {
+        info!("Populating Spigot resources...");
+
         let request = GetSpigotResourcesRequest::create_populate_request();
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();
@@ -189,6 +191,8 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn update_spigot_resources(&self, db_pool: &Pool, update_date_later_than: OffsetDateTime) -> Result<()> {
+        info!("Updating Spigot resources since: {}", update_date_later_than);
+
         let request = GetSpigotResourcesRequest::create_update_request();
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();

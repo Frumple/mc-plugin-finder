@@ -125,6 +125,8 @@ pub struct CommonProjectHangar {
     skip(db_pool)
 )]
 pub async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
+    info!("Refreshing common projects...");
+
     let db_client = db_pool.get().await?;
     let date_started = OffsetDateTime::now_utc();
 

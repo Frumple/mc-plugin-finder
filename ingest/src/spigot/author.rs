@@ -97,6 +97,8 @@ impl<T> SpigotClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_spigot_authors(&self, db_pool: &Pool) -> Result<()> {
+        info!("Populating Spigot authors...");
+
         let request = GetSpigotAuthorsRequest::create_populate_request();
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();

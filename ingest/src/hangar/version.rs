@@ -74,6 +74,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         skip(self, db_pool)
     )]
     pub async fn populate_hangar_versions(&self, db_pool: &Pool) -> Result<()> {
+        info!("Populating Hangar versions...");
+
         let count = Arc::new(AtomicU32::new(0));
         let date_started = OffsetDateTime::now_utc();
 
@@ -98,7 +100,7 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
         };
         insert_ingest_log(db_pool, &ingest_log).await?;
 
-        info!("Hangar project versions populated: {}", items_processed);
+        info!("Hangar versions populated: {}", items_processed);
 
         result
     }
