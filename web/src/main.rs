@@ -1,8 +1,11 @@
+#![recursion_limit = "256"]
+
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
     use axum::Router;
-    use leptos::*;
+    use leptos::prelude::*;
+    use leptos::context::provide_context;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use mc_plugin_finder::database::get_db;
     use tracing::{info, warn};
@@ -44,7 +47,7 @@ async fn main() {
     // <https://github.com/leptos-rs/start-axum#executing-a-server-on-a-remote-machine-without-the-toolchain>
     // Alternately a file can be specified such as Some("Cargo.toml")
     // The file would need to be included with the executable when moved to deployment
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
     let leptos_options = conf.leptos_options;
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
@@ -63,12 +66,15 @@ async fn main() {
             &leptos_options,
             routes,
             move || provide_context(context.clone()),
-            App)
+            {
+                let leptos_options = leptos_options.clone();
+                move || shell(leptos_options.clone())
+            })
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    logging::log!("listening on http://{}", &addr);
+    info!("listening on http://{}", &addr);
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();

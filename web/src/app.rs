@@ -1,9 +1,13 @@
 use crate::error_template::{AppError, ErrorTemplate};
 use crate::util::format_number;
 
-use leptos::*;
-use leptos_meta::*;
-use leptos_router::*;
+use leptos::prelude::*;
+use leptos::either::Either;
+use leptos_meta::{provide_meta_context, Meta, MetaTags, Script, Stylesheet, Title};
+use leptos_router::components::{Form,Router, Routes, Route};
+use leptos_router::params::{Params, ParamsError};
+use leptos_router::hooks::use_query;
+use leptos_router::StaticSegment;
 
 use serde::{Serialize, Deserialize};
 use time::format_description::BorrowedFormatItem;
@@ -423,7 +427,7 @@ impl From<mc_plugin_finder::database::source_repository::SourceRepository> for W
 #[cfg(feature = "ssr")]
 pub mod ssr {
     use deadpool_postgres::Pool;
-    use leptos::use_context;
+    use leptos::context::use_context;
 
     #[derive(Clone)]
     pub struct WebContext {
@@ -432,6 +436,24 @@ pub mod ssr {
 
     pub async fn context() -> Option<WebContext> {
         use_context::<WebContext>()
+    }
+}
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <AutoReload options=options.clone() />
+                <HydrationScripts options/>
+                <MetaTags/>
+            </head>
+            <body>
+                <App/>
+            </body>
+        </html>
     }
 }
 
@@ -476,17 +498,17 @@ pub fn App() -> impl IntoView {
         <Meta name="description" content="Find thousands of Minecraft server plugins with MC Plugin Finder, a search aggregator for plugins hosted on Spigot, Modrinth, and Hangar." />
 
         // content for this welcome page
-        <Router fallback=|| {
-            let mut outside_errors = Errors::default();
-            outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-            .into_view()
-        }>
+        <Router>
             <main>
-                <Routes>
-                    <Route path="" view=HomePage/>
+                <Routes fallback=|| {
+                    let mut outside_errors = Errors::default();
+                    outside_errors.insert_with_default_key(AppError::NotFound);
+                    view! {
+                        <ErrorTemplate outside_errors/>
+                    }
+                    .into_view()
+                }>
+                    <Route path=StaticSegment("") view=HomePage/>
                 </Routes>
             </main>
         </Router>
@@ -543,7 +565,7 @@ pub async fn get_last_ingest_date() -> Result<String, ServerFnError> {
 fn HomePage() -> impl IntoView {
     let params_memo_original = use_query::<WebSearchParams>();
 
-    let params_memo = create_memo(move |_| {
+    let params_memo = Memo::new(move |_| {
         params_memo_original.get().map( |params| {
             // When first loading the home page with no query paramemters,
             // perform a default search on all repositories using the name field only.
@@ -574,12 +596,12 @@ fn HomePage() -> impl IntoView {
         })
     });
 
-    let search_resource = create_resource(
+    let search_resource = Resource::new(
         move || params_memo.get(),
         fetch_projects
     );
 
-    let last_ingest_date_resource = Resource::once(get_last_ingest_date);
+    let last_ingest_date_resource = OnceResource::new(get_last_ingest_date());
     let last_ingest_date = move || last_ingest_date_resource.get();
 
     view! {
@@ -634,7 +656,7 @@ fn SearchForm(
     let params = move || params_memo.get().unwrap_or_default();
 
     view! {
-        <Form action="" class="search-form">
+        <Form action="" {..} class="search-form">
             <input type="text" name="query" class="search-form__query-input" oninput="submitFormDebounce(this.form)" placeholder="Enter search query here..." value=move || params().query />
 
             <span class="search-form__repository-text">"Repository:"</span>
@@ -690,7 +712,7 @@ fn SearchResults(
     /// Memo that tracks the URL query parameters for the search.
     params_memo: Memo<Result<WebSearchParams, ParamsError>>,
     /// The resource that performs the search when the search form is submitted.
-    resource: Resource<Result<WebSearchParams, ParamsError>, Result<WebSearchResponse, ServerFnError>>
+    resource: Resource<Result<WebSearchResponse, ServerFnError>>
 ) -> impl IntoView {
     view! {
         <Transition fallback=move || view! { <div class="search-results__loading">"Loading..."</div> }>
@@ -733,11 +755,11 @@ fn SearchResults(
                             resource.get()
                                 .map(move |response| match response {
                                     Err(e) => {
-                                        view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                        Either::Left(view! {<pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view())
                                     }
                                     Ok(response) => {
                                         if response.results.is_empty() {
-                                            view! { <div class="search-results__no-projects-found">"No projects were found."</div> }.into_view()
+                                           Either::Right(Either::Left(view! { <div class="search-results__no-projects-found">"No projects were found."</div> }.into_view()))
                                         } else {
                                             let full_count = response.results[0].full_count;
 
@@ -750,7 +772,7 @@ fn SearchResults(
                                                 })
                                                 .collect_view();
 
-                                            view! {
+                                            Either::Right(Either::Right(view! {
                                                 <nav class="search-results__pagination">
                                                     <PaginationControls params_memo full_count />
                                                 </nav>
@@ -761,11 +783,10 @@ fn SearchResults(
                                                 <nav class="search-results__pagination">
                                                     <PaginationControls params_memo full_count />
                                                 </nav>
-                                            }.into_view()
+                                            }.into_any()))
                                         }
                                     }
                                 })
-                                .unwrap_or_default()
                         }
                     };
 

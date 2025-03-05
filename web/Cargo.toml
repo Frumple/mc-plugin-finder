@@ -12,10 +12,10 @@ console_error_panic_hook = "0.1"
 deadpool-postgres = { workspace = true, optional = true }
 dotenvy = { workspace = true }
 http = "1"
-leptos = { version = "0.6" }
-leptos_axum = { version = "0.6", optional = true }
-leptos_meta = { version = "0.6" }
-leptos_router = { version = "0.6" }
+leptos = { version = "0.7" }
+leptos_axum = { version = "0.7", optional = true }
+leptos_meta = { version = "0.7" }
+leptos_router = { version = "0.7" }
 mc-plugin-finder = { path = "..", optional = true }
 num-format = "0.4.4"
 serde = { workspace = true }
@@ -32,7 +32,7 @@ wasm-bindgen = "=0.2.99"
 
 [features]
 default = ["ssr"]
-hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
+hydrate = ["leptos/hydrate"]
 ssr = [
     "dep:axum",
     "dep:tokio",
