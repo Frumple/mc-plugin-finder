@@ -11,7 +11,6 @@ use leptos_router::StaticSegment;
 
 use serde::{Serialize, Deserialize};
 use time::format_description::BorrowedFormatItem;
-use std::str::FromStr;
 use time::OffsetDateTime;
 use time::macros::format_description;
 
@@ -33,7 +32,6 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const SEARCH_RESULT_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day]");
 const SEARCH_RESULT_TIME_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[hour]:[minute]:[second]");
-const LAST_INGEST_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day] [hour]:[minute]:[second] UTC");
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Params)]
 pub struct WebSearchParams {
@@ -50,6 +48,7 @@ pub struct WebSearchParams {
 }
 
 impl WebSearchParams {
+    #[cfg(feature = "ssr")]
     fn offset(&self) -> Option<u32> {
         if let Some(page) = self.page {
             if let Some(limit) = self.limit {
@@ -118,6 +117,7 @@ impl Default for WebSearchParams {
 #[cfg(feature = "ssr")]
 impl From<WebSearchParams> for SearchParams {
     fn from(params: WebSearchParams) -> Self {
+        use std::str::FromStr;
         let offset = params.offset();
 
         SearchParams {
@@ -543,6 +543,9 @@ async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> 
         Err(error) => Err(ServerFnError::ServerError(error.to_string()))
     }
 }
+
+#[cfg(feature = "ssr")]
+const LAST_INGEST_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day] [hour]:[minute]:[second] UTC");
 
 #[server(GetLastIngestDate)]
 pub async fn get_last_ingest_date() -> Result<String, ServerFnError> {
