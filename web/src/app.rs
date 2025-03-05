@@ -462,8 +462,9 @@ pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
-    // TODO: Move javascript to external file
     view! {
+        // Script to add a debounce delay to the search form input
+        // TODO: Move javascript to external file
         <Script>
             "
             const submitForm = (form) => {
@@ -487,17 +488,21 @@ pub fn App() -> impl IntoView {
             "
         </Script>
 
-        // injects a stylesheet into the document <head>
+        // Injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/web.css"/>
 
-        // sets the document title
         <Title text="MC Plugin Finder"/>
+
+        // Structured data that sets the site name in search engine results
+        <div itemscope itemtype="https://schema.org/WebSite">
+            <link itemprop="url" href="https://mcpluginfinder.com" />
+            <meta itemprop="name" content="MC Plugin Finder"/>
+        </div>
 
         // Description shown in search engine results
         <Meta name="description" content="Find thousands of Minecraft server plugins with MC Plugin Finder, a search aggregator for plugins hosted on Spigot, Modrinth, and Hangar." />
 
-        // content for this welcome page
         <Router>
             <main>
                 <Routes fallback=|| {
