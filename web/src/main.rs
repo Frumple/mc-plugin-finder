@@ -15,7 +15,6 @@ async fn main() {
     use tracing_subscriber::fmt::format::FmtSpan;
     use web::app::*;
     use web::app::ssr::WebContext;
-    use web::fileserv::file_and_error_handler;
 
     // Initialize tracing
     let appender = tracing_appender::rolling::daily("logs/web", "web.log");
@@ -70,7 +69,7 @@ async fn main() {
                 let leptos_options = leptos_options.clone();
                 move || shell(leptos_options.clone())
             })
-        .fallback(file_and_error_handler)
+        .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
