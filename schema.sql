@@ -136,14 +136,14 @@ FROM
   ON  s.author_id = a.id
 
   FULL JOIN modrinth_project m
-  ON  s.source_repository_host = m.source_repository_host
-  AND s.source_repository_owner = m.source_repository_owner
-  AND s.source_repository_name = m.source_repository_name
+  ON  LOWER(s.source_repository_host) = LOWER(m.source_repository_host)
+  AND LOWER(s.source_repository_owner) = LOWER(m.source_repository_owner)
+  AND LOWER(s.source_repository_name) = LOWER(m.source_repository_name)
 
   FULL JOIN hangar_project h
-  ON  COALESCE(s.source_repository_host, m.source_repository_host) = h.source_repository_host
-  AND COALESCE(s.source_repository_owner, m.source_repository_owner) = h.source_repository_owner
-  AND COALESCE(s.source_repository_name, m.source_repository_name) = h.source_repository_name;
+  ON  LOWER(COALESCE(s.source_repository_host, m.source_repository_host)) = LOWER(h.source_repository_host)
+  AND LOWER(COALESCE(s.source_repository_owner, m.source_repository_owner)) = LOWER(h.source_repository_owner)
+  AND LOWER(COALESCE(s.source_repository_name, m.source_repository_name)) = LOWER(h.source_repository_name);
 
 -- Ingest Logs
 
