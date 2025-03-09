@@ -28,7 +28,7 @@ tower-http = { version = "0.6.2", features = ["fs"], optional = true }
 tracing = { workspace = true, optional = true }
 tracing-appender = { workspace = true, optional = true }
 tracing-subscriber = {workspace = true, optional = true }
-wasm-bindgen = "=0.2.99"
+wasm-bindgen = "=0.2.100"
 
 [features]
 default = ["ssr"]
