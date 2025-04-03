@@ -104,7 +104,8 @@ pub struct IngestLog {
   pub item: IngestLogItem,
   pub date_started: OffsetDateTime,
   pub date_finished: OffsetDateTime,
-  pub items_processed: i32
+  pub items_processed: i32,
+  pub success: bool
 }
 
 impl From<IngestLog> for InsertIngestLogParams {
@@ -115,7 +116,8 @@ impl From<IngestLog> for InsertIngestLogParams {
             item: log.item.into(),
             date_started: log.date_started,
             date_finished: log.date_finished,
-            items_processed: log.items_processed
+            items_processed: log.items_processed,
+            success: log.success
         }
     }
 }
@@ -128,7 +130,8 @@ impl From<IngestLogEntity> for IngestLog {
             item: entity.item.into(),
             date_started: entity.date_started,
             date_finished: entity.date_finished,
-            items_processed: entity.items_processed
+            items_processed: entity.items_processed,
+            success: entity.success
         }
     }
 }
@@ -166,10 +169,10 @@ pub async fn insert_ingest_log(db_pool: &Pool, log: &IngestLog) -> Result<()> {
     level = "debug",
     skip(db_pool)
 )]
-pub async fn get_last_ingest_log(db_pool: &Pool) -> Result<IngestLog> {
+pub async fn get_last_successful_ingest_log(db_pool: &Pool) -> Result<IngestLog> {
     let db_client = db_pool.get().await?;
 
-    let log = ingest_log::get_last_ingest_log()
+    let log = ingest_log::get_last_successful_ingest_log()
         .bind(&db_client)
         .one()
         .await?
@@ -215,12 +218,10 @@ pub mod test {
 
         // Assert
         let retrieved_logs = get_ingest_logs(&context.pool).await?;
-
         assert_that(&retrieved_logs).has_length(1);
         assert_that(&retrieved_logs[0]).is_equal_to(log);
 
-        let last_log = get_last_ingest_log(&context.pool).await?;
-
+        let last_log = get_last_successful_ingest_log(&context.pool).await?;
         assert_that(&last_log).is_equal_to(log);
 
         // Teardown
@@ -245,13 +246,46 @@ pub mod test {
 
         // Assert
         let retrieved_logs = get_ingest_logs(&context.pool).await?;
-
         assert_that(&retrieved_logs).has_length(3);
-        assert_that(&retrieved_logs[2]).is_equal_to(logs[2].clone());
+        for index in 0..2 {
+            assert_that(&retrieved_logs[index]).is_equal_to(logs[index].clone());
+        }
 
-        let last_log = get_last_ingest_log(&context.pool).await?;
-
+        let last_log = get_last_successful_ingest_log(&context.pool).await?;
         assert_that(&last_log).is_equal_to(logs[2].clone());
+
+        // Teardown
+        context.drop().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[named]
+    async fn should_get_last_successful_ingest_log_when_last_log_has_failed() -> Result<()> {
+        // Setup
+        let context = DatabaseTestContext::new(function_name!()).await;
+
+        // Arrange
+        let logs = &mut create_test_ingest_logs();
+        // Set the most recent ingest log as failed
+        logs[2].success = false;
+
+        // Act
+        for log in logs.iter() {
+            insert_ingest_log(&context.pool, log).await?;
+        }
+
+        // Assert
+        let retrieved_logs = get_ingest_logs(&context.pool).await?;
+        assert_that(&retrieved_logs).has_length(3);
+        for index in 0..2 {
+            assert_that(&retrieved_logs[index]).is_equal_to(logs[index].clone());
+        }
+
+        // Since the most recent ingest log has failed, get the next log that is successful
+        let last_log = get_last_successful_ingest_log(&context.pool).await?;
+        assert_that(&last_log).is_equal_to(logs[1].clone());
 
         // Teardown
         context.drop().await?;
@@ -267,7 +301,8 @@ pub mod test {
                 item: IngestLogItem::Resource,
                 date_started: datetime!(2020-01-01 0:00 UTC),
                 date_finished: datetime!(2020-01-01 0:01 UTC),
-                items_processed: 50
+                items_processed: 50,
+                success: true
             },
             IngestLog {
                 action: IngestLogAction::Update,
@@ -275,7 +310,8 @@ pub mod test {
                 item: IngestLogItem::Project,
                 date_started: datetime!(2020-01-01 0:02 UTC),
                 date_finished: datetime!(2020-01-01 0:03 UTC),
-                items_processed: 30
+                items_processed: 30,
+                success: true
             },
             IngestLog {
                 action: IngestLogAction::Update,
@@ -283,7 +319,8 @@ pub mod test {
                 item: IngestLogItem::Project,
                 date_started: datetime!(2020-01-01 0:04 UTC),
                 date_finished: datetime!(2020-01-01 0:05 UTC),
-                items_processed: 10
+                items_processed: 10,
+                success: true
             },
         ]
 

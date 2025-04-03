@@ -553,14 +553,14 @@ async fn fetch_projects(params_result: Result<WebSearchParams, ParamsError>) -> 
 const LAST_INGEST_DATE_FORMAT_DESCRIPTION: &[BorrowedFormatItem] = format_description!("[year]-[month]-[day] [hour]:[minute]:[second] UTC");
 
 #[server(GetLastIngestDate)]
-pub async fn get_last_ingest_date() -> Result<String, ServerFnError> {
+pub async fn get_last_successful_ingest_date() -> Result<String, ServerFnError> {
     use self::ssr::*;
-    use mc_plugin_finder::database::ingest_log::get_last_ingest_log;
+    use mc_plugin_finder::database::ingest_log::get_last_successful_ingest_log;
 
     if let Some(context) = context().await {
-        let last_ingest_log = get_last_ingest_log(&context.db_pool).await;
+        let last_successful_ingest_log = get_last_successful_ingest_log(&context.db_pool).await;
 
-        match last_ingest_log {
+        match last_successful_ingest_log {
             Ok(log) => Ok(log.date_finished.format(&LAST_INGEST_DATE_FORMAT_DESCRIPTION)?),
             Err(error) => Err(ServerFnError::ServerError(error.to_string()))
         }
@@ -609,8 +609,8 @@ fn HomePage() -> impl IntoView {
         fetch_projects
     );
 
-    let last_ingest_date_resource = OnceResource::new(get_last_ingest_date());
-    let last_ingest_date = move || last_ingest_date_resource.get();
+    let last_successful_ingest_date_resource = OnceResource::new(get_last_successful_ingest_date());
+    let last_successful_ingest_date = move || last_successful_ingest_date_resource.get();
 
     view! {
         <a href="https://github.com/Frumple/mc-plugin-finder" class="github-corner" aria-label="View source on GitHub" target="_blank">
@@ -638,9 +638,9 @@ fn HomePage() -> impl IntoView {
         </div>
         <div class="home-page__footer">
             <div class="home-page__footer-last-ingest">
-                <span>"Last Ingest: "</span>
+                <span>"Last Successful Ingest: "</span>
                 <Transition fallback=move || view! { <span>"Loading..."</span> }>
-                    <span>{last_ingest_date}</span>
+                    <span>{last_successful_ingest_date}</span>
                 </Transition>
             </div>
             <div class="home-page__footer-text">

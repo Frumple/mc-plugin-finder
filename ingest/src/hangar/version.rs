@@ -96,7 +96,8 @@ impl<T> HangarClient<T> where T: HttpServer + Send + Sync {
             item: IngestLogItem::Version,
             date_started,
             date_finished,
-            items_processed: items_processed.try_into()?
+            items_processed: items_processed.try_into()?,
+            success: result.is_ok()
         };
         insert_ingest_log(db_pool, &ingest_log).await?;
 

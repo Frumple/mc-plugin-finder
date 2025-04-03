@@ -490,8 +490,8 @@ time::OffsetDateTime, 0>
         |row| { row.get(0) }, mapper: |it| { it },
     }
 } }}pub mod ingest_log
-{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive(Clone,Copy, Debug)] pub struct InsertIngestLogParams<> { pub action: super::super::types::public::IngestLogAction,pub repository: super::super::types::public::IngestLogRepository,pub item: super::super::types::public::IngestLogItem,pub date_started: time::OffsetDateTime,pub date_finished: time::OffsetDateTime,pub items_processed: i32,}#[derive( Debug, Clone, PartialEq,Copy)] pub struct IngestLogEntity
-{ pub id : i32,pub action : super::super::types::public::IngestLogAction,pub repository : super::super::types::public::IngestLogRepository,pub item : super::super::types::public::IngestLogItem,pub date_started : time::OffsetDateTime,pub date_finished : time::OffsetDateTime,pub items_processed : i32,}pub struct IngestLogEntityQuery<'a, C: GenericClient, T, const N: usize>
+{ use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive(Clone,Copy, Debug)] pub struct InsertIngestLogParams<> { pub action: super::super::types::public::IngestLogAction,pub repository: super::super::types::public::IngestLogRepository,pub item: super::super::types::public::IngestLogItem,pub date_started: time::OffsetDateTime,pub date_finished: time::OffsetDateTime,pub items_processed: i32,pub success: bool,}#[derive( Debug, Clone, PartialEq,Copy)] pub struct IngestLogEntity
+{ pub id : i32,pub action : super::super::types::public::IngestLogAction,pub repository : super::super::types::public::IngestLogRepository,pub item : super::super::types::public::IngestLogItem,pub date_started : time::OffsetDateTime,pub date_finished : time::OffsetDateTime,pub items_processed : i32,pub success : bool,}pub struct IngestLogEntityQuery<'a, C: GenericClient, T, const N: usize>
 {
     client: &'a  C, params:
     [&'a (dyn postgres_types::ToSql + Sync); N], stmt: &'a mut
@@ -531,15 +531,15 @@ GenericClient
         Ok(it)
     }
 }pub fn insert_ingest_log() -> InsertIngestLogStmt
-{ InsertIngestLogStmt(cornucopia_async::private::Stmt::new("INSERT INTO ingest_log (action, repository, item, date_started, date_finished, items_processed)
-  VALUES ($1, $2, $3, $4, $5, $6)")) } pub struct
+{ InsertIngestLogStmt(cornucopia_async::private::Stmt::new("INSERT INTO ingest_log (action, repository, item, date_started, date_finished, items_processed, success)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)")) } pub struct
 InsertIngestLogStmt(cornucopia_async::private::Stmt); impl InsertIngestLogStmt
 { pub async fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
-action: &'a super::super::types::public::IngestLogAction,repository: &'a super::super::types::public::IngestLogRepository,item: &'a super::super::types::public::IngestLogItem,date_started: &'a time::OffsetDateTime,date_finished: &'a time::OffsetDateTime,items_processed: &'a i32,) -> Result<u64, tokio_postgres::Error>
+action: &'a super::super::types::public::IngestLogAction,repository: &'a super::super::types::public::IngestLogRepository,item: &'a super::super::types::public::IngestLogItem,date_started: &'a time::OffsetDateTime,date_finished: &'a time::OffsetDateTime,items_processed: &'a i32,success: &'a bool,) -> Result<u64, tokio_postgres::Error>
 {
     let stmt = self.0.prepare(client).await?;
-    client.execute(stmt, &[action,repository,item,date_started,date_finished,items_processed,]).await
+    client.execute(stmt, &[action,repository,item,date_started,date_finished,items_processed,success,]).await
 } }impl <'a, C: GenericClient + Send + Sync, >
 cornucopia_async::Params<'a, InsertIngestLogParams<>, std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
 tokio_postgres::Error>> + Send + 'a>>, C> for InsertIngestLogStmt
@@ -548,13 +548,14 @@ tokio_postgres::Error>> + Send + 'a>>, C> for InsertIngestLogStmt
     params(&'a mut self, client: &'a  C, params: &'a
     InsertIngestLogParams<>) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<u64,
     tokio_postgres::Error>> + Send + 'a>>
-    { Box::pin(self.bind(client, &params.action,&params.repository,&params.item,&params.date_started,&params.date_finished,&params.items_processed,)) }
-}pub fn get_last_ingest_log() -> GetLastIngestLogStmt
-{ GetLastIngestLogStmt(cornucopia_async::private::Stmt::new("SELECT *
+    { Box::pin(self.bind(client, &params.action,&params.repository,&params.item,&params.date_started,&params.date_finished,&params.items_processed,&params.success,)) }
+}pub fn get_last_successful_ingest_log() -> GetLastSuccessfulIngestLogStmt
+{ GetLastSuccessfulIngestLogStmt(cornucopia_async::private::Stmt::new("SELECT *
 FROM ingest_log
+WHERE success = TRUE
 ORDER BY id DESC
 LIMIT 1")) } pub struct
-GetLastIngestLogStmt(cornucopia_async::private::Stmt); impl GetLastIngestLogStmt
+GetLastSuccessfulIngestLogStmt(cornucopia_async::private::Stmt); impl GetLastSuccessfulIngestLogStmt
 { pub fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
 ) -> IngestLogEntityQuery<'a,C,
@@ -563,7 +564,7 @@ IngestLogEntity, 0>
     IngestLogEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),} }, mapper: |it| { <IngestLogEntity>::from(it) },
+        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),success: row.get(7),} }, mapper: |it| { <IngestLogEntity>::from(it) },
     }
 } }pub fn get_ingest_logs() -> GetIngestLogsStmt
 { GetIngestLogsStmt(cornucopia_async::private::Stmt::new("SELECT *
@@ -577,7 +578,7 @@ IngestLogEntity, 0>
     IngestLogEntityQuery
     {
         client, params: [], stmt: &mut self.0, extractor:
-        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),} }, mapper: |it| { <IngestLogEntity>::from(it) },
+        |row| { IngestLogEntity { id: row.get(0),action: row.get(1),repository: row.get(2),item: row.get(3),date_started: row.get(4),date_finished: row.get(5),items_processed: row.get(6),success: row.get(7),} }, mapper: |it| { <IngestLogEntity>::from(it) },
     }
 } }}pub mod modrinth_project
 { use futures::{{StreamExt, TryStreamExt}};use futures; use cornucopia_async::GenericClient;#[derive( Debug)] pub struct UpsertModrinthProjectParams<T1: cornucopia_async::StringSql,T2: cornucopia_async::StringSql,T3: cornucopia_async::StringSql,T4: cornucopia_async::StringSql,T5: cornucopia_async::StringSql,T6: cornucopia_async::StringSql,T7: cornucopia_async::StringSql,T8: cornucopia_async::StringSql,T9: cornucopia_async::StringSql,T10: cornucopia_async::StringSql,T11: cornucopia_async::StringSql,T12: cornucopia_async::StringSql,T13: cornucopia_async::StringSql,T14: cornucopia_async::StringSql,> { pub id: T1,pub slug: T2,pub name: T3,pub description: T4,pub author: T5,pub date_created: time::OffsetDateTime,pub date_updated: time::OffsetDateTime,pub latest_minecraft_version: Option<T6>,pub downloads: i32,pub follows: i32,pub version_id: Option<T7>,pub version_name: Option<T8>,pub status: T9,pub icon_url: Option<T10>,pub source_url: Option<T11>,pub source_repository_host: Option<T12>,pub source_repository_owner: Option<T13>,pub source_repository_name: Option<T14>,}#[derive( Debug, Clone, PartialEq,)] pub struct ModrinthProjectEntity

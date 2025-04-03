@@ -158,7 +158,8 @@ CREATE TABLE IF NOT EXISTS ingest_log (
   item ingest_log_item NOT NULL,
   date_started timestamptz NOT NULL,
   date_finished timestamptz NOT NULL,
-  items_processed integer NOT NULL
+  items_processed integer NOT NULL,
+  success boolean NOT NULL
 );
 
 -- Indexes

@@ -147,7 +147,8 @@ pub async fn refresh_common_projects(db_pool: &Pool) -> Result<()> {
             item: IngestLogItem::Project,
             date_started,
             date_finished,
-            items_processed: items_processed.try_into()?
+            items_processed: items_processed.try_into()?,
+            success: true
         };
         insert_ingest_log(db_pool, &ingest_log).await?;
 
