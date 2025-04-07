@@ -341,10 +341,12 @@ async fn update_all(db_pool: &Pool) -> Result<()> {
     let hangar_server = HangarServer::new().await;
     let hangar_client = HangarClient::new(hangar_server)?;
 
-    populate_spigot_authors(&spigot_client, db_pool).await?;
-    update_spigot_resources(&spigot_client, db_pool).await?;
-    update_modrinth_projects(&modrinth_client, db_pool).await?;
-    update_hangar_projects(&hangar_client, db_pool).await?;
+    let populate_spigot_authors_result = populate_spigot_authors(&spigot_client, db_pool).await;
+    if populate_spigot_authors_result.is_ok() {
+        let _ = update_spigot_resources(&spigot_client, db_pool).await;
+    }
+    let _ = update_modrinth_projects(&modrinth_client, db_pool).await;
+    let _ = update_hangar_projects(&hangar_client, db_pool).await;
 
     Ok(())
 }
