@@ -329,11 +329,44 @@ GenericClient,>(&'a mut self, client: &'a  C,
 {
     let stmt = self.0.prepare(client).await?;
     client.execute(stmt, &[]).await
-} }pub fn add_source_repository_id_to_modrinth_projects() -> AddSourceRepositoryIdToModrinthProjectsStmt
-{ AddSourceRepositoryIdToModrinthProjectsStmt(cornucopia_async::private::Stmt::new("UPDATE modrinth_project
+} }pub fn add_source_repository_id_to_noble_whitelist_discord_spigot_resource() -> AddSourceRepositoryIdToNobleWhitelistDiscordSpigotResourceStmt
+{ AddSourceRepositoryIdToNobleWhitelistDiscordSpigotResourceStmt(cornucopia_async::private::Stmt::new("UPDATE spigot_resource
+SET source_repository_id = 'noble-whitelist-discord'
+WHERE id = 113896")) } pub struct
+AddSourceRepositoryIdToNobleWhitelistDiscordSpigotResourceStmt(cornucopia_async::private::Stmt); impl AddSourceRepositoryIdToNobleWhitelistDiscordSpigotResourceStmt
+{ pub async fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> Result<u64, tokio_postgres::Error>
+{
+    let stmt = self.0.prepare(client).await?;
+    client.execute(stmt, &[]).await
+} }pub fn add_source_repository_id_to_noble_whitelist_discord_modrinth_project() -> AddSourceRepositoryIdToNobleWhitelistDiscordModrinthProjectStmt
+{ AddSourceRepositoryIdToNobleWhitelistDiscordModrinthProjectStmt(cornucopia_async::private::Stmt::new("UPDATE modrinth_project
+SET source_repository_id = 'noble-whitelist-discord'
+WHERE id = 'WWbtvBwl'")) } pub struct
+AddSourceRepositoryIdToNobleWhitelistDiscordModrinthProjectStmt(cornucopia_async::private::Stmt); impl AddSourceRepositoryIdToNobleWhitelistDiscordModrinthProjectStmt
+{ pub async fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> Result<u64, tokio_postgres::Error>
+{
+    let stmt = self.0.prepare(client).await?;
+    client.execute(stmt, &[]).await
+} }pub fn add_source_repository_id_to_noble_whitelist_discord_hangar_project() -> AddSourceRepositoryIdToNobleWhitelistDiscordHangarProjectStmt
+{ AddSourceRepositoryIdToNobleWhitelistDiscordHangarProjectStmt(cornucopia_async::private::Stmt::new("UPDATE hangar_project
+SET source_repository_id = 'noble-whitelist-discord'
+WHERE slug = 'NobleWhitelistDiscord'")) } pub struct
+AddSourceRepositoryIdToNobleWhitelistDiscordHangarProjectStmt(cornucopia_async::private::Stmt); impl AddSourceRepositoryIdToNobleWhitelistDiscordHangarProjectStmt
+{ pub async fn bind<'a, C:
+GenericClient,>(&'a mut self, client: &'a  C,
+) -> Result<u64, tokio_postgres::Error>
+{
+    let stmt = self.0.prepare(client).await?;
+    client.execute(stmt, &[]).await
+} }pub fn add_source_repository_id_to_essentialsx_addon_modrinth_projects() -> AddSourceRepositoryIdToEssentialsxAddonModrinthProjectsStmt
+{ AddSourceRepositoryIdToEssentialsxAddonModrinthProjectsStmt(cornucopia_async::private::Stmt::new("UPDATE modrinth_project
 SET source_repository_id = id
 WHERE id IN ('Vem8mYeH', 'lyP3EhLg', 'IWjhyNzg', 'KPfTOjGm', '2qgyQbO1', 'sYpvDxGJ', 'cj1AijZw', '3yb40IgO')")) } pub struct
-AddSourceRepositoryIdToModrinthProjectsStmt(cornucopia_async::private::Stmt); impl AddSourceRepositoryIdToModrinthProjectsStmt
+AddSourceRepositoryIdToEssentialsxAddonModrinthProjectsStmt(cornucopia_async::private::Stmt); impl AddSourceRepositoryIdToEssentialsxAddonModrinthProjectsStmt
 { pub async fn bind<'a, C:
 GenericClient,>(&'a mut self, client: &'a  C,
 ) -> Result<u64, tokio_postgres::Error>
