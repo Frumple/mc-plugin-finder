@@ -5,7 +5,8 @@ use url::Url;
 pub struct SourceRepository {
     pub host: String,
     pub owner: String,
-    pub name: String
+    pub name: String,
+    pub id: Option<String>
 }
 
 impl SourceRepository {
@@ -26,7 +27,8 @@ pub fn extract_source_repository_from_url(url: &str) -> Option<SourceRepository>
                             let source_repository = SourceRepository {
                                 host: host.to_string(),
                                 owner: path_segments[0].to_string(),
-                                name: path_segments[1].to_string()
+                                name: path_segments[1].to_string(),
+                                id: None
                             };
 
                             return Some(source_repository)
@@ -65,13 +67,13 @@ mod test {
     use speculoos::prelude::*;
 
     #[rstest]
-    #[case::github_url("https://github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
-    #[case::gitlab_url("https://gitlab.com/Frumple/bar", SourceRepository {host: "gitlab.com".to_string(), owner: "Frumple".to_string(), name: "bar".to_string()})]
-    #[case::bitbucket_url("https://bitbucket.org/Frumple/baz", SourceRepository {host: "bitbucket.org".to_string(), owner: "Frumple".to_string(), name: "baz".to_string()})]
-    #[case::codeberg_url("https://codeberg.org/Frumple/qux", SourceRepository {host: "codeberg.org".to_string(), owner: "Frumple".to_string(), name: "qux".to_string()})]
-    #[case::host_with_leading_www("https://www.github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
-    #[case::url_with_trailing_slash("https://github.com/Frumple/foo/", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
-    #[case::url_with_trailing_path("https://github.com/Frumple/foo/wiki", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string()})]
+    #[case::github_url("https://github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string(), id: None})]
+    #[case::gitlab_url("https://gitlab.com/Frumple/bar", SourceRepository {host: "gitlab.com".to_string(), owner: "Frumple".to_string(), name: "bar".to_string(), id: None})]
+    #[case::bitbucket_url("https://bitbucket.org/Frumple/baz", SourceRepository {host: "bitbucket.org".to_string(), owner: "Frumple".to_string(), name: "baz".to_string(), id: None})]
+    #[case::codeberg_url("https://codeberg.org/Frumple/qux", SourceRepository {host: "codeberg.org".to_string(), owner: "Frumple".to_string(), name: "qux".to_string(), id: None})]
+    #[case::host_with_leading_www("https://www.github.com/Frumple/foo", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string(), id: None})]
+    #[case::url_with_trailing_slash("https://github.com/Frumple/foo/", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string(), id: None})]
+    #[case::url_with_trailing_path("https://github.com/Frumple/foo/wiki", SourceRepository {host: "github.com".to_string(), owner: "Frumple".to_string(), name: "foo".to_string(), id: None})]
     fn should_extract_source_repository_from_url(#[case] url: &str, #[case] expected_repo: SourceRepository) {
         let repo = extract_source_repository_from_url(url);
         assert_that(&repo).is_some().is_equal_to(expected_repo);

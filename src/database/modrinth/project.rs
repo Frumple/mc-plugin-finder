@@ -73,7 +73,8 @@ impl From<ModrinthProjectEntity> for ModrinthProject {
             source_repository = Some(SourceRepository {
                 host: entity.source_repository_host.unwrap(),
                 owner: entity.source_repository_owner.unwrap(),
-                name: entity.source_repository_name.unwrap()
+                name: entity.source_repository_name.unwrap(),
+                id: entity.source_repository_id
             })
         }
 
@@ -216,7 +217,8 @@ pub mod test {
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
                 owner: "alice".to_string(),
-                name: "foo-updated".to_string()
+                name: "foo-updated".to_string(),
+                id: None
             })
         };
 
@@ -295,7 +297,8 @@ pub mod test {
                 source_repository: Some(SourceRepository {
                     host: "github.com".to_string(),
                     owner: "alice".to_string(),
-                    name: "foo".to_string()
+                    name: "foo".to_string(),
+                    id: None
                 })
             },
             ModrinthProject {
@@ -317,7 +320,8 @@ pub mod test {
                 source_repository: Some(SourceRepository {
                     host: "gitlab.com".to_string(),
                     owner: "bob".to_string(),
-                    name: "bar".to_string()
+                    name: "bar".to_string(),
+                    id: None
                 })
             },
             ModrinthProject {
@@ -339,7 +343,8 @@ pub mod test {
                 source_repository: Some(SourceRepository {
                     host: "bitbucket.org".to_string(),
                     owner: "eve".to_string(),
-                    name: "baz".to_string()
+                    name: "baz".to_string(),
+                    id: None
                 })
             },
         ]

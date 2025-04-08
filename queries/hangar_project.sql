@@ -1,4 +1,4 @@
---: HangarProjectEntity(latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: HangarProjectEntity(latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?, source_repository_id?)
 
 --! upsert_hangar_project (latest_minecraft_version?, version_name?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 INSERT INTO hangar_project (slug, author, name, description, date_created, date_updated, latest_minecraft_version, downloads, stars, watchers, visibility, icon_url, version_name, source_url, source_repository_host, source_repository_owner, source_repository_name)

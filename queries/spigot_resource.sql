@@ -1,4 +1,4 @@
---: SpigotResourceEntity(parsed_name?, latest_minecraft_version?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SpigotResourceEntity(parsed_name?, latest_minecraft_version?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?, source_repository_id?)
 
 --! upsert_spigot_resource (parsed_name?, latest_minecraft_version?, version_name?, icon_url?, icon_data?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 INSERT INTO spigot_resource (id, name, parsed_name, description, slug, date_created, date_updated, latest_minecraft_version, downloads, likes, author_id, version_id, version_name, premium, abandoned, icon_url, icon_data, source_url, source_repository_host, source_repository_owner, source_repository_name)

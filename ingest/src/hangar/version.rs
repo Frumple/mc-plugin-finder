@@ -344,7 +344,8 @@ pub mod test {
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
                 owner: "alice".to_string(),
-                name: "foo".to_string()
+                name: "foo".to_string(),
+                id: None
             })
         }
     }

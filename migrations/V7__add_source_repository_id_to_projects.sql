@@ -1,91 +1,9 @@
--- Enable trigram module for text search
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+ALTER TABLE spigot_resource ADD COLUMN source_repository_id text;
+ALTER TABLE modrinth_project ADD COLUMN source_repository_id text;
+ALTER TABLE hangar_project ADD COLUMN source_repository_id text;
 
--- Enable collation for ordering Minecraft versions
-CREATE COLLATION en_natural (
-  LOCALE = 'en-US-u-kn-true',
-  PROVIDER = 'icu'
-);
+DROP MATERIALIZED VIEW common_project;
 
--- Tables
-
--- Spigot
-CREATE TABLE IF NOT EXISTS spigot_author (
-  id SERIAL PRIMARY KEY,
-  name text NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS spigot_resource (
-  id SERIAL PRIMARY KEY,
-  name text NOT NULL,
-  parsed_name text,
-  description text NOT NULL,
-  slug text NOT NULL,
-  date_created timestamptz NOT NULL,
-  date_updated timestamptz NOT NULL,
-  latest_minecraft_version text COLLATE en_natural,
-  downloads integer NOT NULL,
-  likes integer NOT NULL,
-  author_id integer NOT NULL REFERENCES spigot_author,
-  version_id integer NOT NULL,
-  version_name text,
-  premium boolean NOT NULL,
-  abandoned boolean NOT NULL,
-  icon_url text,
-  icon_data text,
-  source_url text,
-  source_repository_host text,
-  source_repository_owner text,
-  source_repository_name text,
-  source_repository_id text
-);
-
--- Modrinth
-CREATE TABLE IF NOT EXISTS modrinth_project (
-  id text PRIMARY KEY,
-  slug text NOT NULL,
-  name text NOT NULL,
-  description text NOT NULL,
-  author text NOT NULL,
-  date_created timestamptz NOT NULL,
-  date_updated timestamptz NOT NULL,
-  latest_minecraft_version text COLLATE en_natural,
-  downloads integer NOT NULL,
-  follows integer NOT NULL,
-  version_id text,
-  version_name text,
-  status text NOT NULL,
-  icon_url text,
-  source_url text,
-  source_repository_host text,
-  source_repository_owner text,
-  source_repository_name text,
-  source_repository_id text
-);
-
--- Hangar
-CREATE TABLE IF NOT EXISTS hangar_project (
-  slug text PRIMARY KEY,
-  author text NOT NULL,
-  name text NOT NULL,
-  description text NOT NULL,
-  latest_minecraft_version text COLLATE en_natural,
-  date_created timestamptz NOT NULL,
-  date_updated timestamptz NOT NULL,
-  downloads integer NOT NULL,
-  stars integer NOT NULL,
-  watchers integer NOT NULL,
-  visibility text NOT NULL,
-  icon_url text NOT NULL,
-  version_name text,
-  source_url text,
-  source_repository_host text,
-  source_repository_owner text,
-  source_repository_name text,
-  source_repository_id text
-);
-
--- Common
 CREATE MATERIALIZED VIEW common_project AS
 SELECT
   s.id AS spigot_id,
@@ -150,23 +68,6 @@ FROM
   AND LOWER(COALESCE(s.source_repository_owner, m.source_repository_owner)) = LOWER(h.source_repository_owner)
   AND LOWER(COALESCE(s.source_repository_name, m.source_repository_name)) = LOWER(h.source_repository_name)
   AND LOWER(COALESCE(s.source_repository_id, m.source_repository_id)) IS NOT DISTINCT FROM LOWER(h.source_repository_id);
-
--- Ingest Logs
-
-CREATE TYPE ingest_log_action AS ENUM('Populate', 'Update', 'Refresh');
-CREATE TYPE ingest_log_repository AS ENUM('Spigot', 'Modrinth', 'Hangar', 'Common');
-CREATE TYPE ingest_log_item AS ENUM('Author', 'Resource', 'Project', 'Version');
-
-CREATE TABLE IF NOT EXISTS ingest_log (
-  id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  action ingest_log_action NOT NULL,
-  repository ingest_log_repository NOT NULL,
-  item ingest_log_item NOT NULL,
-  date_started timestamptz NOT NULL,
-  date_finished timestamptz NOT NULL,
-  items_processed integer NOT NULL,
-  success boolean NOT NULL
-);
 
 -- Indexes
 

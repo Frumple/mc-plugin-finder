@@ -361,7 +361,8 @@ async fn convert_incoming_resource(incoming_resource: IncomingSpigotResource, ve
                     resource.source_repository = Some(SourceRepository {
                         host: repo.host,
                         owner: repo.owner,
-                        name: repo.name
+                        name: repo.name,
+                        id: None
                     });
                 }
             }
@@ -494,7 +495,8 @@ mod test {
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
                 owner: "alice".to_string(),
-                name: "foo".to_string()
+                name: "foo".to_string(),
+                id: None
             })
         };
 
@@ -542,7 +544,8 @@ mod test {
             source_repository: Some(SourceRepository {
                 host: "github.com".to_string(),
                 owner: "alice".to_string(),
-                name: "foo".to_string()
+                name: "foo".to_string(),
+                id: None
             })
         };
 

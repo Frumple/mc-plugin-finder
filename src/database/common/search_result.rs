@@ -127,7 +127,8 @@ impl From<SearchResultEntity> for SearchResult {
             source_repository = Some(SourceRepository {
                 host: entity.source_repository_host.unwrap(),
                 owner: entity.source_repository_owner.unwrap(),
-                name: entity.source_repository_name.unwrap()
+                name: entity.source_repository_name.unwrap(),
+                id: entity.source_repository_id
             })
         }
 

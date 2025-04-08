@@ -309,7 +309,8 @@ async fn convert_incoming_project(incoming_project: IncomingHangarProject, incom
             project.source_repository = Some(SourceRepository {
                 host: repo.host,
                 owner: repo.owner,
-                name: repo.name
+                name: repo.name,
+                id: None
             });
         }
     }
@@ -407,7 +408,8 @@ mod test {
                 source_repository: Some(SourceRepository {
                     host: "github.com".to_string(),
                     owner: "alice".to_string(),
-                    name: "foo".to_string()
+                    name: "foo".to_string(),
+                    id: None
                 })
         };
 
@@ -435,7 +437,7 @@ mod test {
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
-                    links: create_test_project_links( SourceRepository { host: "github.com".to_string(), owner: "alice".to_string(), name: "foo".to_string() } ),
+                    links: create_test_project_links( SourceRepository { host: "github.com".to_string(), owner: "alice".to_string(), name: "foo".to_string(), id: None } ),
                     tags: vec!["ADDON".to_string(), "SUPPORTS_FOLIA".to_string()],
                     keywords: vec!["foo".to_string(), "fi".to_string()]
                 }
@@ -457,7 +459,7 @@ mod test {
                 visibility: "public".to_string(),
                 avatar_url: "https://hangarcdn.papermc.io/avatars/project/1.webp?v=1".to_string(),
                 settings: IncomingHangarProjectSettings {
-                    links: create_test_project_links( SourceRepository { host: "gitlab.com".to_string(), owner: "bob".to_string(), name: "bar".to_string() } ),
+                    links: create_test_project_links( SourceRepository { host: "gitlab.com".to_string(), owner: "bob".to_string(), name: "bar".to_string(), id: None } ),
                     tags: vec!["ADDON".to_string(), "SUPPORTS_FOLIA".to_string()],
                     keywords: vec!["foo".to_string(), "fi".to_string()]
                 }

@@ -1,4 +1,4 @@
---: SearchResultEntity(latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_abandoned?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_status?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_icon_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: SearchResultEntity(latest_minecraft_version?, spigot_id?, spigot_slug?, spigot_name?, spigot_description?, spigot_author?, spigot_version?, spigot_premium?, spigot_abandoned?, spigot_icon_data?, modrinth_id?, modrinth_slug?, modrinth_name?, modrinth_description?, modrinth_author?, modrinth_version?, modrinth_status?, modrinth_icon_url?, hangar_slug?, hangar_name?, hangar_description?, hangar_author?, hangar_version?, hangar_icon_url?, source_repository_host?, source_repository_owner?, source_repository_name?, source_repository_id?)
 
 --! search_projects (query, spigot, modrinth, hangar, name, description, author, sort, limit, offset) : SearchResultEntity
 SELECT
@@ -63,7 +63,8 @@ SELECT
 
   source_repository_host,
   source_repository_owner,
-  source_repository_name
+  source_repository_name,
+  source_repository_id
 FROM
   common_project
 WHERE

@@ -1,4 +1,4 @@
---: ModrinthProjectEntity(latest_minecraft_version?, version_id?, version_name?, icon_url?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
+--: ModrinthProjectEntity(latest_minecraft_version?, version_id?, version_name?, icon_url?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?, source_repository_id?)
 
 --! upsert_modrinth_project (latest_minecraft_version?, version_id?, version_name?, icon_url?, source_url?, source_repository_host?, source_repository_owner?, source_repository_name?)
 INSERT INTO modrinth_project (id, slug, name, description, author, date_created, date_updated, latest_minecraft_version, downloads, follows, version_id, version_name, status, icon_url, source_url, source_repository_host, source_repository_owner, source_repository_name)
