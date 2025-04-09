@@ -624,7 +624,7 @@ fn HomePage() -> impl IntoView {
         <h1 class="home-page__title">"MC Plugin Finder"</h1>
         <h2 class="home-page__subtitle">
           <span>"Search for Minecraft server plugins on "</span>
-          <a href="https://www.spigotmc.org" target="_blank">Spigot</a>
+          <a href="https://www.spigotmc.org/resources" target="_blank">Spigot</a>
           <span>", "</span>
           <a href="https://modrinth.com/plugins" target="_blank">Modrinth</a>
           <span>", and "</span>

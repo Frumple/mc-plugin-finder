@@ -1,6 +1,6 @@
 # MC Plugin Finder
 
-A search aggregator for finding Minecraft server plugins on [Spigot](https://www.spigotmc.org), [Modrinth](https://modrinth.com/plugins), and [Hangar](https://hangar.papermc.io).
+A search aggregator for finding Minecraft server plugins on [Spigot](https://www.spigotmc.org/resources), [Modrinth](https://modrinth.com/plugins), and [Hangar](https://hangar.papermc.io).
 
 ### Try it out here: [https://mcpluginfinder.com](https://mcpluginfinder.com)
 
